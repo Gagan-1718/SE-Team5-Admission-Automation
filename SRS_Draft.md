@@ -133,3 +133,49 @@ This requirement covers automated checking of candidate eligibility against conf
 | ID | Requirement ("The system shall...") | Priority | Source | Acceptance Criteria | Dependencies |
 |---|---|---|---|---|---|
 | ADM-F-009 | The system shall evaluate a candidate's submitted exam details and category against configured eligibility rules, return a status of Eligible, Not Eligible, or Pending Verification, and display a basic, human-readable reason accompanying a Not Eligible or Pending Verification result. | High | Candidate / Admin | TC-009: Given seeded exam data and a configured rule set, the system returns the correct eligibility status and a reason that reflects the specific rule not satisfied, for at least three representative cases (eligible, not eligible, pending). | Depends on ADM-F-003 and ADM-F-007 (document verification may affect final status). Feeds ADM-F-012 |
+
+## 4.5 College, Branch and Seat Management
+
+These requirements cover candidate-facing browsing of colleges and branches, and admin-managed catalogue and seat-matrix data.
+
+| ID | Requirement ("The system shall...") | Priority | Source | Acceptance Criteria | Dependencies |
+|---|---|---|---|---|---|
+| ADM-F-010 | The system shall allow a candidate to view a catalogue of participating colleges and their offered branches, including current seat availability, with an optional lightweight filter by college or branch name. | Medium | Candidate | TC-010: Given a filter term, only matching colleges or branches are displayed; seat-availability figures shown match the underlying seat matrix. | Depends on ADM-F-011 |
+| ADM-F-011 | The system shall allow the administrator to add, edit, and configure colleges, branches, and category-wise seat capacity in a data-driven manner, with seat availability updating automatically after each allotment run. | High | Administrator | TC-011: Given a new college/branch record with seat capacity, it becomes immediately visible in the candidate catalogue and available for choice filling and allotment. After a completed allotment run, seat counts reflect the number of candidates allotted to each college-branch-category combination. | Feeds ADM-F-010, ADM-F-013, ADM-F-015 |
+
+## 4.6 Choice Filling
+
+These requirements cover the candidate's selection, ordering, and locking of college-branch preferences prior to allotment.
+
+| ID | Requirement ("The system shall...") | Priority | Source | Acceptance Criteria | Dependencies |
+|---|---|---|---|---|---|
+| ADM-F-012 | The system shall allow an eligible candidate to add, remove, and preview college-branch choices, preventing the addition of duplicate choices. | High | Candidate | TC-012: Given a choice already in the candidate's list, attempting to add it again is rejected with a duplicate-choice message. | Depends on ADM-F-009 (eligibility) and ADM-F-010 (catalogue) |
+| ADM-F-013 | The system shall allow a candidate to reorder saved choices to reflect priority before locking. | Medium | Candidate | TC-013: Given a reordering action, the saved choice-priority sequence is updated and persisted. | Depends on ADM-F-012 |
+| ADM-F-014 | The system shall allow a candidate to lock/freeze their choice list, after which no further additions, removals, or reordering are permitted. | High | Candidate | TC-014: Given a locked choice list, any attempt to modify it is rejected, and the list is used as-is for allotment. | Depends on ADM-F-013. Feeds ADM-F-015 |
+
+## 4.7 Seat Allotment
+
+This is the central algorithmic component of the system: a rank, preference, and seat-availability based allotment engine, triggered by the administrator and executed as a single allotment cycle.
+
+| ID | Requirement ("The system shall...") | Priority | Source | Acceptance Criteria | Dependencies |
+|---|---|---|---|---|---|
+| ADM-F-015 | The system shall, when an administrator runs allotment, process eligible candidates in ascending order of rank and, for each candidate, allocate the first locked preference (in the candidate's saved order) that is eligible and has an available seat, reducing seat availability immediately after each allocation. | High | Admin / System | TC-015: Given a seeded dataset of candidates, ranks, preferences, and a seat matrix, the allotment run produces allocations consistent with rank order, preference order, seat capacity, and eligibility/category rules, verified against a hand-computed expected result. | Depends on ADM-F-009, ADM-F-011, ADM-F-014. Core requirement of the system |
+| ADM-F-016 | The system shall mark a candidate as Not Allocated if none of their locked preferences can be satisfied during the allotment run. | High | System | TC-016: Given a candidate whose preferences are all unavailable or ineligible, the result for that candidate is recorded as Not Allocated. | Depends on ADM-F-015 |
+
+## 4.8 Allotment Result and Seat Decision
+
+These requirements cover candidate-facing publication of the allotment outcome and the candidate's subsequent decision on an allotted seat.
+
+| ID | Requirement ("The system shall...") | Priority | Source | Acceptance Criteria | Dependencies |
+|---|---|---|---|---|---|
+| ADM-F-017 | The system shall allow the administrator to publish allotment results for the completed allotment run, making them visible to candidates only after publication. | High | Administrator | TC-017: Given an unpublished result, candidates cannot view it; after publication, results become visible immediately. | Depends on ADM-F-015 |
+| ADM-F-018 | The system shall allow a candidate to view their allotment result, including the allotted college/branch (if any) and the allocation status. | High | Candidate | TC-018: Given a published result, the candidate sees the correct allotted college/branch and status (Allocated/Not Allocated). | Depends on ADM-F-015, ADM-F-016, ADM-F-017 |
+| ADM-F-019 | The system shall allow a candidate with a published allotment result to accept or reject/withdraw the allotted seat, exactly once. | High | Candidate | TC-019: Given a published result, each of Accept and Reject/Withdraw is available exactly once and correctly updates the candidate's seat-decision status. | Depends on ADM-F-018 |
+
+## 4.9 Administration and Audit
+
+This requirement covers consolidated administrative oversight of candidates, applications, and documents. Audit logging of privileged actions is defined as a security requirement (SEC-F-005) to avoid duplicating the same capability in two sections.
+
+| ID | Requirement ("The system shall...") | Priority | Source | Acceptance Criteria | Dependencies |
+|---|---|---|---|---|---|
+| ADM-F-020 | The system shall allow the administrator to view and manage candidate records, application statuses, and document-verification queues from a consolidated dashboard. | Medium | Administrator | TC-020: Given the admin dashboard, candidate counts, statuses, and pending-verification queues match the underlying data. | Depends on ADM-F-001, ADM-F-005, ADM-F-007, ADM-F-011 |
