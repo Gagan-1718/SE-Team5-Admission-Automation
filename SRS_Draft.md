@@ -179,3 +179,146 @@ This requirement covers consolidated administrative oversight of candidates, app
 | ID | Requirement ("The system shall...") | Priority | Source | Acceptance Criteria | Dependencies |
 |---|---|---|---|---|---|
 | ADM-F-020 | The system shall allow the administrator to view and manage candidate records, application statuses, and document-verification queues from a consolidated dashboard. | Medium | Administrator | TC-020: Given the admin dashboard, candidate counts, statuses, and pending-verification queues match the underlying data. | Depends on ADM-F-001, ADM-F-005, ADM-F-007, ADM-F-011 |
+
+# 5. Non-Functional Requirements
+
+Exactly five non-functional requirements (NFRs) are defined, each measurable and realistic for a college-scale project.
+
+| ID | Category | Priority | Requirement | Acceptance Criterion / Measurement |
+|---|---|---|---|---|
+| ADM-NFR-001 | Performance | High | The system shall respond to standard candidate-facing page requests (login, catalogue view, choice filling) within 2 seconds under normal load in the demonstration environment. | Verified by informal timing or a lightweight load-testing tool during a demo walkthrough; average observed response time does not exceed 2 seconds. |
+| ADM-NFR-002 | Scalability | Medium | The seat allotment engine shall complete an allotment run for the project's demonstration dataset (up to a few hundred candidates) within a reasonable time, without requiring architectural changes for moderate increases in data volume. | An allotment run over the full seeded demonstration dataset completes within an agreed time limit (e.g., under 1 minute) during testing. |
+| ADM-NFR-003 | Reliability / Data Consistency | High | The system shall ensure that seat availability counts remain consistent with actual allotment records at all times, with no allocation exceeding configured seat capacity. | After any allotment run, for every college-branch-category combination, allotted count does not exceed configured seat capacity, verified programmatically or by test script. |
+| ADM-NFR-004 | Usability | Medium | The system shall present candidate-facing workflows (registration through seat decision) so that a first-time user can complete application submission without external assistance. | In an informal walkthrough with a small number of test users, the majority complete application submission without assistance. |
+| ADM-NFR-005 | Maintainability | Medium | The system shall keep college, branch, seat-matrix, and eligibility-rule data fully configurable through admin interfaces rather than hardcoded in application logic. | Adding a new college/branch/rule requires only admin-interface actions and no source-code changes, verified by walkthrough. |
+
+## 5.1 Security
+
+### 5.1.1 Security Objectives
+
+- Objective 1: Protect candidate personal and application data from unauthorized access.
+- Objective 2: Ensure only authorized administrators can perform privileged admission/seat-management operations.
+- Objective 3: Preserve integrity and traceability of important admission actions.
+
+### 5.1.2 Security Requirements
+
+| ID | Requirement | Priority | Acceptance Criteria |
+|---|---|---|---|
+| SEC-F-001 | The system shall require successful authentication (email/mobile and password) before granting access to any candidate or administrator functionality. | High | TC-021: Unauthenticated requests to protected endpoints/pages are redirected to login and denied access to protected data. |
+| SEC-F-002 | The system shall enforce role-based access control, restricting administrative functions to users assigned the Administrator role. | High | TC-022: A candidate-role account attempting to access an admin-only function (e.g., publish results) is denied with an authorization error. |
+| SEC-F-003 | The system shall store candidate and administrator passwords using a salted cryptographic hash and shall never store or log plaintext passwords. | High | TC-023: Inspection of the credential store confirms only salted hashes are present; no plaintext password appears in application logs. |
+| SEC-F-004 | The system shall transmit all candidate and administrator data, including credentials, over an encrypted (HTTPS/TLS) connection. | High | TC-024: Network traffic capture during login and data-entry operations shows encrypted transport with no plaintext credentials or personal data on the wire. |
+| SEC-F-005 | The system shall record an audit log entry, including actor identity, timestamp, and action type, for every privileged administrative action affecting candidate, seat-matrix, or allotment data. | Medium | TC-025: Given a privileged action (e.g., seat-matrix edit, allotment run, result publication), a corresponding audit entry is created and is not editable through the standard UI. |
+
+# 6. Quality Attributes & Acceptance Tests
+
+Beyond the measurable NFRs in Section 5, the system is expected to exhibit correctness (especially in the allotment engine), consistency (seat counts always reconcile with allotment records), and traceability (every privileged action is auditable). The table below defines concise, workflow-level acceptance criteria; each maps to one or more detailed test cases referenced in Section 8.
+
+| Workflow | Acceptance Criteria |
+|---|---|
+| Candidate Registration | A new candidate with unique, valid details can register and receives account confirmation; duplicate email/mobile is rejected. |
+| Application Submission | A candidate can save a draft, resume it, and submit only when all mandatory fields are valid; submission yields a unique reference number. |
+| Document Upload & Verification | Only allowed file types/sizes are accepted; the administrator can approve or reject with a reason; a rejected document can be resubmitted and moves back to Pending Verification. |
+| Eligibility Check | Given seeded exam data, the system returns Eligible, Not Eligible, or Pending Verification with a correct accompanying reason for at least three representative cases. |
+| Choice Filling and Locking | A candidate can add non-duplicate eligible choices, reorder them, and lock the list; no modification is possible after locking. |
+| Seat Allotment (core algorithm) | Across a seeded test dataset the allotment run demonstrates: candidates are processed strictly in ascending rank order; each candidate's preferences are considered in declared priority order; an allocation is made only where a seat is available in that college-branch-category; only eligible candidates receive an allocation; seat-availability counts decrease correctly and immediately after each allocation, with no combination exceeding configured capacity; a candidate with no satisfiable preference is correctly marked Not Allocated. |
+| Allotment Result Publication | Results are hidden from candidates until the administrator publishes the allotment run; after publication, each candidate sees the correct allotted college/branch and status. |
+| Seat Acceptance/Rejection | A candidate with a published result can Accept or Reject/Withdraw exactly once, and the recorded decision status updates accordingly. |
+| Admin Access Control | A non-admin account is denied access to seat-matrix management, allotment execution, and result publication; an admin account can perform all of these. |
+
+# 7. System Models / UML Use-Case Diagrams
+
+Two use-case diagrams model the system's primary actors and their interactions.
+
+## 7.1 Diagram 1: Candidate Admission & Counselling
+
+**Actor:** Candidate
+
+**Use cases:**
+- Register/Login
+- Manage Profile
+- Enter Exam Details
+- Submit Application
+- Upload Documents
+- Check Eligibility
+- View Colleges/Branches
+- Fill Choices
+- Reorder Choices
+- Lock Choices
+- View Allotment
+- Accept/Reject Seat
+
+## 7.2 Diagram 2: Administrator & Allotment Management
+
+**Actor:** Administrator
+
+**Use cases:**
+- Manage Candidates
+- Verify Documents
+- Verify Eligibility
+- Manage Colleges
+- Manage Branches
+- Manage Seat Matrix
+- Run Allotment
+- Publish Results
+- View Audit Logs
+
+**Relationship notes:**
+- Submit Application includes Register/Login.
+- Fill Choices includes Check Eligibility.
+- Lock Choices includes Reorder Choices.
+- View Allotment presumes Lock Choices has occurred.
+- Run Allotment presumes Manage Seat Matrix is configured.
+- Publish Results presumes Run Allotment has completed.
+
+# 8. Requirements Traceability Matrix (RTM)
+
+The RTM below maps every functional, non-functional, and security requirement to its SRS section, implementation module, and test case reference. Status values (Planned/Implemented/Tested/Verified) are to be updated by the team as development proceeds; all entries below are recorded at 'Planned' status as of this document version.
+
+| Req. ID | Summary | SRS § | Module | Test Case | Status |
+|---|---|---|---|---|---|
+| ADM-F-001 | Candidate registration | 4.1 | Account Module | TC-001 | Planned |
+| ADM-F-002 | Candidate login/logout | 4.1 | Account Module | TC-002 | Planned |
+| ADM-F-003 | Candidate profile & exam-detail management | 4.1 | Account Module | TC-003 | Planned |
+| ADM-F-004 | Save application as draft | 4.2 | Application Module | TC-004 | Planned |
+| ADM-F-005 | Edit, submit application; generate reference number | 4.2 | Application Module | TC-005 | Planned |
+| ADM-F-006 | Document upload and validation | 4.3 | Document Module | TC-006 | Planned |
+| ADM-F-007 | Document verification (approve/reject) | 4.3 | Document Module | TC-007 | Planned |
+| ADM-F-008 | Document status view and resubmission | 4.3 | Document Module | TC-008 | Planned |
+| ADM-F-009 | Eligibility calculation and reason display | 4.4 | Eligibility Module | TC-009 | Planned |
+| ADM-F-010 | College/branch catalogue view | 4.5 | Catalogue Module | TC-010 | Planned |
+| ADM-F-011 | Admin college/branch/seat management | 4.5 | Catalogue Module | TC-011 | Planned |
+| ADM-F-012 | Choice add/remove/preview | 4.6 | Choice Module | TC-012 | Planned |
+| ADM-F-013 | Choice reordering | 4.6 | Choice Module | TC-013 | Planned |
+| ADM-F-014 | Choice locking | 4.6 | Choice Module | TC-014 | Planned |
+| ADM-F-015 | Rank/preference/seat-based allotment engine | 4.7 | Allotment Module | TC-015 | Planned |
+| ADM-F-016 | Not Allocated determination | 4.7 | Allotment Module | TC-016 | Planned |
+| ADM-F-017 | Allotment result publication | 4.8 | Result Module | TC-017 | Planned |
+| ADM-F-018 | Allotment result viewing | 4.8 | Result Module | TC-018 | Planned |
+| ADM-F-019 | Seat accept/reject decision | 4.8 | Result Module | TC-019 | Planned |
+| ADM-F-020 | Admin candidate/application dashboard | 4.9 | Admin Module | TC-020 | Planned |
+| ADM-NFR-001 | Response time performance | 5 | Cross-cutting | TC-026 | Planned |
+| ADM-NFR-002 | Allotment run scalability | 5 | Allotment Module | TC-027 | Planned |
+| ADM-NFR-003 | Seat-count data consistency | 5 | Allotment Module | TC-028 | Planned |
+| ADM-NFR-004 | Candidate workflow usability | 5 | Cross-cutting | TC-029 | Planned |
+| ADM-NFR-005 | Configurable, data-driven maintainability | 5 | Catalogue Module | TC-030 | Planned |
+| SEC-F-001 | Mandatory authentication | 5.1.2 | Account Module | TC-021 | Planned |
+| SEC-F-002 | Role-based access control | 5.1.2 | Account Module | TC-022 | Planned |
+| SEC-F-003 | Salted password hashing | 5.1.2 | Account Module | TC-023 | Planned |
+| SEC-F-004 | Encrypted data in transit | 5.1.2 | Cross-cutting | TC-024 | Planned |
+| SEC-F-005 | Audit logging of privileged actions | 5.1.2 | Audit Module | TC-025 | Planned |
+
+# Assumptions
+
+- All exam ranks, categories, and eligibility rules used in the project are mock/seeded data and do not represent real candidates or real KEA/COMEDK data.
+- The project team has access to a standard web development stack and a database of the team's choosing; no specific framework is mandated by this SRS.
+- The demonstration dataset size (tens to a few hundred candidates) is sufficient to validate the correctness of the allotment engine for academic evaluation purposes.
+- No payment functionality, real or simulated, is required for the demonstrated workflow.
+- Document verification is performed manually by the Administrator; no OCR or AI-based automated verification is implemented.
+- A single allotment cycle is sufficient to demonstrate the allotment engine; multiple counselling rounds are not implemented and are noted only as a possible future enhancement.
+
+# References
+
+- Institution-provided SRS template
+- Team's prior C-based COMEDK admission/allotment project
+- Publicly available descriptions of KCET and COMEDK counselling workflows
