@@ -316,9 +316,3 @@ The RTM below maps every functional, non-functional, and security requirement to
 - No payment functionality, real or simulated, is required for the demonstrated workflow.
 - Document verification is performed manually by the Administrator; no OCR or AI-based automated verification is implemented.
 - A single allotment cycle is sufficient to demonstrate the allotment engine; multiple counselling rounds are not implemented and are noted only as a possible future enhancement.
-
-# References
-
-- Institution-provided SRS template
-- Team's prior C-based COMEDK admission/allotment project
-- Publicly available descriptions of KCET and COMEDK counselling workflows
