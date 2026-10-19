@@ -1,10 +1,14 @@
 :root {
-  --ink: #1b2a3a;
-  --muted: #5a6b7b;
-  --brand: #1f4e79;
-  --bg: #f4f6f9;
+  --ink: #14263d;
+  --muted: #5d7188;
+  --brand: #123b68;
+  --brand-dark: #0b2a4b;
+  --accent: #2d78b8;
+  --bg: #eef5fb;
   --card: #ffffff;
-  --line: #d8dee6;
+  --line: #d4e0ec;
+  --error: #a52929;
+  --success: #176b45;
 }
 
 * { box-sizing: border-box; }
@@ -13,18 +17,41 @@ body {
   margin: 0;
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   color: var(--ink);
-  background: var(--bg);
+  background: linear-gradient(135deg, #f7fbff 0%, var(--bg) 100%);
   line-height: 1.5;
 }
 
-.container { max-width: 960px; margin: 0 auto; padding: 0 1rem; }
+.container { max-width: 1080px; margin: 0 auto; padding: 0 1.25rem; }
 
-.site-header { background: var(--brand); color: #fff; padding: 0.9rem 0; }
-.site-header .container { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.75rem; }
-.brand { color: #fff; font-weight: 700; font-size: 1.2rem; text-decoration: none; }
-.tagline { color: #cfe0f1; font-size: 0.9rem; }
+.site-header { background: var(--brand-dark); color: #fff; padding: 1rem 0; box-shadow: 0 2px 12px rgb(10 42 75 / 18%); }
+.site-header .container { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.5rem 1rem; }
+.brand { color: #fff; font-weight: 750; font-size: 1.15rem; letter-spacing: 0.01em; text-decoration: none; }
+main.container { min-height: calc(100vh - 150px); padding-top: 2.5rem; padding-bottom: 3rem; }
 
-main.container { padding-top: 1.5rem; padding-bottom: 2rem; }
+.auth-layout { display: flex; justify-content: center; }
+.auth-card { width: min(100%, 510px); background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: clamp(1.5rem, 4vw, 2.5rem); box-shadow: 0 18px 45px rgb(25 65 105 / 12%); }
+.eyebrow { color: var(--accent); font-size: 0.75rem; font-weight: 800; letter-spacing: 0.13em; text-transform: uppercase; }
+.auth-card h1 { color: var(--brand-dark); font-size: clamp(1.7rem, 4vw, 2.15rem); line-height: 1.2; margin: 0.5rem 0 0.75rem; }
+.intro { color: var(--muted); margin: 0 0 1.75rem; }
+.auth-form { display: grid; gap: 1.15rem; }
+.form-field { display: grid; gap: 0.4rem; }
+.form-field label { color: var(--ink); font-size: 0.92rem; font-weight: 700; }
+.form-field input { width: 100%; min-height: 3rem; border: 1px solid #b9cadb; border-radius: 9px; background: #fbfdff; color: var(--ink); font: inherit; padding: 0.7rem 0.85rem; transition: border-color 150ms ease, box-shadow 150ms ease; }
+.form-field input:focus { border-color: var(--accent); outline: 3px solid rgb(45 120 184 / 20%); box-shadow: 0 0 0 1px var(--accent); }
+.field-hint { color: var(--muted); font-size: 0.78rem; }
+.password-field { position: relative; }
+.password-field input { padding-right: 4.6rem; }
+.password-toggle { position: absolute; top: 50%; right: 0.7rem; transform: translateY(-50%); border: 0; background: transparent; color: var(--accent); cursor: pointer; font: inherit; font-size: 0.82rem; font-weight: 750; padding: 0.35rem; }
+.password-toggle:focus-visible { border-radius: 4px; outline: 2px solid var(--accent); outline-offset: 2px; }
+.primary-button { min-height: 3rem; border: 0; border-radius: 9px; background: var(--brand); color: #fff; cursor: pointer; font: inherit; font-weight: 750; padding: 0.75rem 1rem; transition: background 150ms ease, transform 150ms ease; }
+.primary-button:hover { background: var(--brand-dark); }
+.primary-button:active { transform: translateY(1px); }
+.primary-button:focus-visible { outline: 3px solid rgb(45 120 184 / 35%); outline-offset: 2px; }
+.form-message { border-radius: 8px; font-size: 0.9rem; margin: 0; padding: 0.7rem 0.85rem; }
+.form-message.is-error { background: #fff1f1; color: var(--error); }
+.form-message.is-success { background: #edf9f2; color: var(--success); }
+.auth-switch { border-top: 1px solid var(--line); color: var(--muted); margin: 1.75rem 0 0; padding-top: 1.25rem; text-align: center; }
+.auth-switch a { color: var(--accent); font-weight: 750; }
 
 .card {
   background: var(--card);
@@ -45,4 +72,9 @@ main.container { padding-top: 1.5rem; padding-bottom: 2rem; }
 }
 .button:hover { background: #173c5e; }
 
-.site-footer { color: var(--muted); font-size: 0.85rem; padding: 1rem 0 2rem; }
+@media (max-width: 560px) {
+  .container { padding: 0 1rem; }
+  .site-header .container { align-items: flex-start; flex-direction: column; }
+  main.container { padding-top: 1.5rem; }
+  .auth-card { border-radius: 14px; padding: 1.35rem; }
+}

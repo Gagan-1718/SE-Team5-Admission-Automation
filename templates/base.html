@@ -3,14 +3,13 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}Admission Automation{% endblock %} | Team 5</title>
+  <title>{% block title %}Admission Automation{% endblock %}</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/site.css') }}">
 </head>
 <body>
   <header class="site-header">
     <div class="container">
       <a class="brand" href="{{ url_for('main.home') }}">Admission Automation</a>
-      <span class="tagline">Team 5 &middot; fictional exam data only</span>
     </div>
   </header>
 
@@ -18,8 +17,5 @@
     {% block content %}{% endblock %}
   </main>
 
-  <footer class="site-footer">
-    <div class="container">Software Engineering project &middot; Sprint One</div>
-  </footer>
 </body>
 </html>
