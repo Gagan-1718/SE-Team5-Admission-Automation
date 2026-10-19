@@ -74,3 +74,7 @@ main.container { padding-top: 1.5rem; padding-bottom: 2rem; }
   font: inherit;
 }
 .error { color: #a12626; margin: 0.25rem 0 0; font-size: 0.9rem; }
+
+.button { border: 0; font: inherit; cursor: pointer; }
+.button-primary { background: #2b7a3d; }
+.button-primary:hover { background: #1f5c2d; }

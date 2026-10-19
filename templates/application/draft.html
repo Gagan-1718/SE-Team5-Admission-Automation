@@ -63,6 +63,9 @@
       <p class="note">This application has been submitted and can no longer be edited.</p>
     {% else %}
       <button class="button" type="submit">Save draft</button>
+      <button class="button button-primary" type="submit"
+              formaction="{{ url_for('application.submit_form') }}">Submit application</button>
+      <p class="note">Submitting needs every field filled in. After submitting you cannot edit.</p>
     {% endif %}
   </form>
 </section>
