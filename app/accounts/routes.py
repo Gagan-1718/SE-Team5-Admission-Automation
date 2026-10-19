@@ -21,6 +21,7 @@ from .security import hash_password, verify_password
 bp = Blueprint("accounts", __name__, url_prefix="/accounts")
 EMAIL_PATTERN = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 MOBILE_PATTERN = re.compile(r"^\d{10}$")
+PROFILE_CATEGORIES = {"General", "OBC", "SC", "ST"}
 
 
 @bp.before_app_request
@@ -138,4 +139,59 @@ def admin_check():
 @login_required
 def dashboard():
     return jsonify(message="Candidate dashboard", identity=current_identity())
+
+
+@bp.get("/profile")
+@login_required
+def profile():
+    user = db.session.get(User, current_identity()["id"])
+    return jsonify(
+        id=user.id,
+        name=user.name,
+        email=user.email,
+        mobile=user.mobile,
+        role=user.role,
+        rank=user.rank,
+        category=user.category,
+    )
+
+
+@bp.get("/profile-page")
+@login_required
+def profile_page():
+    return render_template("accounts/profile.html")
+
+
+@bp.put("/profile")
+@login_required
+def update_profile():
+    payload = request.get_json(silent=True)
+    if not isinstance(payload, dict):
+        return _validation_error("A JSON object is required.")
+
+    name = str(payload.get("name", "")).strip()
+    mobile = str(payload.get("mobile", "")).strip()
+    category = str(payload.get("category", "")).strip()
+    try:
+        rank = int(payload.get("rank"))
+    except (TypeError, ValueError):
+        return _validation_error("Rank must be a positive integer.")
+
+    if not 2 <= len(name) <= 120:
+        return _validation_error("Name must be between 2 and 120 characters.")
+    if not MOBILE_PATTERN.fullmatch(mobile):
+        return _validation_error("Mobile number must contain exactly 10 digits.")
+    if rank < 1:
+        return _validation_error("Rank must be a positive integer.")
+    if category not in PROFILE_CATEGORIES:
+        return _validation_error("Category must be General, OBC, SC or ST.")
+
+    user = db.session.get(User, current_identity()["id"])
+    user.name, user.mobile, user.rank, user.category = name, mobile, rank, category
+    try:
+        db.session.commit()
+    except IntegrityError:
+        db.session.rollback()
+        return jsonify(error="duplicate_account", message="That mobile number is already registered."), 409
+    return jsonify(message="Profile updated successfully.")
 

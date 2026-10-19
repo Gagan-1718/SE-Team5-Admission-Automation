@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Candidate profile{% endblock %}
+{% block content %}
+<h1>Candidate profile</h1>
+<form method="post" id="profile-form">
+  <label for="name">Name</label><input id="name" name="name" required>
+  <label for="email">Email</label><input id="email" name="email" type="email" readonly>
+  <label for="mobile">Mobile</label><input id="mobile" name="mobile" inputmode="numeric" required>
+  <label for="rank">Fictional exam rank</label><input id="rank" name="rank" type="number" min="1" required>
+  <label for="category">Category</label><select id="category" name="category" required><option>General</option><option>OBC</option><option>SC</option><option>ST</option></select>
+  <button type="submit">Save profile</button>
+  <p id="message" role="alert"></p>
+</form>
+<script>
+const form = document.getElementById("profile-form");
+fetch("{{ url_for('accounts.profile') }}").then(response => response.json()).then(data => {
+  for (const field of ["name", "email", "mobile", "rank", "category"]) form.elements[field].value = data[field] ?? "";
+});
+form.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const response = await fetch("{{ url_for('accounts.update_profile') }}", {
+    method: "PUT", headers: {"Content-Type": "application/json"},
+    body: JSON.stringify(Object.fromEntries(new FormData(form)))
+  });
+  const data = await response.json();
+  document.getElementById("message").textContent = data.message || "Profile update failed.";
+});
+</script>
+{% endblock %}
