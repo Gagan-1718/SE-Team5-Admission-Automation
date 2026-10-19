@@ -1,16 +1,17 @@
 """Application draft rules: validation, create and save (owner: Gagan).
 
 Other modules should call these functions rather than touching the table.
-Submission and reference numbers are issue #3 and are not implemented here.
+Drafts are issue #2; submission with a unique reference number is issue #3.
 """
 import math
 import re
+from datetime import datetime, timezone
 
 from sqlalchemy.exc import IntegrityError
 
 from app.extensions import db
 
-from .models import DRAFT, FORM_FIELDS, Application
+from .models import DRAFT, FORM_FIELDS, REQUIRED_FIELDS, SUBMITTED, Application
 
 BOARDS = ("Karnataka State PUC", "CBSE", "ICSE", "Other")
 MAX_LENGTHS = {"guardian_name": 100, "school_name": 150}
@@ -106,6 +107,47 @@ def update_draft(application, data):
     for name, value in cleaned.items():
         setattr(application, name, value)
     db.session.commit()
+    return application
+
+
+def missing_required_fields(application):
+    """Field-level errors for every mandatory field that is still empty."""
+    return {
+        name: "This field is required."
+        for name in REQUIRED_FIELDS
+        if getattr(application, name) in (None, "")
+    }
+
+
+def make_reference_number(application_id, when=None):
+    """Reference like ADM-2026-000007: the year plus the never-reused application id."""
+    year = (when or datetime.now(timezone.utc)).year
+    return f"ADM-{year}-{application_id:06d}"
+
+
+def submit(application):
+    """Submit a complete Draft and give it its unique reference number (ADM-F-005).
+
+    Raises ValidationError (field-level) if mandatory fields are missing, and
+    ApplicationLocked if it was already submitted. The status change is one
+    conditional UPDATE, so two simultaneous submits cannot both succeed.
+    """
+    if not application.is_draft:
+        raise ApplicationLocked()
+    errors = missing_required_fields(application)
+    if errors:
+        raise ValidationError(errors)
+
+    result = db.session.execute(
+        db.update(Application)
+        .where(Application.id == application.id, Application.status == DRAFT)
+        .values(status=SUBMITTED, reference_number=make_reference_number(application.id))
+    )
+    if result.rowcount != 1:  # someone else submitted first
+        db.session.rollback()
+        raise ApplicationLocked()
+    db.session.commit()
+    db.session.refresh(application)
     return application
 
 

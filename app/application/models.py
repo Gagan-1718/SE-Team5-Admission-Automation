@@ -15,6 +15,8 @@ STATUSES = (DRAFT, SUBMITTED)
 
 # Editable form fields. Provisional list - to be confirmed with the team (SRS has no field list).
 FORM_FIELDS = ("guardian_name", "guardian_mobile", "school_name", "board", "percentage")
+# Mandatory to submit (ADM-F-005). Provisional: all form fields until the team agrees the list.
+REQUIRED_FIELDS = FORM_FIELDS
 
 
 def _now():
@@ -46,6 +48,13 @@ class Application(db.Model):
             "percentage IS NULL OR (percentage >= 0 AND percentage <= 100)",
             name="ck_applications_percentage",
         ),
+        # A reference number exists exactly when the application is Submitted.
+        CheckConstraint(
+            "(status = 'Submitted') = (reference_number IS NOT NULL)",
+            name="ck_applications_reference_matches_status",
+        ),
+        # Never hand out the id of a deleted row again, so references are never reused.
+        {"sqlite_autoincrement": True},
     )
 
     @property
