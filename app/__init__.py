@@ -54,6 +54,7 @@ def create_app(config_overrides=None):
 
     db.init_app(app)
 
+    from . import setup_check  # noqa: F401  (registers the smoke-test table)
     from .main import bp as main_bp
 
     app.register_blueprint(main_bp)
