@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Local runtime data: SQLite databases, uploads, generated secret key (never commit)
+instance/
+*.db
+*.sqlite
+*.sqlite3
+uploads/
+
+# Secrets and local configuration
+.env
+.env.*
+*.pem
+*.key
+
+# Editors and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
