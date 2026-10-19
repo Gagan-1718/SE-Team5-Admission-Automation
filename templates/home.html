@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block title %}Home{% endblock %}
+
+{% block content %}
+<section class="card">
+  <h1>Admission Automation</h1>
+  <p>
+    Web application for engineering admission and counselling workflows.
+    Candidates apply and upload documents; administrators manage colleges and verify
+    documents; eligibility is checked by the software.
+  </p>
+  <p class="note">The shared Flask application is running. Feature modules are being added in Sprint One.</p>
+  <p><a class="button" href="{{ url_for('main.health') }}">Check application health</a></p>
+</section>
+{% endblock %}
