@@ -54,6 +54,10 @@ def create_app(config_overrides=None):
 
     db.init_app(app)
 
+    from .main import bp as main_bp
+
+    app.register_blueprint(main_bp)
+
     for name in MODULES:
         import_optional(f"app.{name}.models")
         routes = import_optional(f"app.{name}.routes")
