@@ -8,6 +8,10 @@ Start with SPRINT_ONE_START_HERE.md for responsibilities and the proposed Octobe
 
 The shared Flask foundation (application factory, SQLite, home page, `/health`, database commands and startup tests) is in place for review under issue #31. Feature modules (accounts, application, documents, catalogue, eligibility) are still being built by their owners. Acceptance tests TC-001 to TC-030 have not been executed yet.
 
+### Application module (draft slice, issue #2)
+
+Open `/application` to save and resume a draft. JSON endpoints follow the SAD: `POST /api/v1/applications`, `PUT /api/v1/applications/<id>`, `GET /api/v1/applications/me`. Submission and reference numbers (#3) are not built yet. The draft uses a **temporary** candidate ID of 1 from `app/application/identity.py`; when login is integrated, only that one function changes. The draft form fields (guardian name/mobile, school, board, percentage) are provisional until the team agrees the final list.
+
 ## Run it locally (Windows PowerShell)
 
 You need Git and Python 3.12.
