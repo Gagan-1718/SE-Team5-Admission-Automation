@@ -1,7 +1,8 @@
 """Application draft pages and JSON API (owner: Gagan).
 
-HTML:  GET/POST /application
-JSON:  POST /api/v1/applications, PUT /api/v1/applications/<id>, GET /api/v1/applications/me
+HTML:  GET/POST /application, POST /application/submit
+JSON:  POST /api/v1/applications, PUT /api/v1/applications/<id>, GET /api/v1/applications/me,
+       POST /api/v1/applications/<id>/submit
 Errors use the team's body {status, error, message} (SAD A-20).
 """
 from http import HTTPStatus
@@ -80,6 +81,29 @@ def save_draft_form():
     return redirect(url_for("application.draft_form"))
 
 
+@bp.post("/application/submit")
+def submit_form():
+    """Save what is typed, then submit. Missing fields keep the application a Draft."""
+    candidate_id = current_candidate_id()
+    posted = {name: request.form[name] for name in FORM_FIELDS if name in request.form}
+    try:
+        application = services.get_for_candidate(candidate_id)
+        if application is None:
+            application = services.create_draft(candidate_id, posted)
+        else:
+            services.update_draft(application, posted)
+        services.submit(application)
+    except services.ValidationError as exc:
+        application = services.get_for_candidate(candidate_id)
+        return _render_form(application, posted, exc.errors, 422)
+    except services.ApplicationLocked:
+        application = services.get_for_candidate(candidate_id)
+        flash("This application is already submitted.")
+        return _render_form(application, application.fields(), {}, 409)
+    flash(f"Application submitted. Your reference number is {application.reference_number}.")
+    return redirect(url_for("application.draft_form"))
+
+
 # ---------------------------------------------------------------- JSON API
 
 @bp.post("/api/v1/applications")
@@ -111,6 +135,20 @@ def api_save_draft(application_id):
     except services.ApplicationLocked:
         return _error(409, "The application is already submitted.")
     return jsonify(_application_json(application))
+
+
+@bp.post("/api/v1/applications/<int:application_id>/submit")
+def api_submit(application_id):
+    application, failure = _owned_application(application_id)
+    if failure:
+        return failure
+    try:
+        services.submit(application)
+    except services.ValidationError as exc:
+        return _error(422, "Mandatory fields are missing.", fields=exc.errors)
+    except services.ApplicationLocked:
+        return _error(409, "The application is already submitted.")
+    return jsonify(referenceNumber=application.reference_number, status=application.status)
 
 
 @bp.get("/api/v1/applications/me")
