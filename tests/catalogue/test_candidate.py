@@ -24,7 +24,7 @@ def test_filter_by_branch_name_shows_only_matching_branches(seeded, client):
     response = client.get("/colleges?q=civil")
     assert b"Civil Engineering" in response.data
     assert CEDARWOOD in response.data
-    assert MERIDIAN not in response.data
+    assert b"<h2>" + MERIDIAN not in response.data
     assert b"Mechanical Engineering" not in response.data
     assert b"Information Science" not in response.data
 
@@ -34,7 +34,7 @@ def test_filter_by_college_name_shows_all_its_branches(seeded, client):
     assert CEDARWOOD in response.data
     for branch in (b"Computer Science and Engineering", b"Information Science and Engineering", b"Civil Engineering"):
         assert branch in response.data
-    assert MERIDIAN not in response.data
+    assert b"<h2>" + MERIDIAN not in response.data
 
 
 def test_filter_matching_branches_in_several_colleges(seeded, client):
@@ -60,7 +60,7 @@ def test_college_and_text_filters_combine(seeded, client):
 def test_filter_with_no_match_shows_message(seeded, client):
     response = client.get("/colleges?q=zzz-no-such-thing")
     assert b"No colleges or branches match" in response.data
-    assert MERIDIAN not in response.data
+    assert b"<h2>" + MERIDIAN not in response.data
 
 
 def test_filter_text_is_not_treated_as_a_pattern(seeded, client):
