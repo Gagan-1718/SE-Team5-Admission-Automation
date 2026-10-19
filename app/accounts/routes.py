@@ -13,6 +13,7 @@ from .auth import (
     delete_current_session,
     login_required,
     load_current_user,
+    role_required,
 )
 from .models import User
 from .security import hash_password, verify_password
@@ -128,9 +129,13 @@ def me():
 
 
 @bp.get("/admin-check")
-@login_required
+@role_required("administrator")
 def admin_check():
-    if current_identity()["role"] != "administrator":
-        return jsonify(error="forbidden", message="You do not have permission for this resource."), 403
     return jsonify(message="Administrator access granted.")
+
+
+@bp.get("/dashboard")
+@login_required
+def dashboard():
+    return jsonify(message="Candidate dashboard", identity=current_identity())
 
