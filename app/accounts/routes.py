@@ -1,7 +1,7 @@
 """Candidate registration and shared account session endpoints."""
 import re
 
-from flask import Blueprint, jsonify, make_response, redirect, render_template, request, url_for
+from flask import Blueprint, jsonify, make_response, render_template, request
 from sqlalchemy.exc import IntegrityError
 
 from app.extensions import db
@@ -15,7 +15,7 @@ from .auth import (
     load_current_user,
 )
 from .models import User
-from .security import hash_password
+from .security import hash_password, verify_password
 
 bp = Blueprint("accounts", __name__, url_prefix="/accounts")
 EMAIL_PATTERN = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
@@ -57,6 +57,11 @@ def registration_page():
     return render_template("accounts/register.html")
 
 
+@bp.get("/login")
+def login_page():
+    return render_template("accounts/login.html")
+
+
 @bp.post("/register")
 def register():
     values, error = _registration_values(request.get_json(silent=True))
@@ -78,6 +83,40 @@ def register():
         return jsonify(error="duplicate_account", message="An account with that email or mobile already exists."), 409
 
     return jsonify(message="Registration successful.", user_id=user.id), 201
+
+
+@bp.post("/login")
+def login():
+    payload = request.get_json(silent=True)
+    identifier = str(payload.get("identifier", "")).strip() if isinstance(payload, dict) else ""
+    password = payload.get("password") if isinstance(payload, dict) else None
+    user = db.session.execute(
+        db.select(User).where((User.email == identifier.lower()) | (User.mobile == identifier))
+    ).scalar_one_or_none()
+    if not user or not verify_password(user.password_hash, password):
+        return jsonify(error="invalid_credentials", message="Invalid credentials."), 401
+
+    response = make_response(
+        jsonify(message="Login successful.", user_id=user.id, role=user.role)
+    )
+    response.set_cookie(
+        SESSION_COOKIE,
+        create_session(user),
+        httponly=True,
+        samesite="Lax",
+        secure=request.is_secure,
+        max_age=8 * 60 * 60,
+    )
+    return response
+
+
+@bp.post("/logout")
+@login_required
+def logout():
+    delete_current_session()
+    response = make_response("", 204)
+    response.delete_cookie(SESSION_COOKIE)
+    return response
 
 
 @bp.get("/me")
