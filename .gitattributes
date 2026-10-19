@@ -1,0 +1,8 @@
+# Keep code and config line endings identical on Windows, macOS and Linux
+*.py   text eol=lf
+*.txt  text eol=lf
+*.html text eol=lf
+*.css  text eol=lf
+*.ini  text eol=lf
+.gitignore     text eol=lf
+.gitattributes text eol=lf
