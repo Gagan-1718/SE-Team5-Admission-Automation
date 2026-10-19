@@ -66,4 +66,8 @@ def create_app(config_overrides=None):
         if blueprint is not None:
             app.register_blueprint(blueprint)
 
+    from .cli import register_commands
+
+    register_commands(app)
+
     return app
