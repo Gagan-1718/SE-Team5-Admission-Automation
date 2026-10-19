@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit college' if college else 'Add college' }}{% endblock %}
+{% block content %}
+{% include "catalogue/_styles.html" %}
+<section class="card">
+  <h1>{{ 'Edit college' if college else 'Add college' }}</h1>
+  {% include "catalogue/_messages.html" %}
+  <form method="post" class="cat-form">
+    <label for="name">College name</label>
+    <input type="text" id="name" name="name" value="{{ form.name }}" maxlength="120" required>
+    <label for="city">City</label>
+    <input type="text" id="city" name="city" value="{{ form.city }}" maxlength="80">
+    <p>
+      <button class="button" type="submit">Save college</button>
+      <a href="{{ url_for('catalogue.admin_index') }}">Cancel</a>
+    </p>
+  </form>
+</section>
+{% endblock %}

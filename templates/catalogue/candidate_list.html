@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}College catalogue{% endblock %}
+{% block content %}
+{% include "catalogue/_styles.html" %}
+<section class="card">
+  <h1>College catalogue</h1>
+  <p class="note">Participating colleges, their branches and current seat availability (fictional data).</p>
+
+  <form method="get" action="{{ url_for('catalogue.candidate_list') }}" class="cat-filter cat-form">
+    <div>
+      <label for="q">College or branch name</label>
+      <input type="text" id="q" name="q" value="{{ query }}" placeholder="e.g. Computer or Cedarwood">
+    </div>
+    <div>
+      <label for="college_id">College</label>
+      <select id="college_id" name="college_id">
+        <option value="">All colleges</option>
+        {% for c in all_colleges %}
+        <option value="{{ c.id }}" {% if college_id == c.id %}selected{% endif %}>{{ c.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <button class="button" type="submit">Filter</button>
+      <a href="{{ url_for('catalogue.candidate_list') }}">Clear</a>
+    </div>
+  </form>
+
+  {% for college, branches in results %}
+  <div class="cat-college">
+    <h2>{{ college.name }}{% if college.city %} <small class="note">&middot; {{ college.city }}</small>{% endif %}</h2>
+    {% if branches %}
+    <table class="cat-table">
+      <thead>
+        <tr>
+          <th>Branch</th>
+          {% for category in categories %}<th class="num">{{ category }}</th>{% endfor %}
+          <th class="num">Total available</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for branch in branches %}
+        <tr>
+          <td>{{ branch.name }}</td>
+          {% for category in categories %}
+          {% set seat = branch.seat_for(category) %}
+          <td class="num">{% if seat %}{{ seat.available }} / {{ seat.capacity }}{% else %}&ndash;{% endif %}</td>
+          {% endfor %}
+          <td class="num">{{ branch.seats_available }} / {{ branch.seats_total }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="note">No branches have been added for this college yet.</p>
+    {% endif %}
+  </div>
+  {% else %}
+  <p>No colleges or branches match your filter.</p>
+  {% endfor %}
+  <p class="note">Cells show seats available / total capacity.</p>
+</section>
+{% endblock %}
