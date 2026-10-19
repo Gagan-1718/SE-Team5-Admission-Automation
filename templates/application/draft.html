@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block title %}Application{% endblock %}
+
+{% block content %}
+{% set is_locked = application and application.status != "Draft" %}
+<section class="card">
+  <h1>Your application</h1>
+  <p>
+    Status:
+    <span class="badge">{{ application.status if application else "Not started" }}</span>
+    {% if application and application.reference_number %}
+      &middot; Reference number: <strong>{{ application.reference_number }}</strong>
+    {% endif %}
+  </p>
+  <p class="note">
+    Temporary: this page uses candidate #1 until login is integrated.
+    You can save an incomplete draft and continue later.
+  </p>
+
+  <form method="post" action="{{ url_for('application.save_draft_form') }}" novalidate>
+    <div class="field">
+      <label for="guardian_name">Guardian name</label>
+      <input id="guardian_name" name="guardian_name" type="text" maxlength="100"
+             value="{{ values.get('guardian_name') or '' }}" {{ "disabled" if is_locked }}>
+      {% if errors.guardian_name %}<p class="error">{{ errors.guardian_name }}</p>{% endif %}
+    </div>
+
+    <div class="field">
+      <label for="guardian_mobile">Guardian mobile (10 digits)</label>
+      <input id="guardian_mobile" name="guardian_mobile" type="text" inputmode="numeric" maxlength="10"
+             value="{{ values.get('guardian_mobile') or '' }}" {{ "disabled" if is_locked }}>
+      {% if errors.guardian_mobile %}<p class="error">{{ errors.guardian_mobile }}</p>{% endif %}
+    </div>
+
+    <div class="field">
+      <label for="school_name">School / college last attended</label>
+      <input id="school_name" name="school_name" type="text" maxlength="150"
+             value="{{ values.get('school_name') or '' }}" {{ "disabled" if is_locked }}>
+      {% if errors.school_name %}<p class="error">{{ errors.school_name }}</p>{% endif %}
+    </div>
+
+    <div class="field">
+      <label for="board">Board</label>
+      <select id="board" name="board" {{ "disabled" if is_locked }}>
+        <option value="">-- choose --</option>
+        {% for option in boards %}
+          <option value="{{ option }}" {{ "selected" if values.get('board') == option }}>{{ option }}</option>
+        {% endfor %}
+      </select>
+      {% if errors.board %}<p class="error">{{ errors.board }}</p>{% endif %}
+    </div>
+
+    <div class="field">
+      <label for="percentage">Qualifying exam percentage</label>
+      <input id="percentage" name="percentage" type="text" inputmode="decimal"
+             value="{{ values.get('percentage') if values.get('percentage') is not none else '' }}"
+             {{ "disabled" if is_locked }}>
+      {% if errors.percentage %}<p class="error">{{ errors.percentage }}</p>{% endif %}
+    </div>
+
+    {% if is_locked %}
+      <p class="note">This application has been submitted and can no longer be edited.</p>
+    {% else %}
+      <button class="button" type="submit">Save draft</button>
+    {% endif %}
+  </form>
+</section>
+{% endblock %}
