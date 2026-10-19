@@ -176,6 +176,7 @@ def test_submitted_application_cannot_be_edited(client):
     created = client.post(API, json=VALID).get_json()
     application = stored_application()
     application.status = SUBMITTED
+    application.reference_number = "ADM-TEST-000001"
     db.session.commit()
 
     api_response = client.put(f"{API}/{created['applicationId']}", json={"guardian_name": "Late edit"})
