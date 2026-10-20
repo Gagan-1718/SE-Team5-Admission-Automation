@@ -218,3 +218,11 @@ def test_database_rejects_out_of_range_percentage(app):
     with pytest.raises(IntegrityError):
         db.session.commit()
     db.session.rollback()
+
+
+def test_database_rejects_application_for_unknown_user(app):
+    """candidate_id must point at a real row in users (foreign key)."""
+    db.session.add(Application(candidate_id=999))
+    with pytest.raises(IntegrityError):
+        db.session.commit()
+    db.session.rollback()

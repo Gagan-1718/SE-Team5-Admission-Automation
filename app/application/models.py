@@ -27,9 +27,8 @@ class Application(db.Model):
     __tablename__ = "applications"
 
     id = db.Column(db.Integer, primary_key=True)
-    # One application per candidate. No foreign key yet: the users table belongs to
-    # the accounts module (Varun). Add REFERENCES users(id) when login is integrated.
-    candidate_id = db.Column(db.Integer, nullable=False, unique=True)
+    # One application per candidate, and the candidate must exist in the accounts module's users table.
+    candidate_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False, unique=True)
     status = db.Column(db.String(20), nullable=False, default=DRAFT)
     reference_number = db.Column(db.String(30), unique=True)  # set only on submission (#3)
 
