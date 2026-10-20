@@ -2,7 +2,7 @@
 
 The implementation uses Python 3.12, Flask, SQLite and simple HTML/CSS pages served by the same application. The system uses fictional exam data and supports one admission counselling cycle. It has candidate and administrator roles.
 
-Start with SPRINT_ONE_START_HERE.md for responsibilities and the proposed October 19–23 schedule. Follow the existing SRS for requirements, SAD_Python.md for architecture and TEST_PLAN_PYTHON_ADDENDUM.md alongside the original test cases. DOCUMENT_CHANGE_RECORD.md explains revision status.
+Start with SPRINT_ONE_START_HERE.md for responsibilities and the proposed October 19–23 schedule. Follow the existing SRS for requirements, SAD_Python.md for architecture and TEST_PLAN_PYTHON_ADDENDUM.md alongside the original test cases. DOCUMENT_CHANGE_RECORD.md explains revision status. Differences between what we built and the submitted SRS, SAD and test plan are listed in docs/DEVIATIONS.md; test evidence is in docs/evidence/. A GitHub Actions check (.github/workflows/ci.yml) runs the tests on every push and pull request.
 
 ## Status
 
