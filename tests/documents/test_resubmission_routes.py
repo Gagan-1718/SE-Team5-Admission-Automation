@@ -83,3 +83,45 @@ def test_oversized_request(setup):
     data = {'csrf_token': token, 'file': (BytesIO(b'x' * (3 * 1024 * 1024)), 'large.pdf')}
     assert client.post(f'/documents/{document.id}/resubmit', data=data).status_code == 413
     assert document.status == 'Rejected'
+
+
+def test_reject_resubmit_download_and_approve_workflow(setup, app, tmp_path):
+    client, document, candidate_token = setup
+    document.status = 'Pending'
+    document.rejection_reason = None
+    db.session.commit()
+    document_id = document.id
+    app.config['DOCUMENTS_ADMIN_GUARD'] = lambda: True
+    assert client.get('/admin/documents').status_code == 200
+    with client.session_transaction() as session:
+        admin_token = session['document_review_token']
+    review_url = f'/admin/documents/{document_id}/review'
+    response = client.post(review_url, json={
+        'csrf_token': admin_token, 'decision': 'Rejected', 'reason': 'Upload a clearer scan',
+    })
+    assert response.status_code == 200
+    app.config['DOCUMENTS_ADMIN_GUARD'] = lambda: False
+    page = client.get('/documents')
+    assert b'Upload a clearer scan' in page.data
+    assert b'Resubmit document' in page.data
+    replacement = payload(candidate_token)
+    replacement_bytes = replacement['file'][0].getvalue()
+    assert client.post(f'/documents/{document_id}/resubmit', data=replacement).status_code == 303
+    assert not (tmp_path / 'old.pdf').exists()
+    assert client.get(f'/admin/documents/{document_id}/file').status_code == 403
+    app.config['DOCUMENTS_ADMIN_GUARD'] = lambda: True
+    queue = client.get('/admin/documents.json').get_json()['documents']
+    assert any(item['id'] == document_id and item['status'] == 'Pending' for item in queue)
+    downloaded = client.get(f'/admin/documents/{document_id}/file')
+    assert downloaded.status_code == 200
+    assert downloaded.data == replacement_bytes
+    downloaded.close()
+    assert client.post(review_url, json={
+        'csrf_token': admin_token, 'decision': 'Approved',
+    }).status_code == 200
+    app.config['DOCUMENTS_ADMIN_GUARD'] = lambda: False
+    page = client.get('/documents')
+    assert b'Approved' in page.data
+    assert b'Resubmit document' not in page.data
+    assert b'Upload a clearer scan' not in page.data
+    assert client.post(f'/documents/{document_id}/resubmit', data=payload(candidate_token)).status_code == 409
