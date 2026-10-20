@@ -1,0 +1,8 @@
+# Extra pinned packages for serving the app over HTTPS (SEC-F-004). Python 3.12.
+# Install after requirements.txt:  pip install -r requirements-https.txt
+cffi==2.1.1
+cheroot==11.1.2
+cryptography==50.0.2
+jaraco.functools==4.6.0
+more-itertools==11.2.1
+pycparser==3.11
