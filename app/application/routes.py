@@ -4,6 +4,7 @@ HTML:  GET/POST /application, POST /application/submit
 JSON:  POST /api/v1/applications, PUT /api/v1/applications/<id>, GET /api/v1/applications/me,
        POST /api/v1/applications/<id>/submit
 Errors use the team's body {status, error, message} (SAD A-20).
+All routes need a logged-in candidate: pages redirect to the login page, the API returns 401/403.
 """
 from http import HTTPStatus
 
@@ -12,7 +13,7 @@ from flask import Blueprint, flash, jsonify, redirect, render_template, request,
 from app.extensions import db
 
 from . import services
-from .identity import current_candidate_id
+from .identity import candidate_page_required, candidate_required, current_candidate_id
 from .models import FORM_FIELDS, Application
 
 bp = Blueprint("application", __name__)
@@ -58,6 +59,7 @@ def _render_form(application, values, errors, code=200):
 
 
 @bp.get("/application")
+@candidate_page_required
 def draft_form():
     application = services.get_for_candidate(current_candidate_id())
     values = application.fields() if application else {}
@@ -65,6 +67,7 @@ def draft_form():
 
 
 @bp.post("/application")
+@candidate_page_required
 def save_draft_form():
     candidate_id = current_candidate_id()
     posted = {name: request.form[name] for name in FORM_FIELDS if name in request.form}
@@ -82,6 +85,7 @@ def save_draft_form():
 
 
 @bp.post("/application/submit")
+@candidate_page_required
 def submit_form():
     """Save what is typed, then submit. Missing fields keep the application a Draft."""
     candidate_id = current_candidate_id()
@@ -107,6 +111,7 @@ def submit_form():
 # ---------------------------------------------------------------- JSON API
 
 @bp.post("/api/v1/applications")
+@candidate_required
 def api_create_draft():
     data = request.get_json(silent=True)
     if not isinstance(data, dict):
@@ -121,6 +126,7 @@ def api_create_draft():
 
 
 @bp.put("/api/v1/applications/<int:application_id>")
+@candidate_required
 def api_save_draft(application_id):
     application, failure = _owned_application(application_id)
     if failure:
@@ -138,6 +144,7 @@ def api_save_draft(application_id):
 
 
 @bp.post("/api/v1/applications/<int:application_id>/submit")
+@candidate_required
 def api_submit(application_id):
     application, failure = _owned_application(application_id)
     if failure:
@@ -152,6 +159,7 @@ def api_submit(application_id):
 
 
 @bp.get("/api/v1/applications/me")
+@candidate_required
 def api_my_application():
     application = services.get_for_candidate(current_candidate_id())
     if application is None:
