@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}My documents{% endblock %}
+{% block content %}
+<h1>My documents</h1>
+<a href="{{ url_for('documents.upload') }}">Upload a document</a>
+{% for document in documents %}
+<section>
+  <h2>{{ document.document_type }}</h2>
+  <p>Status: {{ 'Pending Verification' if document.status == 'Pending' else document.status }}</p>
+  {% if document.rejection_reason %}
+  <p>Rejection reason: {{ document.rejection_reason }}</p>
+  {% endif %}
+</section>
+{% else %}
+<p>No documents uploaded.</p>
+{% endfor %}
+{% endblock %}

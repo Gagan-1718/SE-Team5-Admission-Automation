@@ -6,17 +6,24 @@ from flask import (
     Blueprint,
     abort,
     current_app,
+    jsonify,
     redirect,
     render_template,
     request,
     session,
+    send_from_directory,
     url_for,
 )
 from werkzeug.exceptions import RequestEntityTooLarge
 
-from app.documents.services import save_document
+from pathlib import Path
 
-bp = Blueprint("documents", __name__, url_prefix="/documents")
+from app.extensions import db
+from app.documents.models import Document
+from app.documents.access import admin_required
+from app.documents.services import save_document, review_document, ReviewConflict
+
+bp = Blueprint("documents", __name__)
 
 
 def development_identity():
@@ -32,7 +39,7 @@ def development_identity():
     return 1, 1
 
 
-@bp.route("/upload", methods=["GET", "POST"])
+@bp.route("/documents/upload", methods=["GET", "POST"])
 def upload():
     candidate_id, application_id = development_identity()
 
@@ -78,3 +85,90 @@ def upload():
 @bp.errorhandler(RequestEntityTooLarge)
 def oversized_request(error):
     return "Upload request too large. Maximum file size is 2 MB.", 413
+
+
+def review_token():
+    if "document_review_token" not in session:
+        session["document_review_token"] = secrets.token_urlsafe(32)
+    return session["document_review_token"]
+
+
+def document_json(document):
+    return {"id": document.id, "candidate_id": document.candidate_id,
+            "document_type": document.document_type, "status": document.status,
+            "rejection_reason": document.rejection_reason}
+
+
+@bp.get("/admin/documents")
+@bp.get("/admin/documents.json")
+@admin_required
+def review_queue():
+    status = request.args.get("status", "Pending")
+    if status not in ("Pending", "Approved", "Rejected"):
+        abort(400, description="Invalid document status.")
+    documents = db.session.execute(
+        db.select(Document).where(Document.status == status).order_by(Document.id)
+    ).scalars().all()
+    if request.path.endswith(".json"):
+        return jsonify(documents=[document_json(d) for d in documents])
+    return render_template("documents/review.html", documents=documents,
+                           status=status, csrf_token=review_token())
+
+
+@bp.post("/admin/documents/<int:document_id>/review")
+@admin_required
+def review(document_id):
+    # Both HTML and JSON writes require the session-bound form token.
+    data = request.get_json(silent=True) if request.is_json else request.form
+    if not data or not hasattr(data, "get"):
+        abort(400)
+    supplied = request.headers.get("X-CSRF-Token") or data.get("csrf_token", "")
+    expected = session.get("document_review_token")
+    if not isinstance(supplied, str) or not expected or not secrets.compare_digest(supplied, expected):
+        abort(400, description="Invalid form token. Reload the review queue.")
+    try:
+        document = review_document(document_id, data.get("decision"), data.get("reason"))
+    except LookupError:
+        abort(404)
+    except ReviewConflict as exc:
+        abort(409, description=str(exc))
+    except ValueError as exc:
+        abort(422, description=str(exc))
+    if request.is_json:
+        return jsonify(document_json(document))
+    return redirect(url_for("documents.review_queue"))
+
+
+@bp.get("/admin/documents/<int:document_id>/file")
+@admin_required
+def review_file(document_id):
+    document = db.session.get(Document, document_id)
+    if document is None:
+        abort(404)
+    name = document.stored_name
+    if not name or "/" in name or "\\" in name or name in (".", ".."):
+        abort(404)
+    directory = Path(current_app.config.get("DOCUMENT_UPLOAD_DIR")
+                     or Path(current_app.instance_path) / "uploads").resolve()
+    destination = directory / name
+    if destination.resolve().parent != directory or not destination.is_file():
+        abort(404)
+    response = send_from_directory(directory, name, as_attachment=True)
+    response.headers["Cache-Control"] = "no-store"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    return response
+
+
+@bp.get("/documents")
+def status_page():
+    candidate_id, _ = development_identity()
+    documents = db.session.execute(
+        db.select(Document)
+        .where(Document.candidate_id == candidate_id)
+        .order_by(Document.id.desc())
+    ).scalars().all()
+    response = current_app.make_response(
+        render_template("documents/status.html", documents=documents)
+    )
+    response.headers["Cache-Control"] = "no-store"
+    return response
