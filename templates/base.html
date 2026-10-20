@@ -15,6 +15,9 @@
   </header>
 
   <main class="container">
+    {% for message in get_flashed_messages() %}
+      <p class="flash" role="status">{{ message }}</p>
+    {% endfor %}
     {% block content %}{% endblock %}
   </main>
 

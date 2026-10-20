@@ -46,3 +46,35 @@ main.container { padding-top: 1.5rem; padding-bottom: 2rem; }
 .button:hover { background: #173c5e; }
 
 .site-footer { color: var(--muted); font-size: 0.85rem; padding: 1rem 0 2rem; }
+
+.flash {
+  background: #e6f2e6;
+  border: 1px solid #b7d7b7;
+  border-radius: 6px;
+  padding: 0.6rem 1rem;
+}
+
+.badge {
+  display: inline-block;
+  background: #e8eef5;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0 0.6rem;
+  font-weight: 600;
+}
+
+.field { margin-bottom: 1rem; }
+.field label { display: block; font-weight: 600; margin-bottom: 0.25rem; }
+.field input, .field select {
+  width: 100%;
+  max-width: 28rem;
+  padding: 0.5rem;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font: inherit;
+}
+.error { color: #a12626; margin: 0.25rem 0 0; font-size: 0.9rem; }
+
+.button { border: 0; font: inherit; cursor: pointer; }
+.button-primary { background: #2b7a3d; }
+.button-primary:hover { background: #1f5c2d; }
