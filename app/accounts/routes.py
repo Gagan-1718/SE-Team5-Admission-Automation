@@ -10,20 +10,21 @@ from .auth import (
     SESSION_COOKIE,
     create_session,
     current_identity,
+    current_candidate_id,
     delete_current_session,
     login_required,
     load_current_user,
+    page_login_required,
     role_required,
 )
-from .models import User
+from .constants import ALLOWED_CATEGORIES, EXAM_TYPES
+from .models import ExamRecord, User
+from .services import get_exam_details
 from .security import hash_password, verify_password
 
 bp = Blueprint("accounts", __name__, url_prefix="/accounts")
 EMAIL_PATTERN = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 MOBILE_PATTERN = re.compile(r"^\d{10}$")
-PROFILE_CATEGORIES = {"General", "OBC", "SC", "ST"}
-
-
 @bp.before_app_request
 def load_user_for_request():
     load_current_user()
@@ -157,7 +158,7 @@ def profile():
 
 
 @bp.get("/profile-page")
-@login_required
+@page_login_required
 def profile_page():
     return render_template("accounts/profile.html")
 
@@ -168,30 +169,60 @@ def update_profile():
     payload = request.get_json(silent=True)
     if not isinstance(payload, dict):
         return _validation_error("A JSON object is required.")
+    if any(field in payload for field in ("exam_type", "rank", "category", "score")):
+        return _validation_error("Exam details must be submitted through /accounts/exam-details.")
 
     name = str(payload.get("name", "")).strip()
     mobile = str(payload.get("mobile", "")).strip()
-    category = str(payload.get("category", "")).strip()
-    try:
-        rank = int(payload.get("rank"))
-    except (TypeError, ValueError):
-        return _validation_error("Rank must be a positive integer.")
 
     if not 2 <= len(name) <= 120:
         return _validation_error("Name must be between 2 and 120 characters.")
     if not MOBILE_PATTERN.fullmatch(mobile):
         return _validation_error("Mobile number must contain exactly 10 digits.")
-    if rank < 1:
-        return _validation_error("Rank must be a positive integer.")
-    if category not in PROFILE_CATEGORIES:
-        return _validation_error("Category must be General, OBC, SC or ST.")
 
     user = db.session.get(User, current_identity()["id"])
-    user.name, user.mobile, user.rank, user.category = name, mobile, rank, category
+    user.name, user.mobile = name, mobile
     try:
         db.session.commit()
     except IntegrityError:
         db.session.rollback()
         return jsonify(error="duplicate_account", message="That mobile number is already registered."), 409
     return jsonify(message="Profile updated successfully.")
+
+
+@bp.put("/exam-details")
+@role_required("candidate")
+def update_exam_details():
+    payload = request.get_json(silent=True)
+    if not isinstance(payload, dict):
+        return _validation_error("A JSON object is required.")
+
+    exam_type = payload.get("exam_type")
+    category = payload.get("category")
+    try:
+        rank = int(payload.get("rank"))
+        score = float(payload.get("score"))
+    except (TypeError, ValueError):
+        return jsonify(error="no_matching_record", message="No matching exam record was found."), 422
+
+    if exam_type not in EXAM_TYPES or category not in ALLOWED_CATEGORIES:
+        return jsonify(error="no_matching_record", message="No matching exam record was found."), 422
+
+    record = db.session.execute(
+        db.select(ExamRecord).where(
+            ExamRecord.exam_type == exam_type,
+            ExamRecord.rank == rank,
+            ExamRecord.category == category,
+            ExamRecord.score == score,
+        )
+    ).scalar_one_or_none()
+    if record is None:
+        return jsonify(error="no_matching_record", message="No matching exam record was found."), 422
+
+    user = db.session.get(User, current_candidate_id())
+    user.exam_record_id = record.id
+    user.rank = record.rank
+    user.category = record.category
+    db.session.commit()
+    return jsonify(message="Exam details saved successfully.", exam_details=get_exam_details(user.id))
 

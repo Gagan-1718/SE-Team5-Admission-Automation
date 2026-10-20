@@ -13,8 +13,10 @@ class User(db.Model):
     mobile = db.Column(db.String(20), nullable=False, unique=True, index=True)
     password_hash = db.Column(db.String(255), nullable=False)
     role = db.Column(db.String(30), nullable=False, default="candidate")
+    exam_record_id = db.Column(db.Integer, db.ForeignKey("exam_records.id"), nullable=True)
     rank = db.Column(db.Integer, nullable=True)
     category = db.Column(db.String(40), nullable=True)
+    exam_record = db.relationship("ExamRecord", backref=db.backref("candidates"))
 
     def identity(self):
         return {
@@ -23,6 +25,19 @@ class User(db.Model):
             "rank": self.rank,
             "category": self.category,
         }
+
+
+class ExamRecord(db.Model):
+    __tablename__ = "exam_records"
+    __table_args__ = (
+        db.UniqueConstraint("exam_type", "rank", name="uq_exam_records_exam_type_rank"),
+    )
+
+    id = db.Column(db.Integer, primary_key=True)
+    exam_type = db.Column(db.String(20), nullable=False)
+    rank = db.Column(db.Integer, nullable=False)
+    category = db.Column(db.String(20), nullable=False)
+    score = db.Column(db.Float, nullable=False)
 
 
 class UserSession(db.Model):

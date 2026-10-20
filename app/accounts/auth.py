@@ -4,7 +4,7 @@ import secrets
 from datetime import datetime, timedelta, timezone
 from functools import wraps
 
-from flask import g, jsonify, request
+from flask import g, jsonify, redirect, request, url_for
 
 from app.extensions import db
 
@@ -61,11 +61,30 @@ def current_identity():
     return g.current_user.identity() if g.current_user else None
 
 
+def current_candidate_id():
+    """Return the authenticated candidate ID, never an administrator ID."""
+    current_user = getattr(g, "current_user", None)
+    if current_user and current_user.role == "candidate":
+        return int(current_user.id)
+    return None
+
+
 def login_required(view):
     @wraps(view)
     def wrapped(*args, **kwargs):
         if not g.current_user:
             return jsonify(error="authentication_required", message="Authentication is required."), 401
+        return view(*args, **kwargs)
+
+    return wrapped
+
+
+def page_login_required(view):
+    """Redirect anonymous browser-page requests to the login page."""
+    @wraps(view)
+    def wrapped(*args, **kwargs):
+        if not g.current_user:
+            return redirect(url_for("accounts.login_page", next=request.path))
         return view(*args, **kwargs)
 
     return wrapped
