@@ -109,3 +109,48 @@ def review_document(document_id, decision, reason=None):
         raise
 
     return document
+class ResubmissionConflict(ValueError):
+    """Raised when a document is no longer eligible for replacement."""
+
+
+def resubmit_document(document_id, candidate_id, upload):
+    """Replace an owned Rejected document after the caller authenticates the candidate."""
+    from app.documents.storage import save_replacement_file, stored_file_path
+
+    document = db.session.get(Document, document_id)
+    if document is None or not candidate_id or document.candidate_id != candidate_id:
+        raise LookupError("Document not found.")
+    if document.status != "Rejected":
+        raise ResubmissionConflict("Only Rejected documents can be resubmitted.")
+
+    original_name = document.stored_name
+    original_path = stored_file_path(original_name)
+    replacement_name = save_replacement_file(upload)
+    try:
+        result = db.session.execute(
+            db.update(Document)
+            .where(
+                Document.id == document_id,
+                Document.candidate_id == candidate_id,
+                Document.status == "Rejected",
+                Document.stored_name == original_name,
+            )
+            .values(stored_name=replacement_name, status="Pending", rejection_reason=None)
+        )
+        if result.rowcount != 1:
+            raise ResubmissionConflict("Document changed; refresh before resubmitting.")
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        try:
+            stored_file_path(replacement_name).unlink(missing_ok=True)
+        except OSError:
+            current_app.logger.exception("Could not clean up failed replacement file")
+        raise
+
+    # Keep the original until the replacement metadata is durably committed.
+    try:
+        original_path.unlink(missing_ok=True)
+    except OSError:
+        current_app.logger.exception("Replacement saved but old document file needs cleanup")
+    return document

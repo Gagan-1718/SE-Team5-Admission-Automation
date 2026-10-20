@@ -21,7 +21,10 @@ from pathlib import Path
 from app.extensions import db
 from app.documents.models import Document
 from app.documents.access import admin_required
-from app.documents.services import save_document, review_document, ReviewConflict
+from app.documents.services import (
+    save_document, review_document, ReviewConflict,
+    resubmit_document, ResubmissionConflict,
+)
 
 bp = Blueprint("documents", __name__)
 
@@ -168,7 +171,35 @@ def status_page():
         .order_by(Document.id.desc())
     ).scalars().all()
     response = current_app.make_response(
-        render_template("documents/status.html", documents=documents)
+        render_template("documents/status.html", documents=documents,
+                        csrf_token=resubmission_token(),
+                        success=session.pop("document_resubmission_success", False))
     )
     response.headers["Cache-Control"] = "no-store"
     return response
+
+
+def resubmission_token():
+    if "document_resubmission_token" not in session:
+        session["document_resubmission_token"] = secrets.token_urlsafe(32)
+    return session["document_resubmission_token"]
+
+
+@bp.post("/documents/<int:document_id>/resubmit")
+def resubmit(document_id):
+    candidate_id, _ = development_identity()
+    request.max_content_length = 3 * 1024 * 1024
+    supplied = request.form.get("csrf_token", "")
+    expected = session.get("document_resubmission_token")
+    if not expected or not secrets.compare_digest(supplied, expected):
+        abort(400, description="Invalid form token. Reload My documents.")
+    try:
+        resubmit_document(document_id, candidate_id, request.files.get("file"))
+    except LookupError:
+        abort(404)
+    except ResubmissionConflict as exc:
+        abort(409, description=str(exc))
+    except ValueError as exc:
+        abort(422, description=str(exc))
+    session["document_resubmission_success"] = True
+    return redirect(url_for("documents.status_page"), code=303)
