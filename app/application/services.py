@@ -84,6 +84,14 @@ def get_for_candidate(candidate_id):
     ).scalar_one_or_none()
 
 
+def get_submitted_application(candidate_id):
+    """The candidate's application only if it is Submitted (used by the documents module)."""
+    application = get_for_candidate(candidate_id)
+    if application is not None and application.status == SUBMITTED:
+        return application
+    return None
+
+
 def create_draft(candidate_id, data):
     """Create the candidate's single draft. Raises ApplicationExists if one exists."""
     cleaned = clean_fields(data)
