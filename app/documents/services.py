@@ -60,3 +60,52 @@ def save_document(upload, candidate_id, application_id, document_type):
         raise
 
     return document
+
+class ReviewConflict(ValueError):
+    """Raised when a document has already been reviewed."""
+
+
+def review_document(document_id, decision, reason=None):
+    """Review a Pending document after the caller authorizes the admin."""
+    if decision not in ("Approved", "Rejected"):
+        raise ValueError("Decision must be Approved or Rejected.")
+
+    if reason is not None and not isinstance(reason, str):
+        raise ValueError("Rejection reason must be text.")
+
+    reason = (reason or "").strip()
+
+    if decision == "Rejected" and not reason:
+        raise ValueError("A rejection reason is required.")
+
+    document = db.session.get(Document, document_id)
+
+    if document is None:
+        raise LookupError("Document not found.")
+
+    values = {"status": decision}
+
+    if decision == "Rejected":
+        values["rejection_reason"] = reason
+
+    try:
+        # Update only Pending records, preventing a second review
+        # from overwriting an existing decision.
+        result = db.session.execute(
+            db.update(Document)
+            .where(
+                Document.id == document_id,
+                Document.status == "Pending",
+            )
+            .values(**values)
+        )
+
+        if result.rowcount != 1:
+            raise ReviewConflict("Only Pending documents can be reviewed.")
+
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        raise
+
+    return document
