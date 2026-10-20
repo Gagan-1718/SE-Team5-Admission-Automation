@@ -103,3 +103,21 @@ Rules the team agreed: one owner per module, no direct work on `main`, fictional
 ```powershell
 pytest
 ```
+
+## Integrated candidate documents
+
+After signing in, open My application and submit it. The submitted page links to
+Upload documents and My documents. Upload/resubmission use the current candidate
+and their Submitted application. Administrators sign in through the same login
+page and are sent to Review documents; candidates cannot access review/download
+routes. The header provides navigation and logout.
+
+The old DOCUMENT_DEV_FIXTURE and DOCUMENTS_ADMIN_GUARD settings no longer grant
+document access. No fixed candidate or application ID is used by document routes.
+
+Use an existing administrator account, or run the existing seed-db command for
+fictional demo data. On first creation, its password comes from ADMIN_SEED_PASSWORD
+or is printed by the seed command; seeding does not reset an existing password.
+Never reset the database to test integration.
+
+See ADM_F_008_VERIFICATION.md for test coverage and outstanding team integration.

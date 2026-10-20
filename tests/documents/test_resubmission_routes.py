@@ -8,9 +8,9 @@ from app.extensions import db
 
 
 @pytest.fixture
-def setup(app, client, tmp_path):
-    app.config.update(DEBUG=True, DOCUMENT_DEV_FIXTURE=True,
-                      DOCUMENT_UPLOAD_DIR=str(tmp_path))
+def setup(app, client, tmp_path, login_as):
+    login_as(client)
+    app.config.update(DOCUMENT_UPLOAD_DIR=str(tmp_path))
     document = Document(candidate_id=1, application_id=1, document_type="Marksheet",
                         stored_name="old.pdf", status="Rejected", rejection_reason="Unreadable")
     db.session.add(document)
@@ -72,10 +72,10 @@ def test_missing_file_validation(setup):
     assert document.status == 'Rejected'
 
 
-def test_disabled_identity_blocks_resubmit(setup, app):
+def test_logout_blocks_resubmit(setup, app):
     client, document, token = setup
-    app.config['DOCUMENT_DEV_FIXTURE'] = False
-    assert client.post(f'/documents/{document.id}/resubmit', data=payload(token)).status_code == 503
+    assert client.post('/accounts/logout').status_code == 204
+    assert client.post(f'/documents/{document.id}/resubmit', data=payload(token)).status_code == 302
 
 
 def test_oversized_request(setup):
@@ -85,13 +85,13 @@ def test_oversized_request(setup):
     assert document.status == 'Rejected'
 
 
-def test_reject_resubmit_download_and_approve_workflow(setup, app, tmp_path):
+def test_reject_resubmit_download_and_approve_workflow(setup, app, tmp_path, login_as):
     client, document, candidate_token = setup
     document.status = 'Pending'
     document.rejection_reason = None
     db.session.commit()
     document_id = document.id
-    app.config['DOCUMENTS_ADMIN_GUARD'] = lambda: True
+    login_as(client, 3)
     assert client.get('/admin/documents').status_code == 200
     with client.session_transaction() as session:
         admin_token = session['document_review_token']
@@ -100,7 +100,7 @@ def test_reject_resubmit_download_and_approve_workflow(setup, app, tmp_path):
         'csrf_token': admin_token, 'decision': 'Rejected', 'reason': 'Upload a clearer scan',
     })
     assert response.status_code == 200
-    app.config['DOCUMENTS_ADMIN_GUARD'] = lambda: False
+    login_as(client, 1)
     page = client.get('/documents')
     assert b'Upload a clearer scan' in page.data
     assert b'Resubmit document' in page.data
@@ -109,7 +109,7 @@ def test_reject_resubmit_download_and_approve_workflow(setup, app, tmp_path):
     assert client.post(f'/documents/{document_id}/resubmit', data=replacement).status_code == 303
     assert not (tmp_path / 'old.pdf').exists()
     assert client.get(f'/admin/documents/{document_id}/file').status_code == 403
-    app.config['DOCUMENTS_ADMIN_GUARD'] = lambda: True
+    login_as(client, 3)
     queue = client.get('/admin/documents.json').get_json()['documents']
     assert any(item['id'] == document_id and item['status'] == 'Pending' for item in queue)
     downloaded = client.get(f'/admin/documents/{document_id}/file')
@@ -119,7 +119,7 @@ def test_reject_resubmit_download_and_approve_workflow(setup, app, tmp_path):
     assert client.post(review_url, json={
         'csrf_token': admin_token, 'decision': 'Approved',
     }).status_code == 200
-    app.config['DOCUMENTS_ADMIN_GUARD'] = lambda: False
+    login_as(client, 1)
     page = client.get('/documents')
     assert b'Approved' in page.data
     assert b'Resubmit document' not in page.data

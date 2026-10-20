@@ -1,4 +1,4 @@
-"""Document upload routes with an explicit local development fixture."""
+"""Documents linked to authenticated accounts and submitted applications."""
 
 import secrets
 
@@ -26,25 +26,32 @@ from app.documents.services import (
     resubmit_document, ResubmissionConflict,
 )
 
+from app.accounts.auth import current_candidate_id
+from app.application.identity import candidate_page_required
+from app.application.services import get_submitted_application
+
 bp = Blueprint("documents", __name__)
 
 
-def development_identity():
-    """Temporary local fixture; replace with real account/application checks."""
-    enabled = current_app.config.get("DOCUMENT_DEV_FIXTURE", False)
+@bp.after_request
+def private_document_response(response):
+    response.headers['Cache-Control'] = 'no-store'
+    return response
 
-    if not enabled or not current_app.debug:
-        abort(503, description="Document identity integration is not ready.")
 
-    if request.remote_addr not in {"127.0.0.1", "::1"}:
-        abort(403)
-
-    return 1, 1
+def submitted_identity():
+    """Resolve only the signed-in candidate's submitted application."""
+    candidate_id = current_candidate_id()
+    application = get_submitted_application(candidate_id)
+    if application is None:
+        abort(409, description="Submit your application before uploading documents.")
+    return candidate_id, application.id
 
 
 @bp.route("/documents/upload", methods=["GET", "POST"])
+@candidate_page_required
 def upload():
-    candidate_id, application_id = development_identity()
+    candidate_id, application_id = submitted_identity()
 
     # Allow multipart overhead beyond the individual file's 2 MiB limit.
     request.max_content_length = 3 * 1024 * 1024
@@ -163,8 +170,9 @@ def review_file(document_id):
 
 
 @bp.get("/documents")
+@candidate_page_required
 def status_page():
-    candidate_id, _ = development_identity()
+    candidate_id = current_candidate_id()
     documents = db.session.execute(
         db.select(Document)
         .where(Document.candidate_id == candidate_id)
@@ -186,8 +194,12 @@ def resubmission_token():
 
 
 @bp.post("/documents/<int:document_id>/resubmit")
+@candidate_page_required
 def resubmit(document_id):
-    candidate_id, _ = development_identity()
+    candidate_id, application_id = submitted_identity()
+    document = db.session.get(Document, document_id)
+    if document is None or document.candidate_id != candidate_id or document.application_id != application_id:
+        abort(404)
     request.max_content_length = 3 * 1024 * 1024
     supplied = request.form.get("csrf_token", "")
     expected = session.get("document_resubmission_token")

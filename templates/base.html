@@ -14,6 +14,28 @@
     </div>
   </header>
 
+  <nav class="container" aria-label="Main navigation">
+    <a href="{{ url_for('main.home') }}">Home</a>
+    {% if g.current_user %}
+      {% if g.current_user.role == 'candidate' %}
+      <a href="{{ url_for('accounts.profile_page') }}">My profile</a>
+      <a href="{{ url_for('application.draft_form') }}">My application</a>
+      <a href="{{ url_for('documents.status_page') }}">My documents</a>
+      {% elif g.current_user.role == 'administrator' %}
+      <a href="{{ url_for('documents.review_queue') }}">Review documents</a>
+      {% endif %}
+      <button type="button" id="logout-button">Log out</button>
+      <script>
+      document.getElementById('logout-button').addEventListener('click', async () => {
+        const response = await fetch({{ url_for('accounts.logout')|tojson }}, {method: 'POST'});
+        if (response.ok) window.location.href = {{ url_for('accounts.login_page')|tojson }};
+      });
+      </script>
+    {% else %}
+      <a href="{{ url_for('accounts.login_page') }}">Log in</a>
+      <a href="{{ url_for('accounts.registration_page') }}">Register</a>
+    {% endif %}
+  </nav>
   <main class="container">
     {% for message in get_flashed_messages() %}
       <p class="flash" role="status">{{ message }}</p>
