@@ -5,7 +5,6 @@ import pytest
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.application import routes as application_routes
 from app.application import services
 from app.application.models import DRAFT, FORM_FIELDS, SUBMITTED, Application
 from app.extensions import db
@@ -55,13 +54,12 @@ def test_submitted_application_is_visible_through_me_endpoint(client):
     assert (body["status"], body["referenceNumber"]) == (SUBMITTED, reference)
 
 
-def test_reference_numbers_are_unique_per_application(client, monkeypatch):
+def test_reference_numbers_are_unique_per_application(client, other_client):
     first_id = create(client, COMPLETE)
     first = client.post(f"{API}/{first_id}/submit").get_json()["referenceNumber"]
 
-    monkeypatch.setattr(application_routes, "current_candidate_id", lambda: 2)
-    second_id = create(client, COMPLETE)
-    second = client.post(f"{API}/{second_id}/submit").get_json()["referenceNumber"]
+    second_id = create(other_client, COMPLETE)
+    second = other_client.post(f"{API}/{second_id}/submit").get_json()["referenceNumber"]
 
     assert first != second
 
@@ -147,11 +145,10 @@ def test_submitted_application_cannot_be_edited_again(client):
 
 # ------------------------------------------------------------------ security
 
-def test_candidate_cannot_submit_another_candidates_application(client, monkeypatch):
+def test_candidate_cannot_submit_another_candidates_application(client, other_client):
     application_id = create(client, COMPLETE)
 
-    monkeypatch.setattr(application_routes, "current_candidate_id", lambda: 2)
-    assert client.post(f"{API}/{application_id}/submit").status_code == 403
+    assert other_client.post(f"{API}/{application_id}/submit").status_code == 403
     assert stored_application(candidate_id=1).status == DRAFT
 
 

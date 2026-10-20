@@ -2,10 +2,11 @@
 import pytest
 from sqlalchemy.exc import IntegrityError
 
-from app.application import routes as application_routes
 from app.application import services
 from app.application.models import DRAFT, SUBMITTED, Application
 from app.extensions import db
+
+from .conftest import login
 
 API = "/api/v1/applications"
 VALID = {
@@ -46,6 +47,7 @@ def test_form_save_then_resume_in_a_new_session_shows_saved_values(app, client):
     client.post("/application", data={"guardian_name": "Fictional Guardian", "board": "ICSE"})
 
     other_session = app.test_client()  # like logging out and back in: nothing but the DB remains
+    login(other_session, 1)
     page = other_session.get("/application")
     assert page.status_code == 200
     assert b"Fictional Guardian" in page.data
@@ -159,11 +161,10 @@ def test_client_cannot_set_status_candidate_or_reference_number(client):
     assert stored_application(candidate_id=99) is None
 
 
-def test_candidate_cannot_edit_another_candidates_application(client, monkeypatch):
+def test_candidate_cannot_edit_another_candidates_application(client, other_client):
     created = client.post(API, json=VALID).get_json()
 
-    monkeypatch.setattr(application_routes, "current_candidate_id", lambda: 2)
-    response = client.put(f"{API}/{created['applicationId']}", json={"guardian_name": "Hijack"})
+    response = other_client.put(f"{API}/{created['applicationId']}", json={"guardian_name": "Hijack"})
     assert response.status_code == 403
     assert stored_application(candidate_id=1).guardian_name == "Fictional Guardian"
 
