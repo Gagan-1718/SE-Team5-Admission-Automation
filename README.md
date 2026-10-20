@@ -10,7 +10,11 @@ The shared Flask foundation (application factory, SQLite, home page, `/health`, 
 
 ### Application module (draft and submission, issues #2 and #3)
 
-Open `/application` to save and resume a draft, then press **Submit application** once every field is filled in. Submitting gives a unique reference number such as `ADM-2026-000001` and locks the application. JSON endpoints follow the SAD: `POST /api/v1/applications`, `PUT /api/v1/applications/<id>`, `GET /api/v1/applications/me`, `POST /api/v1/applications/<id>/submit`. If you already created a local database from an earlier version, run `flask --app app init-db --reset` once because the table gained a rule. The draft uses a **temporary** candidate ID of 1 from `app/application/identity.py`; when login is integrated, only that one function changes. The draft form fields (guardian name/mobile, school, board, percentage) are provisional until the team agrees the final list.
+You must be logged in as a candidate. Register and log in at `/accounts/register` and `/accounts/login`; anonymous visitors are sent to the login page, and administrators are refused (403). Then open `/application` to save and resume a draft: your draft is kept when you log out and log in again. Press **Submit application** once every field is filled in. Submitting gives a unique reference number such as `ADM-2026-000001` and locks the application.
+
+JSON endpoints follow the SAD: `POST /api/v1/applications`, `PUT /api/v1/applications/<id>`, `GET /api/v1/applications/me`, `POST /api/v1/applications/<id>/submit` (401 when not logged in, 403 for another candidate's application).
+
+For other modules: `app.application.services.get_for_candidate(candidate_id)` and `get_submitted_application(candidate_id)` (returns the application only when it is Submitted). `applications.candidate_id` is a foreign key to `users.id`, so if you created a local database before this change, run `flask --app app init-db --reset` once. The form fields (guardian name/mobile, school, board, percentage) are provisional until the team agrees the final list.
 
 ## Run it locally (Windows PowerShell)
 
