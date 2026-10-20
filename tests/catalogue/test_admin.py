@@ -3,12 +3,18 @@ from app.catalogue.models import Branch, College, Seat
 from app.extensions import db
 
 from tests.catalogue.helpers import count, get_branch, get_college, get_seat
+import pytest
 
+
+@pytest.fixture
+def admin_access(app):
+    app.config["CATALOGUE_ADMIN_GUARD"] = lambda: True
+    return app
 MERIDIAN = "Meridian Institute of Technology"
 CSE = "Computer Science and Engineering"
 
 
-def test_admin_index_lists_seeded_catalogue(seeded, client):
+def test_admin_index_lists_seeded_catalogue(seeded, admin_access, client):
     response = client.get("/admin/colleges")
     assert response.status_code == 200
     assert MERIDIAN.encode() in response.data
@@ -16,7 +22,7 @@ def test_admin_index_lists_seeded_catalogue(seeded, client):
     assert b"Add college" in response.data
 
 
-def test_add_college(app, client):
+def test_add_college(admin_access, client):
     response = client.post("/admin/colleges/new", data={"name": "Test College One", "city": "Testville"})
     assert response.status_code == 302
     db.session.expire_all()
@@ -26,7 +32,7 @@ def test_add_college(app, client):
     assert b"College &#39;Test College One&#39; added." in page.data
 
 
-def test_add_duplicate_college_is_rejected_with_message(app, client):
+def test_add_duplicate_college_is_rejected_with_message(admin_access, client):
     client.post("/admin/colleges/new", data={"name": "Test College One"})
     response = client.post("/admin/colleges/new", data={"name": "  test college ONE "})
     assert response.status_code == 409
@@ -35,14 +41,14 @@ def test_add_duplicate_college_is_rejected_with_message(app, client):
     assert count(College) == 1
 
 
-def test_add_college_with_blank_name_is_rejected(app, client):
+def test_add_college_with_blank_name_is_rejected(admin_access, client):
     response = client.post("/admin/colleges/new", data={"name": "   ", "city": "X"})
     assert response.status_code == 422
     assert b"College name is required." in response.data
     assert count(College) == 0
 
 
-def test_edit_college(seeded, client):
+def test_edit_college(seeded, admin_access, client):
     college = get_college(MERIDIAN)
     response = client.post(
         f"/admin/colleges/{college.id}/edit", data={"name": "Meridian Tech Institute", "city": "Newtown"}
@@ -53,14 +59,14 @@ def test_edit_college(seeded, client):
     assert (edited.name, edited.city) == ("Meridian Tech Institute", "Newtown")
 
 
-def test_edit_college_form_is_prefilled(seeded, client):
+def test_edit_college_form_is_prefilled(seeded, admin_access, client):
     college = get_college(MERIDIAN)
     response = client.get(f"/admin/colleges/{college.id}/edit")
     assert response.status_code == 200
     assert MERIDIAN.encode() in response.data
 
 
-def test_edit_college_to_duplicate_name_is_rejected_and_unchanged(seeded, client):
+def test_edit_college_to_duplicate_name_is_rejected_and_unchanged(seeded, admin_access, client):
     college = get_college(MERIDIAN)
     response = client.post(
         f"/admin/colleges/{college.id}/edit",
@@ -71,7 +77,7 @@ def test_edit_college_to_duplicate_name_is_rejected_and_unchanged(seeded, client
     assert db.session.get(College, college.id).name == MERIDIAN
 
 
-def test_edit_college_keeping_own_name_is_allowed(seeded, client):
+def test_edit_college_keeping_own_name_is_allowed(seeded, admin_access, client):
     college = get_college(MERIDIAN)
     response = client.post(f"/admin/colleges/{college.id}/edit", data={"name": MERIDIAN, "city": "Elsewhere"})
     assert response.status_code == 302
@@ -79,7 +85,7 @@ def test_edit_college_keeping_own_name_is_allowed(seeded, client):
     assert db.session.get(College, college.id).city == "Elsewhere"
 
 
-def test_add_branch_then_set_seats(app, client):
+def test_add_branch_then_set_seats(admin_access, client):
     client.post("/admin/colleges/new", data={"name": "Test College One"})
     db.session.expire_all()
     college = get_college("Test College One")
@@ -101,7 +107,7 @@ def test_add_branch_then_set_seats(app, client):
     assert count(Seat) == 4  # blank EWS means "not set"
 
 
-def test_add_duplicate_branch_is_rejected(seeded, client):
+def test_add_duplicate_branch_is_rejected(seeded, admin_access, client):
     college = get_college(MERIDIAN)
     before = count(Branch)
     response = client.post(f"/admin/colleges/{college.id}/branches/new", data={"name": "computer science and engineering"})
@@ -111,7 +117,7 @@ def test_add_duplicate_branch_is_rejected(seeded, client):
     assert count(Branch) == before
 
 
-def test_rename_branch_and_reject_duplicate_rename(seeded, client):
+def test_rename_branch_and_reject_duplicate_rename(seeded, admin_access, client):
     branch = get_branch(MERIDIAN, "Mechanical Engineering")
     ok = client.post(f"/admin/branches/{branch.id}/edit", data={"name": "Mechanical and Automation"})
     assert ok.status_code == 302
@@ -121,7 +127,7 @@ def test_rename_branch_and_reject_duplicate_rename(seeded, client):
     assert db.session.get(Branch, branch.id).name == "Mechanical and Automation"
 
 
-def test_edit_seat_capacity(seeded, client):
+def test_edit_seat_capacity(seeded, admin_access, client):
     branch = get_branch(MERIDIAN, CSE)
     response = client.post(
         f"/admin/branches/{branch.id}/seats",
@@ -132,7 +138,7 @@ def test_edit_seat_capacity(seeded, client):
     assert get_seat(MERIDIAN, CSE, "General").capacity == 45
 
 
-def test_negative_seat_capacity_is_rejected_and_nothing_is_saved(seeded, client):
+def test_negative_seat_capacity_is_rejected_and_nothing_is_saved(seeded, admin_access, client):
     branch = get_branch(MERIDIAN, CSE)
     response = client.post(
         f"/admin/branches/{branch.id}/seats",
@@ -145,14 +151,14 @@ def test_negative_seat_capacity_is_rejected_and_nothing_is_saved(seeded, client)
     assert get_seat(MERIDIAN, CSE, "OBC").capacity == 15
 
 
-def test_non_numeric_seat_capacity_is_rejected(seeded, client):
+def test_non_numeric_seat_capacity_is_rejected(seeded, admin_access, client):
     branch = get_branch(MERIDIAN, CSE)
     response = client.post(f"/admin/branches/{branch.id}/seats", data={"General": "lots"})
     assert response.status_code == 422
     assert b"whole number" in response.data
 
 
-def test_seat_capacity_below_filled_is_rejected(seeded, client):
+def test_seat_capacity_below_filled_is_rejected(seeded, admin_access, client):
     seat = get_seat(MERIDIAN, CSE, "General")
     seat.filled = 10
     db.session.commit()
@@ -164,7 +170,7 @@ def test_seat_capacity_below_filled_is_rejected(seeded, client):
     assert get_seat(MERIDIAN, CSE, "General").capacity == 30
 
 
-def test_unknown_records_return_404(app, client):
+def test_unknown_records_return_404(admin_access, client):
     assert client.get("/admin/colleges/999/edit").status_code == 404
     assert client.post("/admin/colleges/999/branches/new", data={"name": "X"}).status_code == 404
     assert client.get("/admin/branches/999/edit").status_code == 404
@@ -185,13 +191,19 @@ def test_admin_pages_use_the_configurable_guard(seeded, client):
     assert count(College) == 2
     assert client.get("/colleges").status_code == 200  # candidate page stays public
 
+def test_admin_colleges_denies_access_when_guard_is_missing(seeded, client):
+    seeded.config.pop("CATALOGUE_ADMIN_GUARD", None)
+
+    response = client.get("/admin/colleges")
+
+    assert response.status_code == 403
 
 def test_admin_pages_allow_an_admin_guard(seeded, client):
     seeded.config["CATALOGUE_ADMIN_GUARD"] = lambda: True
     assert client.get("/admin/colleges").status_code == 200
 
 
-def test_new_record_appears_for_candidates_immediately(app, client):
+def test_new_record_appears_for_candidates_immediately(admin_access, client):
     client.post("/admin/colleges/new", data={"name": "Test College One", "city": "Testville"})
     db.session.expire_all()
     college = get_college("Test College One")
