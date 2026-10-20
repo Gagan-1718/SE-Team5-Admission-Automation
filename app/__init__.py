@@ -56,7 +56,9 @@ def create_app(config_overrides=None):
 
     from . import setup_check  # noqa: F401  (registers the smoke-test table)
     from .main import bp as main_bp
+    from .security import register_security
 
+    register_security(app)
     app.register_blueprint(main_bp)
 
     for name in MODULES:
