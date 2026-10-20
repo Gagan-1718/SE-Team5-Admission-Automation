@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Candidate login{% endblock %}
+{% block content %}
+<h1>Candidate login</h1>
+<form method="post" id="login-form">
+  <label for="identifier">Email or mobile</label><input id="identifier" name="identifier" required>
+  <label for="password">Password</label><input id="password" name="password" type="password" required>
+  <button type="submit">Log in</button>
+  <p id="message" role="alert"></p>
+</form>
+<script>
+document.getElementById("login-form").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const response = await fetch("{{ url_for('accounts.login') }}", {
+    method: "POST", headers: {"Content-Type": "application/json"},
+    body: JSON.stringify(Object.fromEntries(new FormData(event.target)))
+  });
+  const data = await response.json();
+  document.getElementById("message").textContent = data.message || "Login failed.";
+});
+</script>
+{% endblock %}

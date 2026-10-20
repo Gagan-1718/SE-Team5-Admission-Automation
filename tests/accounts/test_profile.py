@@ -1,0 +1,62 @@
+from .test_registration import registration_payload
+
+
+def register_and_login(client):
+    payload = registration_payload()
+    assert client.post("/accounts/register", json=payload).status_code == 201
+    assert client.post(
+        "/accounts/login",
+        json={"identifier": payload["email"], "password": payload["password"]},
+    ).status_code == 200
+    return payload
+
+
+def test_profile_can_be_read_and_updated(client):
+    register_and_login(client)
+    assert client.get("/accounts/profile-page").status_code == 200
+
+    response = client.put(
+        "/accounts/profile",
+        json={
+            "name": "Updated Fictional Candidate",
+            "mobile": "9876543211",
+        },
+    )
+
+    assert response.status_code == 200
+    profile = client.get("/accounts/profile")
+    assert profile.status_code == 200
+    assert profile.get_json()["rank"] is None
+    assert profile.get_json()["category"] is None
+    assert profile.get_json()["email"] == "candidate@example.test"
+    assert profile.get_json()["role"] == "candidate"
+
+
+def test_profile_update_rejects_exam_fields(client):
+    register_and_login(client)
+
+    response = client.put(
+        "/accounts/profile",
+        json={"name": "Candidate", "mobile": "9876543211", "rank": 1000, "category": "General"},
+    )
+
+    assert response.status_code == 400
+
+
+def test_profile_changes_persist_after_logout_and_login(client):
+    payload = register_and_login(client)
+    assert client.put(
+        "/accounts/profile",
+        json={"name": "Persisted Candidate", "mobile": payload["mobile"]},
+    ).status_code == 200
+    assert client.post("/accounts/logout").status_code == 204
+    assert client.post(
+        "/accounts/login",
+        json={"identifier": payload["email"], "password": payload["password"]},
+    ).status_code == 200
+
+    profile = client.get("/accounts/profile").get_json()
+    assert profile["name"] == "Persisted Candidate"
+    assert profile["rank"] is None
+    assert profile["category"] is None
+
