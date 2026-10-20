@@ -1,22 +1,60 @@
 {% extends "base.html" %}
-{% block title %}Candidate login{% endblock %}
+{% block title %}Welcome back{% endblock %}
 {% block content %}
-<h1>Candidate login</h1>
-<form method="post" id="login-form">
-  <label for="identifier">Email or mobile</label><input id="identifier" name="identifier" required>
-  <label for="password">Password</label><input id="password" name="password" type="password" required>
-  <button type="submit">Log in</button>
-  <p id="message" role="alert"></p>
-</form>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/accounts.css') }}">
+<section class="auth-layout" aria-labelledby="login-heading">
+  <div class="auth-card">
+    <div class="eyebrow">Candidate portal</div>
+    <h1 id="login-heading">Welcome back</h1>
+    <p class="intro">Sign in securely to view your admission profile and application details.</p>
+
+    <form method="post" id="login-form" class="auth-form">
+      <div class="form-field">
+        <label for="identifier">Email or mobile number</label>
+        <input id="identifier" name="identifier" type="text" autocomplete="username" required>
+      </div>
+      <div class="form-field">
+        <label for="password">Password</label>
+        <div class="password-field">
+          <input id="password" name="password" type="password" autocomplete="current-password" required>
+          <button type="button" class="password-toggle" aria-controls="password" aria-label="Show password">Show</button>
+        </div>
+      </div>
+      <button type="submit" class="primary-button">Sign in</button>
+      <p id="message" class="form-message" role="alert" aria-live="polite" hidden></p>
+    </form>
+
+    <p class="auth-switch">New candidate? <a href="{{ url_for('accounts.registration_page') }}">Create an account</a></p>
+  </div>
+</section>
 <script>
-document.getElementById("login-form").addEventListener("submit", async (event) => {
+const form = document.getElementById("login-form");
+const message = document.getElementById("message");
+form.querySelector(".password-toggle").addEventListener("click", (event) => {
+  const password = document.getElementById(event.currentTarget.getAttribute("aria-controls"));
+  const visible = password.type === "text";
+  password.type = visible ? "password" : "text";
+  event.currentTarget.textContent = visible ? "Show" : "Hide";
+  event.currentTarget.setAttribute("aria-label", visible ? "Show password" : "Hide password");
+});
+form.addEventListener("submit", async (event) => {
   event.preventDefault();
-  const response = await fetch("{{ url_for('accounts.login') }}", {
-    method: "POST", headers: {"Content-Type": "application/json"},
-    body: JSON.stringify(Object.fromEntries(new FormData(event.target)))
-  });
-  const data = await response.json();
-  document.getElementById("message").textContent = data.message || "Login failed.";
+  message.hidden = false;
+  message.className = "form-message";
+  message.textContent = "Signing you in...";
+  try {
+    const response = await fetch("{{ url_for('accounts.login') }}", {
+      method: "POST", headers: {"Content-Type": "application/json"},
+      body: JSON.stringify(Object.fromEntries(new FormData(event.target)))
+    });
+    const data = await response.json();
+    message.textContent = data.message || "Login failed.";
+    message.classList.toggle("is-success", response.ok);
+    message.classList.toggle("is-error", !response.ok);
+  } catch (error) {
+    message.textContent = "We could not reach the admission portal. Please try again.";
+    message.classList.add("is-error");
+  }
 });
 </script>
 {% endblock %}
