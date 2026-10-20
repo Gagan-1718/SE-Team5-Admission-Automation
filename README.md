@@ -41,6 +41,19 @@ If PowerShell refuses to run `Activate.ps1`, use `.venv\Scripts\python -m pip ..
 
 macOS/Linux (same steps, not yet run by the team): create the environment with `python3.12 -m venv .venv` and activate it with `source .venv/bin/activate`.
 
+## Run it over HTTPS (issue #4)
+
+Flask's own `flask run` server is plain HTTP and is only for development. For the HTTPS demonstration the app is served by Cheroot with a locally generated, self-signed certificate (valid for `localhost` and `127.0.0.1`).
+
+```powershell
+pip install -r requirements-https.txt
+python scripts/serve_https.py
+```
+
+Open <https://localhost:8443/>. Your browser warns that the certificate is self-signed: that is expected in the lab, so choose to continue. Plain `http://localhost:8080/` redirects to HTTPS. Only TLS 1.2 or newer is accepted, HTTPS responses carry `Strict-Transport-Security`, and the login cookie is marked `Secure` when served over HTTPS. Use `--https-port` and `--http-port` to change the ports.
+
+The certificate and private key are created once in `instance/certs/`, which is ignored by Git. Never commit them. The HTTPS tests (`python -m pytest -q tests/test_https.py`) start the real server and record the bytes on the network to show that a password is not visible; they are skipped automatically if `requirements-https.txt` is not installed.
+
 ## Database commands
 
 | Command | What it does |
