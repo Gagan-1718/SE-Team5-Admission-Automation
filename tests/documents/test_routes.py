@@ -15,15 +15,13 @@ def pdf_stream():
     return output
 
 @pytest.fixture
-def demo_client(app, client, tmp_path, monkeypatch):
-    monkeypatch.setattr(app, "debug", True)
-    monkeypatch.setitem(app.config, "DOCUMENT_DEV_FIXTURE", True)
+def demo_client(app, client, tmp_path, monkeypatch, login_as):
     monkeypatch.setitem(
         app.config,
         "DOCUMENT_UPLOAD_DIR",
         str(tmp_path / "uploads"),
     )
-    return client
+    return login_as(client)
 
 
 def form_token(client):
@@ -34,17 +32,17 @@ def form_token(client):
         return session["document_upload_token"]
 
 
-def test_fixture_disabled_by_default(client):
+def test_anonymous_redirects_to_login(client):
     response = client.get("/documents/upload")
 
-    assert response.status_code == 503
+    assert response.status_code == 302
 
 
-def test_fixture_requires_debug_mode(app, client, monkeypatch):
+def test_development_flag_cannot_bypass_login(app, client, monkeypatch):
     monkeypatch.setattr(app, "debug", False)
     monkeypatch.setitem(app.config, "DOCUMENT_DEV_FIXTURE", True)
 
-    assert client.get("/documents/upload").status_code == 503
+    assert client.get("/documents/upload").status_code == 302
 
 
 def test_upload_page_loads(demo_client):
@@ -110,10 +108,10 @@ def test_missing_form_token_is_rejected(demo_client):
     assert response.status_code == 400
 
 
-def test_nonlocal_access_is_denied(demo_client):
+def test_authenticated_nonlocal_access_is_allowed(demo_client):
     response = demo_client.get(
         "/documents/upload",
         environ_overrides={"REMOTE_ADDR": "192.0.2.10"},
     )
 
-    assert response.status_code == 403
+    assert response.status_code == 200

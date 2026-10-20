@@ -48,6 +48,12 @@ form.addEventListener("submit", async (event) => {
       body: JSON.stringify(Object.fromEntries(new FormData(event.target)))
     });
     const data = await response.json();
+    if (response.ok) {
+      window.location.href = data.role === 'administrator'
+        ? {{ url_for('documents.review_queue')|tojson }}
+        : {{ url_for('application.draft_form')|tojson }};
+      return;
+    }
     message.textContent = data.message || "Login failed.";
     message.classList.toggle("is-success", response.ok);
     message.classList.toggle("is-error", !response.ok);

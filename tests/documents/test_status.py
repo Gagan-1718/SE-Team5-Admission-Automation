@@ -7,9 +7,8 @@ from app.extensions import db
 
 
 @pytest.fixture
-def candidate_client(app, client):
-    app.config.update(DEBUG=True, DOCUMENT_DEV_FIXTURE=True)
-    return client
+def candidate_client(app, client, login_as):
+    return login_as(client)
 
 
 def add_document(candidate_id=1, status="Pending", reason=None, name="sample.pdf"):
@@ -49,9 +48,9 @@ def test_hides_other_candidate_even_with_query_parameter(candidate_client):
     assert b'other.pdf' not in response.data
 
 
-def test_admin_rejection_becomes_visible_to_candidate(app, candidate_client):
+def test_admin_rejection_becomes_visible_to_candidate(app, candidate_client, login_as):
     document = add_document()
-    app.config['DOCUMENTS_ADMIN_GUARD'] = lambda: True
+    login_as(candidate_client, 3)
     assert candidate_client.get('/admin/documents').status_code == 200
     with candidate_client.session_transaction() as session:
         token = session['document_review_token']
@@ -59,7 +58,7 @@ def test_admin_rejection_becomes_visible_to_candidate(app, candidate_client):
         'decision': 'Rejected', 'reason': 'Upload a clearer scan', 'csrf_token': token,
     })
     assert result.status_code == 200
-    app.config['DOCUMENTS_ADMIN_GUARD'] = lambda: False
+    login_as(candidate_client, 1)
     response = candidate_client.get('/documents')
     assert b'Rejected' in response.data
     assert b'Upload a clearer scan' in response.data
@@ -73,16 +72,16 @@ def test_reason_is_html_escaped(candidate_client):
     assert b'&lt;script&gt;alert(1)&lt;/script&gt;' in response.data
 
 
-def test_fixture_disabled_denies_status_page(client):
-    assert client.get('/documents').status_code == 503
+def test_anonymous_status_redirects(client):
+    assert client.get('/documents').status_code == 302
 
 
-def test_fixture_requires_debug_mode(app, client):
+def test_debug_flag_does_not_bypass_login(app, client):
     app.config.update(DEBUG=False, DOCUMENT_DEV_FIXTURE=True)
-    assert client.get('/documents').status_code == 503
+    assert client.get('/documents').status_code == 302
 
 
-def test_fixture_rejects_nonlocal_requests(candidate_client):
+def test_authenticated_nonlocal_status_works(candidate_client):
     assert candidate_client.get('/documents', environ_overrides={
         'REMOTE_ADDR': '192.0.2.10',
-    }).status_code == 403
+    }).status_code == 200

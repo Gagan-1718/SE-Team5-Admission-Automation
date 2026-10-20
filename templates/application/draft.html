@@ -14,7 +14,6 @@
     {% endif %}
   </p>
   <p class="note">
-    Temporary: this page uses candidate #1 until login is integrated.
     You can save an incomplete draft and continue later.
   </p>
 
@@ -61,6 +60,8 @@
 
     {% if is_locked %}
       <p class="note">This application has been submitted and can no longer be edited.</p>
+      <a class="button" href="{{ url_for('documents.upload') }}">Upload documents</a>
+      <a href="{{ url_for('documents.status_page') }}">View document status</a>
     {% else %}
       <button class="button" type="submit">Save draft</button>
       <button class="button button-primary" type="submit"

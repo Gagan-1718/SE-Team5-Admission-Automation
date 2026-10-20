@@ -21,8 +21,8 @@ def document(app, tmp_path):
 
 
 @pytest.fixture
-def admin(app, client):
-    app.config['DOCUMENTS_ADMIN_GUARD'] = lambda: True
+def admin(app, client, login_as):
+    login_as(client, 3)
     assert client.get('/admin/documents').status_code == 200
     with client.session_transaction() as session:
         token = session['document_review_token']
@@ -35,8 +35,9 @@ def decide(admin, document, decision, reason=None):
         'decision': decision, 'reason': reason, 'csrf_token': token})
 
 
-@pytest.mark.parametrize('guard', [None, False, lambda: False, lambda: 'administrator'])
-def test_admin_routes_deny_by_default(app, client, document, guard):
+@pytest.mark.parametrize('guard', [None, False, lambda: False, lambda: 'administrator', lambda: True])
+def test_admin_routes_deny_by_default(app, client, document, guard, login_as):
+    login_as(client, 1)
     app.config['DOCUMENTS_ADMIN_GUARD'] = guard
     assert client.get('/admin/documents').status_code == 403
     assert client.get('/admin/documents.json').status_code == 403

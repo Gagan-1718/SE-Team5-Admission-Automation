@@ -31,13 +31,26 @@ Run the suite from the repository root:
 .\.venv\Scripts\python.exe -m pytest -q
 ```
 
-## Remaining integration
+## Local Accounts/Application integration (2026-10-20)
 
-Candidate identity currently uses the explicitly enabled localhost/debug fixture.
-Replace it with authenticated Accounts identity and Application access/submission
-checks. Replace the administrator guard callback with shared role authorization.
-Connect required audit events to the shared audit service and verify the flow
-again with real accounts and application records before closing issue #10.
+Document routes now use real Accounts sessions and the shared administrator role
+check. Upload and resubmission require the authenticated candidate's Submitted
+application; browser-supplied candidate/application IDs are ignored. Resubmission
+also checks the document's application link. The fixed-ID development identity
+and configurable admin bypass have been removed.
 
-This branch builds on feature/9-documents-review. Review the PR against that branch
-while its changes remain unmerged; reassess the base after the dependency merges.
+Updated route tests use real logins. An additional whole-flow test registers a
+candidate, submits an application, uploads a document, performs administrator
+rejection, candidate resubmission and administrator approval, then verifies logout
+revokes access. Final execution of the updated suite is pending: the agent's
+terminal could not access the venv's installed Python runtime.
+
+## Remaining team integration
+
+Catalogue, eligibility, dashboard and audit contain placeholders in this checkout.
+Their shared services are not yet available for document audit/eligibility events.
+The documents table still uses integer links without database foreign keys;
+route-level ownership/application checks are enforced, but an agreed migration
+and existing-data validation remain necessary for database-level constraints.
+No existing database or uploaded files were migrated or reset during this change.
+Repeat browser acceptance checks with real candidate and administrator accounts.
