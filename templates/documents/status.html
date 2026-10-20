@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}My documents{% endblock %}
+{% block content %}
+<h1>My documents</h1>
+{% if success %}
+<p role="status">Replacement submitted. Your document is pending verification.</p>
+{% endif %}
+<a href="{{ url_for('documents.upload') }}">Upload a document</a>
+{% for document in documents %}
+<section>
+  <h2>{{ document.document_type }}</h2>
+  <p>Status: {{ 'Pending Verification' if document.status == 'Pending' else document.status }}</p>
+  {% if document.rejection_reason %}
+  <p>Rejection reason: {{ document.rejection_reason }}</p>
+  {% endif %}
+  {% if document.status == 'Rejected' %}
+  <form method="post" action="{{ url_for('documents.resubmit', document_id=document.id) }}" enctype="multipart/form-data">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <label for="replacement-{{ document.id }}">Replacement for {{ document.document_type }}</label>
+    <input id="replacement-{{ document.id }}" type="file" name="file" accept=".pdf,.jpg,.jpeg,.png" required>
+    <p>Upload a PDF, JPG, or PNG up to 2 MB. Your replacement will be reviewed again.</p>
+    <button type="submit">Resubmit document</button>
+  </form>
+  {% endif %}
+</section>
+{% else %}
+<p>No documents uploaded.</p>
+{% endfor %}
+{% endblock %}

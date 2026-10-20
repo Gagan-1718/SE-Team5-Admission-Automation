@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Review documents{% endblock %}
+{% block content %}
+<h1>Document verification queue</h1>
+<form method="get">
+  <label for="status">Status</label>
+  <select id="status" name="status">
+    {% for value in ['Pending', 'Approved', 'Rejected'] %}
+    <option {% if value == status %}selected{% endif %}>{{ value }}</option>
+    {% endfor %}
+  </select><button type="submit">Filter</button>
+</form>
+{% for document in documents %}
+<section aria-labelledby="document-{{ document.id }}">
+  <h2 id="document-{{ document.id }}">Document {{ document.id }}: {{ document.document_type }}</h2>
+  <p>Candidate {{ document.candidate_id }} — {{ document.status }}</p>
+  <a href="{{ url_for('documents.review_file', document_id=document.id) }}">Download document {{ document.id }}</a>
+  {% if document.rejection_reason %}<p>Reason: {{ document.rejection_reason }}</p>{% endif %}
+  {% if document.status == 'Pending' %}
+  <form method="post" action="{{ url_for('documents.review', document_id=document.id) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <label for="reason-{{ document.id }}">Rejection reason (required when rejecting)</label>
+    <textarea id="reason-{{ document.id }}" name="reason"></textarea>
+    <button name="decision" value="Approved">Approve</button>
+    <button name="decision" value="Rejected">Reject</button>
+  </form>
+  {% endif %}
+</section>
+{% else %}<p>No {{ status }} documents.</p>{% endfor %}
+{% endblock %}
