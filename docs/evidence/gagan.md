@@ -43,3 +43,26 @@ Automated: `python -m pytest -q tests/application` -> 71 passed (includes `test_
 
 **Observed (same curl run):** submit with missing fields -> 422; submit with all fields -> 302 and the page showed `ADM-2026-000001`; a second submit -> 409. The database row held the logged-in user's id, status `Submitted` and that reference number.
 Automated: `tests/application/test_submit.py` and `test_identity.py` pass.
+
+## Integrated demo flow on `main` (21 October 2026)
+
+**Run:** `python -m pytest -q tests/integration/test_demo_flow.py -rx` on `main` plus this test file, against a temporary database seeded exactly like `flask seed-db` (administrator, exam records, catalogue, eligibility rules). The test uses real routes, real logins and generated fictional files.
+
+**Observed: 1 passed, 10 expected failures** (each one fails for exactly the reason written next to it; checked with `--runxfail`).
+
+| Step | Result |
+|---|---|
+| Register, duplicate email refused (409), wrong password refused (401), login | PASS |
+| Made-up rank refused (422); a seeded combination accepted (200) | PASS (TC-003) |
+| Partial draft saved, logout, login, draft still there | PASS (TC-004) |
+| Incomplete submit refused (422), complete submit gives `ADM-YYYY-NNNNNN`, second submit refused (409) | PASS (TC-005) |
+| Wrong file type refused (400); Marksheet, ID Proof and Category Certificate uploaded | PASS (TC-006) |
+| Administrator (seeded) sees the queue; rejecting without a reason refused (422); with a reason accepted and visible to the candidate | PASS (TC-007) |
+| Candidate resubmits the rejected document; it returns to Pending; administrator approves; all three Approved | PASS (TC-008) |
+| Eligibility endpoint returns a valid status and a reason | PASS for the shape only; the inputs are still sample values |
+| Candidate browses the seeded catalogue | PASS (TC-010) |
+| Candidate gets 403 on `/admin/documents`; anonymous visitors are redirected to login | PASS (TC-021, TC-022) |
+
+**Not working yet (expected failures, owners in brackets):** the administrator cannot open `/admin/colleges` because the guard is not connected to the login (Tasya); eligibility always says Eligible, ignores the real exam details and is not login-protected (Tasya); `/admin/dashboard` and `/admin/audit-logs` do not exist (Tasya); `all_documents_approved()` and `REQUIRED_DOCUMENT_TYPES` are missing and any document type text is accepted (Dikshith); documents have no foreign keys to users and applications (Dikshith); the profile page has no exam-details form (Varun).
+
+**Therefore not marked passed:** TC-009 (eligibility with real inputs), TC-011 (administrator seat management through the login), TC-020 (dashboard), TC-025 (audit log).

@@ -6,7 +6,7 @@ Start with SPRINT_ONE_START_HERE.md for responsibilities and the proposed Octobe
 
 ## Status
 
-The shared Flask foundation (application factory, SQLite, home page, `/health`, database commands and startup tests) is in place for review under issue #31. Feature modules (accounts, application, documents, catalogue, eligibility) are still being built by their owners. Acceptance tests TC-001 to TC-030 have not been executed yet.
+Merged into `main`: shared Flask foundation, accounts (registration, login, roles, seeded exam details), application draft and submission, documents (upload, administrator review, resubmission), the college catalogue, eligibility rules, HTTPS and a CI check. Eligibility still runs on sample inputs, and the audit log, the admin dashboard and some links between modules are not finished. **`python -m pytest -q tests/integration/test_demo_flow.py -rx` is the live checklist:** the passing test is the working demo flow, and every item listed as XFAIL says what is still missing and who owns it. Acceptance tests TC-001 to TC-030 are only marked passed in `docs/evidence/` after they were actually run.
 
 ### Application module (draft and submission, issues #2 and #3)
 
@@ -53,6 +53,34 @@ python scripts/serve_https.py
 Open <https://localhost:8443/>. Your browser warns that the certificate is self-signed: that is expected in the lab, so choose to continue. Plain `http://localhost:8080/` redirects to HTTPS. Only TLS 1.2 or newer is accepted, HTTPS responses carry `Strict-Transport-Security`, and the login cookie is marked `Secure` when served over HTTPS. Use `--https-port` and `--http-port` to change the ports.
 
 The certificate and private key are created once in `instance/certs/`, which is ignored by Git. Never commit them. The HTTPS tests (`python -m pytest -q tests/test_https.py`) start the real server and record the bytes on the network to show that a password is not visible; they are skipped automatically if `requirements-https.txt` is not installed.
+
+## Demo walkthrough (Sprint One)
+
+Everything uses fictional data. In PowerShell, from the project folder with the virtual environment active:
+
+```powershell
+$env:ADMIN_SEED_PASSWORD = "choose-a-fictional-password"
+flask --app app init-db --reset
+flask --app app seed-db
+python scripts/serve_https.py      # HTTPS on https://localhost:8443 (see the HTTPS section), or: flask --app app run
+```
+
+`seed-db` creates the administrator `admin@example.test` (password = what you put in `ADMIN_SEED_PASSWORD`), the fictional exam records, two colleges with branches and seats, and the eligibility cut-offs. Candidates register themselves.
+
+Exam details a candidate can enter (only these exact combinations exist; anything else is refused):
+
+| Exam | Rank | Category | Score |
+|---|---|---|---|
+| KCET | 1000 | General | 185.0 |
+| KCET | 4500 | OBC | 160.5 |
+| KCET | 12000 | SC | 140.0 |
+| KCET | 15000 | ST | 132.5 |
+| KCET | 9000 | EWS | 150.0 |
+| KCET | 90000 | General | 60.0 |
+| COMEDK | 800 | General | 190.0 |
+| COMEDK | 6000 | OBC | 155.0 |
+
+Flow: register at `/accounts/register`, log in, enter the exam details (the profile page has no exam-details form yet, so for now send `PUT /accounts/exam-details` with `exam_type`, `rank`, `category` and `score`; the form is being added), open `/application` and save a draft, log out and in again (the draft is still there), submit (you get a reference such as `ADM-2026-000001`), upload the three documents (Marksheet, ID Proof, Category Certificate; PDF, JPEG or PNG up to 2 MB), then log in as the administrator at `/admin/documents` to approve, or reject with a reason. The candidate sees the reason on `/documents` and can resubmit. Candidates browse colleges at `/colleges`.
 
 ## Database commands
 
