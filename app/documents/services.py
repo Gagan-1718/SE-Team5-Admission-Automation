@@ -9,6 +9,10 @@ from app.extensions import db
 from app.documents.models import Document
 from app.documents.validation import validate_upload
 
+# The three documents every candidate must have approved (agreed Day 2 list, see
+# docs/DEVIATIONS.md P-02). Matched by exact name as stored in documents.document_type.
+REQUIRED_DOCUMENT_TYPES = ("Marksheet", "ID Proof", "Category Certificate")
+
 
 def save_document(upload, candidate_id, application_id, document_type):
     """Save an upload after the caller verifies identity and application access."""
@@ -154,3 +158,31 @@ def resubmit_document(document_id, candidate_id, upload):
     except OSError:
         current_app.logger.exception("Replacement saved but old document file needs cleanup")
     return document
+
+
+def all_documents_approved(candidate_id):
+    """True only when every required document type is present and approved.
+
+    Reads this candidate's real document rows. Returns False when the candidate has no
+    documents, when a required type is missing, and when any document of a required type
+    is Pending or Rejected. Documents of other types are ignored.
+    """
+    if not candidate_id:
+        return False
+
+    rows = db.session.execute(
+        db.select(Document.document_type, Document.status).where(
+            Document.candidate_id == candidate_id,
+            Document.document_type.in_(REQUIRED_DOCUMENT_TYPES),
+        )
+    ).all()
+
+    statuses_by_type = {}
+    for document_type, status in rows:
+        statuses_by_type.setdefault(document_type, []).append(status)
+
+    return all(
+        statuses_by_type.get(document_type)
+        and all(status == "Approved" for status in statuses_by_type[document_type])
+        for document_type in REQUIRED_DOCUMENT_TYPES
+    )

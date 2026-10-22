@@ -2,13 +2,18 @@
 from app.catalogue.models import Branch, College, Seat
 from app.extensions import db
 
-from tests.catalogue.helpers import count, get_branch, get_college, get_seat
+from tests.catalogue.helpers import count, get_branch, get_college, get_seat, login_client
 import pytest
 
 
 @pytest.fixture
+def client(app):
+    """Every test in this file acts as a signed-in administrator unless it says otherwise."""
+    return login_client(app, "administrator", 1)
+
+
+@pytest.fixture
 def admin_access(app):
-    app.config["CATALOGUE_ADMIN_GUARD"] = lambda: True
     return app
 MERIDIAN = "Meridian Institute of Technology"
 CSE = "Computer Science and Engineering"
@@ -177,30 +182,32 @@ def test_unknown_records_return_404(admin_access, client):
     assert client.get("/admin/branches/999/seats").status_code == 404
 
 
-def test_admin_pages_use_the_configurable_guard(seeded, client):
-    seeded.config["CATALOGUE_ADMIN_GUARD"] = lambda: False
+def test_anonymous_visitors_get_401_on_admin_pages(seeded):
+    anonymous = seeded.test_client()
     college = get_college(MERIDIAN)
-    for path in (
-        "/admin/colleges",
-        "/admin/colleges/new",
-        f"/admin/colleges/{college.id}/edit",
-    ):
-        assert client.get(path).status_code == 403
-    assert client.post("/admin/colleges/new", data={"name": "Sneaky College"}).status_code == 403
+    for path in ("/admin/colleges", "/admin/colleges/new", f"/admin/colleges/{college.id}/edit"):
+        assert anonymous.get(path).status_code == 401
+    assert anonymous.post("/admin/colleges/new", data={"name": "Sneaky College"}).status_code == 401
     db.session.expire_all()
     assert count(College) == 2
-    assert client.get("/colleges").status_code == 200  # candidate page stays public
+    assert anonymous.get("/colleges").status_code == 200  # candidate page stays public
 
-def test_admin_colleges_denies_access_when_guard_is_missing(seeded, client):
-    seeded.config.pop("CATALOGUE_ADMIN_GUARD", None)
 
-    response = client.get("/admin/colleges")
+def test_candidates_get_403_on_admin_pages(seeded):
+    candidate = login_client(seeded, "candidate", 2)
+    assert candidate.get("/admin/colleges").status_code == 403
+    assert candidate.post("/admin/colleges/new", data={"name": "Sneaky College"}).status_code == 403
+    db.session.expire_all()
+    assert count(College) == 2
 
-    assert response.status_code == 403
 
-def test_admin_pages_allow_an_admin_guard(seeded, client):
-    seeded.config["CATALOGUE_ADMIN_GUARD"] = lambda: True
+def test_administrator_can_open_the_admin_page(seeded, client):
     assert client.get("/admin/colleges").status_code == 200
+
+
+def test_admin_access_is_lost_after_logout(seeded, client):
+    assert client.post("/accounts/logout").status_code == 204
+    assert client.get("/admin/colleges").status_code == 401
 
 
 def test_new_record_appears_for_candidates_immediately(admin_access, client):
