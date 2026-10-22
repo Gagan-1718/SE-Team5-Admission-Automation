@@ -1,4 +1,6 @@
 """Administrator pages: add/edit colleges, branches and seat capacity."""
+from app.accounts.models import User
+from app.accounts.security import hash_password
 from app.catalogue.models import Branch, College, Seat
 from app.extensions import db
 
@@ -6,9 +8,20 @@ from tests.catalogue.helpers import count, get_branch, get_college, get_seat
 import pytest
 
 
+def login_as(client, role):
+    password = "catalogue-test-password"
+    user = User(name="Catalogue Tester", email="catalogue@example.test",
+                mobile="9123456780", password_hash=hash_password(password), role=role)
+    db.session.add(user)
+    db.session.commit()
+    response = client.post("/accounts/login", json={
+        "identifier": user.email, "password": password})
+    assert response.status_code == 200
+
+
 @pytest.fixture
-def admin_access(app):
-    app.config["CATALOGUE_ADMIN_GUARD"] = lambda: True
+def admin_access(app, client):
+    login_as(client, "administrator")
     return app
 MERIDIAN = "Meridian Institute of Technology"
 CSE = "Computer Science and Engineering"
@@ -177,30 +190,62 @@ def test_unknown_records_return_404(admin_access, client):
     assert client.get("/admin/branches/999/seats").status_code == 404
 
 
-def test_admin_pages_use_the_configurable_guard(seeded, client):
-    seeded.config["CATALOGUE_ADMIN_GUARD"] = lambda: False
-    college = get_college(MERIDIAN)
-    for path in (
-        "/admin/colleges",
-        "/admin/colleges/new",
-        f"/admin/colleges/{college.id}/edit",
-    ):
-        assert client.get(path).status_code == 403
-    assert client.post("/admin/colleges/new", data={"name": "Sneaky College"}).status_code == 403
-    db.session.expire_all()
-    assert count(College) == 2
-    assert client.get("/colleges").status_code == 200  # candidate page stays public
+def catalogue_snapshot():
+    return {
+        model.__tablename__: [
+            tuple(getattr(row, column.name) for column in model.__table__.columns)
+            for row in db.session.execute(db.select(model).order_by(model.id)).scalars()
+        ]
+        for model in (College, Branch, Seat)
+    }
 
-def test_admin_colleges_denies_access_when_guard_is_missing(seeded, client):
-    seeded.config.pop("CATALOGUE_ADMIN_GUARD", None)
 
-    response = client.get("/admin/colleges")
-
-    assert response.status_code == 403
-
-def test_admin_pages_allow_an_admin_guard(seeded, client):
+@pytest.mark.parametrize("role,expected", [(None, 401), ("candidate", 403)])
+def test_all_admin_routes_deny_unauthorized_users_without_changes(seeded, client, role, expected):
+    if role:
+        login_as(client, role)
+    # The obsolete development hook must never bypass the real session check.
     seeded.config["CATALOGUE_ADMIN_GUARD"] = lambda: True
+    college = get_college(MERIDIAN)
+    branch = get_branch(MERIDIAN, CSE)
+    paths = [
+        ("/admin/colleges/new", {"name": "Unauthorized College"}),
+        (f"/admin/colleges/{college.id}/edit", {"name": "Unauthorized Rename"}),
+        (f"/admin/colleges/{college.id}/branches/new", {"name": "Unauthorized Branch"}),
+        (f"/admin/branches/{branch.id}/edit", {"name": "Unauthorized Rename"}),
+        (f"/admin/branches/{branch.id}/seats", {"General": "99"}),
+    ]
+    before = catalogue_snapshot()
+    assert client.get("/admin/colleges").status_code == expected
+    for path, data in paths:
+        assert client.get(path).status_code == expected
+        assert client.post(path, data=data).status_code == expected
+        assert client.post(path, json=data).status_code == expected
+    db.session.expire_all()
+    assert catalogue_snapshot() == before
+    assert client.get("/colleges").status_code == 200
+
+
+def test_real_admin_can_open_all_pages_without_development_guard(seeded, admin_access, client):
+    seeded.config.pop("CATALOGUE_ADMIN_GUARD", None)
+    college = get_college(MERIDIAN)
+    branch = get_branch(MERIDIAN, CSE)
+    for path in (
+        "/admin/colleges", "/admin/colleges/new",
+        f"/admin/colleges/{college.id}/edit",
+        f"/admin/colleges/{college.id}/branches/new",
+        f"/admin/branches/{branch.id}/edit",
+        f"/admin/branches/{branch.id}/seats",
+    ):
+        assert client.get(path).status_code == 200
+
+
+def test_logout_revokes_catalogue_admin_access(admin_access, client):
     assert client.get("/admin/colleges").status_code == 200
+    assert client.post("/accounts/logout").status_code == 204
+    assert client.get("/admin/colleges").status_code == 401
+    assert client.post("/admin/colleges/new", data={"name": "Denied"}).status_code == 401
+    assert count(College) == 0
 
 
 def test_new_record_appears_for_candidates_immediately(admin_access, client):

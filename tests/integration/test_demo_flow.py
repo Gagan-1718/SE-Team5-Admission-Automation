@@ -189,8 +189,6 @@ def test_full_demo_flow(seeded):
 
 # ----------------------------------------------- not connected yet: the list of what is left
 
-@pytest.mark.xfail(reason="Catalogue admin guard is not connected to the login yet (Tasya): "
-                          "the administrator gets 403 on /admin/colleges. Use role_required('administrator').")
 def test_administrator_can_open_the_catalogue_admin_page(seeded):
     admin = login(seeded.test_client(), "admin@example.test", ADMIN_PASSWORD)
     assert admin.get("/admin/colleges").status_code == 200
