@@ -18,6 +18,7 @@ from werkzeug.exceptions import RequestEntityTooLarge
 
 from pathlib import Path
 
+from app.audit.services import record_admin_action
 from app.extensions import db
 from app.documents.models import Document
 from app.documents.access import admin_required
@@ -136,14 +137,22 @@ def review(document_id):
     expected = session.get("document_review_token")
     if not isinstance(supplied, str) or not expected or not secrets.compare_digest(supplied, expected):
         abort(400, description="Invalid form token. Reload the review queue.")
+    decision = data.get("decision")
     try:
-        document = review_document(document_id, data.get("decision"), data.get("reason"))
+        document = review_document(document_id, decision, data.get("reason"))
     except LookupError:
         abort(404)
     except ReviewConflict as exc:
         abort(409, description=str(exc))
     except ValueError as exc:
         abort(422, description=str(exc))
+    # Only reached when the review succeeded. The entry holds ids and the decision, never
+    # the rejection reason or any file name.
+    record_admin_action(
+        "document.approve" if decision == "Approved" else "document.reject",
+        "document",
+        document.id,
+    )
     if request.is_json:
         return jsonify(document_json(document))
     return redirect(url_for("documents.review_queue"))

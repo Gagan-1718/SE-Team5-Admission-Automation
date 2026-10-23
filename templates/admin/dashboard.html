@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Admin dashboard{% endblock %}
+{% block content %}
+{% include "catalogue/_styles.html" %}
+<section class="card">
+  <h1>Administrator dashboard</h1>
+
+  <h2>Candidates</h2>
+  <table class="cat-table">
+    <tbody>
+      <tr><th>Registered candidates</th><td class="num">{{ summary.candidateCounts.total }}</td></tr>
+      <tr><th>With exam details entered</th><td class="num">{{ summary.candidateCounts.withExamDetails }}</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Applications</h2>
+  <table class="cat-table">
+    <tbody>
+      {% for status, number in summary.statusCounts.applications.items() %}
+      <tr><th>{{ status }}</th><td class="num">{{ number }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <h2>Documents</h2>
+  <table class="cat-table">
+    <tbody>
+      {% for status, number in summary.statusCounts.documents.items() %}
+      <tr><th>{{ status }}</th><td class="num">{{ number }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <h2>Pending verification queue ({{ summary.pendingDocuments|length }})</h2>
+  {% if summary.pendingDocuments %}
+  <table class="cat-table">
+    <thead><tr><th>Document</th><th>Type</th><th>Candidate</th></tr></thead>
+    <tbody>
+      {% for doc in summary.pendingDocuments %}
+      <tr><td>#{{ doc.id }}</td><td>{{ doc.documentType }}</td><td>#{{ doc.candidateId }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="note">Nothing is waiting for review.</p>
+  {% endif %}
+
+  <p class="cat-actions">
+    <a href="/admin/documents">Review documents</a>
+    <a href="/admin/colleges">Manage colleges</a>
+    <a href="/admin/audit-logs">Audit log</a>
+  </p>
+</section>
+{% endblock %}

@@ -1,26 +1,8 @@
-
 """Admin-only access guard for the catalogue's administrator pages.
 
-The admin guard is supplied through app.config["CATALOGUE_ADMIN_GUARD"].
-Until a valid guard is configured and explicitly approves access, requests
-are denied by default.
+Uses the shared Accounts role check, the same one the documents module uses:
+anonymous visitors get 401, signed-in candidates get 403, administrators pass.
 """
-from functools import wraps
+from app.accounts.auth import role_required
 
-from flask import abort, current_app
-
-
-def admin_required(view):
-    @wraps(view)
-    def wrapped(*args, **kwargs):
-        guard = current_app.config.get("CATALOGUE_ADMIN_GUARD")
-
-        if not callable(guard):
-            abort(403)
-
-        if not guard():
-            abort(403)
-
-        return view(*args, **kwargs)
-
-    return wrapped
+admin_required = role_required("administrator")

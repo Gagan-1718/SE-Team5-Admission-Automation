@@ -1,28 +1,32 @@
 """Eligibility service: other modules call get_eligibility(candidate_id)."""
 from sqlalchemy import select
 
+from app.accounts.services import get_exam_details
+from app.documents.services import all_documents_approved
 from app.extensions import db
 
-from .evaluation import evaluate_eligibility
+from .evaluation import PENDING, evaluate_eligibility
 from .models import EligibilityRule
 
-__all__ = ["evaluate_eligibility", "get_eligibility"]
+__all__ = ["ExamDetailsNotEntered", "evaluate_eligibility", "get_eligibility"]
 
 
-def _temporary_inputs(candidate_id):
-    """TEMPORARY (Day 2): fixed sample inputs so this module works on its own.
+class ExamDetailsNotEntered(LookupError):
+    """The candidate has not entered exam details yet (SAD: 422 exam details not entered)."""
 
-    Day 3 replacement: rank and category come from
-    app.accounts.services.get_exam_details(candidate_id) and documents_approved from
-    app.documents.services.all_documents_approved(candidate_id). Delete this function then.
+
+def get_eligibility(candidate_id, require_exam_details=False):
+    """Return {'status': 'Pending'|'Eligible'|'Not Eligible', 'reason': str}.
+
+    Without exam details the default answer is Pending. The JSON endpoint passes
+    require_exam_details=True to get ExamDetailsNotEntered instead.
     """
-    return {"rank": 1000, "category": "General", "documents_approved": True}
-
-
-def get_eligibility(candidate_id):
-    """Return {'status': 'Pending'|'Eligible'|'Not Eligible', 'reason': str}."""
-    inputs = _temporary_inputs(candidate_id)
+    details = get_exam_details(candidate_id)
+    if details is None:
+        if require_exam_details:
+            raise ExamDetailsNotEntered("exam details not entered")
+        return {"status": PENDING, "reason": "Exam details have not been entered yet."}
     rules = db.session.scalars(select(EligibilityRule)).all()
     return evaluate_eligibility(
-        inputs["rank"], inputs["category"], inputs["documents_approved"], rules
+        details["rank"], details["category"], all_documents_approved(candidate_id), rules
     )
