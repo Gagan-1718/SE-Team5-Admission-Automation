@@ -3,9 +3,8 @@
 register -> login -> exam details -> draft -> submit -> upload -> admin review -> resubmit ->
 approve -> eligibility -> catalogue. Fictional data only; real seeds, real logins, real routes.
 
-Things that are not connected yet are written as `xfail` tests with the reason. They do not
-fail the build; when a teammate connects the piece, the test starts passing (XPASS) and the
-`xfail` mark should be deleted. Together they are the list of what is left for the demo.
+Every piece of the Sprint One demonstration is connected: this file is the regression check
+for it. If one test here fails, the demo flow is broken.
 """
 import re
 from io import BytesIO
@@ -67,14 +66,21 @@ def seeded(app, monkeypatch, tmp_path):
     return app
 
 
-def new_candidate(app):
-    """A registered, logged-in candidate with exam details (rank 1000, General) entered."""
+GOOD_EXAM = {"exam_type": "KCET", "rank": 1000, "category": "General", "score": 185.0}
+HIGH_RANK_EXAM = {"exam_type": "KCET", "rank": 90000, "category": "General", "score": 60.0}
+
+
+def new_candidate(app, exam=GOOD_EXAM):
+    """A registered, logged-in candidate with the given (seeded) exam details entered."""
     client = app.test_client()
     assert client.post("/accounts/register", json=CANDIDATE).status_code == 201
     login(client, CANDIDATE["email"], CANDIDATE_PASSWORD)
-    exam = {"exam_type": "KCET", "rank": 1000, "category": "General", "score": 185.0}
     assert client.put("/accounts/exam-details", json=exam).status_code == 200
     return client
+
+
+def eligibility(client):
+    return client.get("/api/v1/candidates/me/eligibility").get_json()
 
 
 def submit_application(client):
@@ -151,6 +157,7 @@ def test_full_demo_flow(seeded):
     assert bad.status_code == 400
     upload_all_documents(candidate)
     assert statuses_in_database(app, 2) == {t: "Pending" for t in REQUIRED_TYPES}  # candidate is user 2
+    assert eligibility(candidate)["status"] == "Pending"  # documents not approved yet (TC-009)
 
     # 7: the seeded administrator reviews: a reason is mandatory, then visible to the candidate (TC-007)
     admin = login(app.test_client(), "admin@example.test", ADMIN_PASSWORD)
@@ -172,30 +179,41 @@ def test_full_demo_flow(seeded):
     assert review(admin, ids["Marksheet"], "Approved").status_code == 200
     assert set(statuses_in_database(app, 2).values()) == {"Approved"}
 
-    # 9: eligibility returns a valid status and a reason (TC-009; inputs are still temporary, see xfails)
-    eligibility = candidate.get("/api/v1/candidates/me/eligibility").get_json()
-    assert eligibility["status"] in ELIGIBILITY_STATUSES and eligibility["reason"]
+    # 9: all documents approved, rank 1000 General is under the cut-off: Eligible with a reason (TC-009)
+    result = eligibility(candidate)
+    assert result["status"] == "Eligible" and "1000" in result["reason"]
 
     # 10: the candidate can browse the seeded catalogue (TC-010)
     colleges = candidate.get("/colleges")
     assert colleges.status_code == 200
     assert b"Meridian Institute of Technology" in colleges.data
 
+    # 11: the administrator manages the catalogue, sees the dashboard and the audit log (TC-011, TC-020, TC-025)
+    assert admin.get("/admin/colleges").status_code == 200
+    dashboard = admin.get("/admin/dashboard.json").get_json()
+    assert dashboard["candidateCounts"]["total"] >= 1
+    assert dashboard["statusCounts"]["applications"]["Submitted"] == 1
+    assert dashboard["statusCounts"]["documents"]["Approved"] == 3
+    audit = admin.get("/admin/audit-logs.json")
+    assert audit.status_code == 200
+    assert b"document.reject" in audit.data and b"document.approve" in audit.data
+    assert b"Image is not readable" not in audit.data  # the log holds ids and decisions, not the reason
+
     # 12: access control (TC-021, TC-022)
     assert candidate.get("/admin/documents").status_code == 403
+    assert candidate.get("/admin/dashboard").status_code == 403
+    assert candidate.get("/admin/audit-logs").status_code == 403
     assert app.test_client().get("/application").status_code == 302
     assert app.test_client().get("/admin/documents").status_code in (302, 401, 403)
 
 
-# ----------------------------------------------- not connected yet: the list of what is left
+# ----------------------------------------------- one focused check for each connected piece
 
 def test_administrator_can_open_the_catalogue_admin_page(seeded):
     admin = login(seeded.test_client(), "admin@example.test", ADMIN_PASSWORD)
     assert admin.get("/admin/colleges").status_code == 200
 
 
-@pytest.mark.xfail(reason="Eligibility still uses temporary inputs (Tasya): it always says Eligible. "
-                          "It must say Pending until all required documents are approved.")
 def test_eligibility_is_pending_until_the_documents_are_approved(seeded):
     candidate = new_candidate(seeded)
     submit_application(candidate)
@@ -203,32 +221,43 @@ def test_eligibility_is_pending_until_the_documents_are_approved(seeded):
     assert status == "Pending"
 
 
-@pytest.mark.xfail(reason="Eligibility must use the candidate's real rank and category (Tasya): "
-                          "rank 90000 General is above the cut-off and must be Not Eligible.")
-def test_eligibility_uses_the_real_exam_details(seeded):
+def approve_all_documents(app, candidate):
+    """Submit the application, upload the three documents and let the administrator approve them."""
+    submit_application(candidate)
+    upload_all_documents(candidate)
+    admin = login(app.test_client(), "admin@example.test", ADMIN_PASSWORD)
+    for document_id in pending_ids(admin).values():
+        assert review(admin, document_id, "Approved").status_code == 200
+
+
+def test_high_rank_candidate_is_not_eligible_once_documents_are_approved(seeded):
+    candidate = new_candidate(seeded, HIGH_RANK_EXAM)
+    assert eligibility(candidate)["status"] == "Pending"
+    approve_all_documents(seeded, candidate)
+    result = eligibility(candidate)
+    assert result["status"] == "Not Eligible"
+    assert "90000" in result["reason"] and "cut-off" in result["reason"]
+
+
+def test_eligibility_needs_exam_details(seeded):
     client = seeded.test_client()
-    client.post("/accounts/register", json=CANDIDATE)
+    assert client.post("/accounts/register", json=CANDIDATE).status_code == 201
     login(client, CANDIDATE["email"], CANDIDATE_PASSWORD)
-    exam = {"exam_type": "KCET", "rank": 90000, "category": "General", "score": 60.0}
-    assert client.put("/accounts/exam-details", json=exam).status_code == 200
-    result = client.get("/api/v1/candidates/me/eligibility").get_json()
-    assert result["status"] in {"Pending", "Not Eligible"}
+    response = client.get("/api/v1/candidates/me/eligibility")
+    assert response.status_code == 422
 
 
-@pytest.mark.xfail(reason="Eligibility pages are not login-protected yet (Tasya): anonymous visitors get 200.")
 def test_anonymous_cannot_see_eligibility(seeded):
     anonymous = seeded.test_client()
     assert anonymous.get("/api/v1/candidates/me/eligibility").status_code == 401
     assert anonymous.get("/eligibility").status_code == 302
 
 
-@pytest.mark.xfail(reason="Admin dashboard is not built yet (Tasya, #27): /admin/dashboard returns 404.")
 def test_administrator_dashboard_exists(seeded):
     admin = login(seeded.test_client(), "admin@example.test", ADMIN_PASSWORD)
     assert admin.get("/admin/dashboard").status_code == 200
 
 
-@pytest.mark.xfail(reason="Audit log is not built yet (Tasya, #28): /admin/audit-logs returns 404.")
 def test_administrator_can_read_the_audit_log(seeded):
     admin = login(seeded.test_client(), "admin@example.test", ADMIN_PASSWORD)
     assert admin.get("/admin/audit-logs").status_code == 200
@@ -259,8 +288,6 @@ def test_upload_refuses_an_unknown_document_type(seeded):
     assert response.status_code == 400
 
 
-@pytest.mark.xfail(reason="The profile page has no exam-details form yet (Varun): candidates can only enter "
-                          "exam details through PUT /accounts/exam-details, not in the browser (demo step 3).")
 def test_profile_page_has_an_exam_details_form(seeded):
     client = seeded.test_client()
     client.post("/accounts/register", json=CANDIDATE)
