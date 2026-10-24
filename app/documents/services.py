@@ -19,13 +19,12 @@ def save_document(upload, candidate_id, application_id, document_type):
     if not candidate_id or not application_id:
         raise ValueError("Candidate and application are required.")
 
-    if not isinstance(document_type, str):
-        raise ValueError("A valid document type is required.")
-
-    document_type = document_type.strip()
-
-    if not document_type or len(document_type) > 80:
-        raise ValueError("A valid document type is required.")
+    if isinstance(document_type, str):
+        document_type = document_type.strip()
+    if document_type not in REQUIRED_DOCUMENT_TYPES:
+        raise ValueError(
+            "Invalid document type. Choose Marksheet, ID Proof or Category Certificate."
+        )
 
     content, extension = validate_upload(upload)
 
