@@ -34,6 +34,7 @@ def test_candidate_sees_catalogue_eligibility_and_own_pages(app):
     for expected in ("/application", "/documents", "/colleges", "/eligibility"):
         assert expected in links
     assert "/admin/documents" not in links and "/admin/colleges" not in links
+    assert "/admin/dashboard" not in links and "/admin/audit-logs" not in links
 
 
 def test_administrator_review_link_opens_the_page_not_the_json(app):
@@ -41,4 +42,5 @@ def test_administrator_review_link_opens_the_page_not_the_json(app):
     assert "/admin/documents" in links
     assert "/admin/documents.json" not in links
     assert "/admin/colleges" in links
+    assert "/admin/dashboard" in links and "/admin/audit-logs" in links
     assert "/application" not in links
