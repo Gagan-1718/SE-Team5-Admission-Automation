@@ -23,7 +23,7 @@ from app.extensions import db
 from app.documents.models import Document
 from app.documents.access import admin_required
 from app.documents.services import (
-    save_document, review_document, ReviewConflict,
+    REQUIRED_DOCUMENT_TYPES, save_document, review_document, ReviewConflict,
     resubmit_document, ResubmissionConflict,
 )
 
@@ -87,6 +87,7 @@ def upload():
 
     return render_template(
         "documents/upload.html",
+        document_types=REQUIRED_DOCUMENT_TYPES,
         csrf_token=session["document_upload_token"],
         error=error,
         success=success,
@@ -111,7 +112,7 @@ def document_json(document):
 
 
 @bp.get("/admin/documents")
-@bp.get("/admin/documents.json")
+@bp.get("/admin/documents.json", endpoint="review_queue_json")
 @admin_required
 def review_queue():
     status = request.args.get("status", "Pending")

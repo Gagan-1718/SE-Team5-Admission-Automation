@@ -7,6 +7,10 @@ from .setup_check import seed as seed_setup_check
 
 
 def register_commands(app):
+    from .documents.migrations import register_commands as register_document_commands
+
+    register_document_commands(app)
+
     @app.cli.command("init-db")
     @click.option("--reset", is_flag=True, help="Drop all tables first (local development data is lost).")
     def init_db(reset):

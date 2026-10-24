@@ -234,16 +234,15 @@ def test_administrator_can_read_the_audit_log(seeded):
     assert admin.get("/admin/audit-logs").status_code == 200
 
 
-@pytest.mark.xfail(reason="Documents are not linked to users and applications in the database yet (Dikshith): "
-                          "documents.candidate_id must be a foreign key to users.id.")
 def test_documents_candidate_id_is_a_foreign_key(seeded):
     from sqlalchemy import inspect
     foreign_keys = inspect(db.engine).get_foreign_keys("documents")
-    assert any(fk["referred_table"] == "users" for fk in foreign_keys)
+    links = {(tuple(fk["constrained_columns"]), fk["referred_table"],
+              tuple(fk["referred_columns"])) for fk in foreign_keys}
+    assert (("candidate_id",), "users", ("id",)) in links
+    assert (("application_id",), "applications", ("id",)) in links
 
 
-@pytest.mark.xfail(reason="all_documents_approved(candidate_id) and REQUIRED_DOCUMENT_TYPES are not in "
-                          "app/documents/services.py yet (Dikshith). Eligibility (Tasya) needs them.")
 def test_documents_module_exposes_the_agreed_interface(seeded):
     from app.documents import services
     assert set(services.REQUIRED_DOCUMENT_TYPES) == REQUIRED_TYPES
@@ -251,8 +250,6 @@ def test_documents_module_exposes_the_agreed_interface(seeded):
         assert services.all_documents_approved(999) is False
 
 
-@pytest.mark.xfail(reason="The upload accepts any document type text (Dikshith); it should accept only "
-                          "Marksheet, ID Proof and Category Certificate.")
 def test_upload_refuses_an_unknown_document_type(seeded):
     candidate = new_candidate(seeded)
     submit_application(candidate)

@@ -32,6 +32,7 @@ def test_counts_match_the_data(app, admin):
     db.session.add(Application(candidate_id=first.user_id, status="Draft"))
     db.session.add(Application(candidate_id=second.user_id, status="Submitted",
                                reference_number="ADM-2026-000002"))
+    db.session.commit()
     for number, (status, kind) in enumerate(
             [("Pending", "Marksheet"), ("Pending", "ID Proof"), ("Approved", "Category Certificate"),
              ("Rejected", "Marksheet")], start=1):

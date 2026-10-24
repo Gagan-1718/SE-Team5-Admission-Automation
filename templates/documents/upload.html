@@ -25,14 +25,12 @@
 
   <p>
     <label for="document_type">Document type</label>
-    <input
-      id="document_type"
-      name="document_type"
-      type="text"
-      maxlength="80"
-      placeholder="For example: marksheet"
-      required
-    >
+    <select id="document_type" name="document_type" required>
+      <option value="">Choose a document type</option>
+      {% for document_type in document_types %}
+      <option value="{{ document_type }}">{{ document_type }}</option>
+      {% endfor %}
+    </select>
   </p>
 
   <p>

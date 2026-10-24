@@ -149,3 +149,30 @@ or is printed by the seed command; seeding does not reset an existing password.
 Never reset the database to test integration.
 
 See ADM_F_008_VERIFICATION.md for test coverage and outstanding team integration.
+
+
+## Document integrity upgrade (24 October 2026)
+
+New databases include foreign keys from documents.candidate_id to users.id and
+documents.application_id to applications.id. The upload page offers only
+Marksheet, ID Proof and Category Certificate; the server rejects other types
+before creating metadata or saving a file. Existing legacy document types are
+preserved by the migration and are not silently renamed.
+
+For an existing local SQLite database, stop the server and back up its database
+and uploads first. If DATABASE_URL is set, back up that database instead of the
+default instance/team5_admission.db. Keep backups outside Git.
+
+Then run from the repository root:
+
+~~~powershell
+.\.venv\Scripts\python.exe -m flask --app app upgrade-document-references
+~~~
+
+This command preserves document IDs, metadata and upload files and is safe to
+repeat. It stops without changing rows if a document references a missing user
+or application. Repair those references before retrying; do not reset the database.
+init-db alone does not alter tables that already exist. This upgrade has been
+tested on temporary databases; it has not been applied to your personal database.
+
+See docs/evidence/dikshith.md for executed TC-006/007/008/022 checks.

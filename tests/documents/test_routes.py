@@ -59,7 +59,7 @@ def test_valid_upload_saves_document(app, demo_client):
         "/documents/upload",
         data={
             "csrf_token": token,
-            "document_type": "marksheet",
+            "document_type": "Marksheet",
             "file": (pdf_stream(), "sample.pdf"),
         },
         follow_redirects=True,
@@ -84,7 +84,7 @@ def test_invalid_file_is_rejected(app, demo_client):
         "/documents/upload",
         data={
             "csrf_token": token,
-            "document_type": "marksheet",
+            "document_type": "Marksheet",
             "file": (pdf_stream(), "sample.exe"),
         },
     )
@@ -100,7 +100,7 @@ def test_missing_form_token_is_rejected(demo_client):
     response = demo_client.post(
         "/documents/upload",
         data={
-            "document_type": "marksheet",
+            "document_type": "Marksheet",
             "file": (pdf_stream(), "sample.pdf"),
         },
     )
@@ -115,3 +115,41 @@ def test_authenticated_nonlocal_access_is_allowed(demo_client):
     )
 
     assert response.status_code == 200
+
+def test_upload_form_offers_only_the_allowed_types(demo_client):
+    from html.parser import HTMLParser
+
+    class DocumentOptions(HTMLParser):
+        def __init__(self):
+            super().__init__()
+            self.in_document_select = False
+            self.values = []
+
+        def handle_starttag(self, tag, attrs):
+            attrs = dict(attrs)
+            if tag == "select" and attrs.get("name") == "document_type":
+                self.in_document_select = True
+            if tag == "option" and self.in_document_select and attrs.get("value"):
+                self.values.append(attrs["value"])
+
+        def handle_endtag(self, tag):
+            if tag == "select":
+                self.in_document_select = False
+
+    parser = DocumentOptions()
+    parser.feed(demo_client.get("/documents/upload").get_data(as_text=True))
+    assert parser.values == ["Marksheet", "ID Proof", "Category Certificate"]
+
+
+@pytest.mark.parametrize("document_type", ["Holiday Photo", "marksheet", "", "Transcript"])
+def test_forged_document_type_is_rejected_without_saving(app, demo_client, document_type):
+    from pathlib import Path
+    token = form_token(demo_client)
+    response = demo_client.post("/documents/upload", data={
+        "csrf_token": token, "document_type": document_type,
+        "file": (pdf_stream(), "sample.pdf"),
+    })
+    assert response.status_code == 400
+    assert b"Choose Marksheet, ID Proof or Category Certificate" in response.data
+    assert db.session.execute(db.select(db.func.count(Document.id))).scalar_one() == 0
+    assert not Path(app.config["DOCUMENT_UPLOAD_DIR"]).exists()

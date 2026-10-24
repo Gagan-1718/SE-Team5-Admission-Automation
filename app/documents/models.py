@@ -8,9 +8,12 @@ class Document(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
 
-    # No cross-module foreign keys until the team integrates its models.
-    candidate_id = db.Column(db.Integer, nullable=False, index=True)
-    application_id = db.Column(db.Integer, nullable=False, index=True)
+    candidate_id = db.Column(
+        db.Integer, db.ForeignKey("users.id"), nullable=False, index=True
+    )
+    application_id = db.Column(
+        db.Integer, db.ForeignKey("applications.id"), nullable=False, index=True
+    )
 
     document_type = db.Column(db.String(80), nullable=False)
     stored_name = db.Column(db.String(255), nullable=False, unique=True)
