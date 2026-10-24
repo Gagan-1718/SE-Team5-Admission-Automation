@@ -121,7 +121,45 @@ body:has(.auth-layout) main.container {
 }
 .auth-switch a { color: var(--accounts-accent); font-weight: 750; }
 
+.profile-layout {
+  display: grid;
+  gap: 1.25rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.profile-card {
+  background: var(--accounts-card);
+  border: 1px solid var(--accounts-line);
+  border-radius: 18px;
+  box-shadow: 0 18px 45px rgb(25 65 105 / 10%);
+  padding: clamp(1.35rem, 3vw, 2rem);
+}
+.profile-card h1,
+.profile-card h2 { color: var(--accounts-brand-dark); margin-top: 0.45rem; }
+.profile-intro { color: var(--accounts-muted); }
+.profile-form { display: grid; gap: 1rem; }
+.profile-field { display: grid; gap: 0.4rem; }
+.profile-field label { color: var(--accounts-ink); font-weight: 700; }
+.profile-field input,
+.profile-field select {
+  width: 100%;
+  min-height: 2.8rem;
+  border: 1px solid #b9cadb;
+  border-radius: 9px;
+  background: #fbfdff;
+  color: var(--accounts-ink);
+  font: inherit;
+  padding: 0.65rem 0.8rem;
+}
+.profile-field input:focus,
+.profile-field select:focus {
+  border-color: var(--accounts-accent);
+  outline: 3px solid rgb(45 120 184 / 20%);
+  box-shadow: 0 0 0 1px var(--accounts-accent);
+}
+.profile-form .primary-button:disabled { cursor: wait; opacity: 0.7; }
+
 @media (max-width: 560px) {
   body:has(.auth-layout) main.container { padding-top: 1.5rem; }
   .auth-card { border-radius: 14px; padding: 1.35rem; }
+  .profile-layout { grid-template-columns: 1fr; }
 }
