@@ -136,7 +136,12 @@ def test_anonymous_requests_are_denied_on_discovered_protected_routes(client):
         ("get", "/documents/upload", 302),
         ("get", "/documents", 302),
         ("post", "/documents/1/resubmit", 302),
+        ("get", "/eligibility", 302),
+        ("get", "/api/v1/candidates/me/eligibility", 401),
+        ("get", "/admin/colleges", 401),
         ("get", "/admin/documents", 401),
+        ("get", "/admin/dashboard", 401),
+        ("get", "/admin/audit-logs", 401),
     ]
 
     for method, path, expected_status in protected_requests:
@@ -144,22 +149,36 @@ def test_anonymous_requests_are_denied_on_discovered_protected_routes(client):
         assert response.status_code == expected_status, f"{method.upper()} {path}"
 
 
-def test_logout_invalidates_old_cookie_for_known_eligibility_path(client):
-    # Eligibility has no routes yet; this records the owner gap without changing it.
-    assert client.get("/eligibility").status_code == 404
+def test_logout_invalidates_old_cookie_on_eligibility_api(app):
+    client = app.test_client()
+    payload, _ = register(client, "A")
+    login(client, payload)
+    old_cookie = client.get_cookie("team5_session").value
+
+    assert client.post("/accounts/logout").status_code == 204
+
+    stale = app.test_client()
+    stale.set_cookie("team5_session", old_cookie)
+    response = stale.get("/api/v1/candidates/me/eligibility")
+    assert response.status_code == 401
 
 
-def test_candidate_is_forbidden_on_admin_route_and_missing_admin_routes_are_reported(
-    app, monkeypatch
-):
+def test_anonymous_and_candidate_admin_authorization(app, client, monkeypatch):
     seed_admin(app, monkeypatch)
+    admin_paths = (
+        "/admin/colleges",
+        "/admin/documents",
+        "/admin/dashboard",
+        "/admin/audit-logs",
+    )
+    for path in admin_paths:
+        assert client.get(path).status_code == 401
+
     candidate = app.test_client()
     payload, _ = register(candidate, "A")
     login(candidate, payload)
-
-    assert candidate.get("/admin/documents").status_code == 403
-    for missing_route in ("/admin/colleges", "/admin/dashboard", "/admin/audit-logs"):
-        assert candidate.get(missing_route).status_code == 404
+    for path in admin_paths:
+        assert candidate.get(path).status_code == 403
 
     administrator = app.test_client()
     administrator.post(
@@ -167,6 +186,9 @@ def test_candidate_is_forbidden_on_admin_route_and_missing_admin_routes_are_repo
         json={"identifier": "admin@example.test", "password": ADMIN_PASSWORD},
     )
     assert administrator.get("/admin/documents").status_code == 200
+    assert administrator.get("/admin/colleges").status_code == 200
+    assert administrator.get("/admin/dashboard").status_code == 200
+    assert administrator.get("/admin/audit-logs").status_code == 200
 
 
 def test_duplicate_email_and_mobile_are_rejected(client):
