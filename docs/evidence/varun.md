@@ -18,3 +18,11 @@ Full-suite command: `python -m pytest -q` — FAIL, 2 failed, 244 passed, 1 skip
 Python 3.12 was not available; the available interpreter was Python 3.11.9.
 
 Integration blockers observed during route inspection: the required `/api/v1/candidates/me/eligibility` endpoint is not protected/present on this branch and returns 404; `/admin/colleges` is not present locally and returns 404 instead of the required anonymous 401. `/admin/dashboard` is also not present locally. `app/catalogue/routes.py` and `app/eligibility/routes.py` were not edited. `/admin/documents` is implemented by the Documents module and remains covered.
+
+## Corrected run after merging the latest `origin/main`
+
+The earlier failures above were caused by running the tests before the Eligibility, Catalogue, Admin, and Audit route merges. After a normal merge of `origin/main`, the corrected tests used the available routes:
+
+- `python -m pytest -q tests/accounts/test_integration.py` — PASS, 7 passed in 4.74s.
+- `python -m pytest -q` — PASS, 384 passed, 1 skipped, 3 xfailed, 7 xpassed in 175.19s.
+- Python 3.12 was unavailable locally; Python 3.11.9 was used.
