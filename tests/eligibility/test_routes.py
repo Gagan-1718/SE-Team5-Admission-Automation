@@ -5,6 +5,7 @@ import re
 import pytest
 
 from app.accounts.models import ExamRecord, User
+from app.application.models import Application
 from app.documents.models import Document
 from app.eligibility import services
 from app.eligibility.seed import seed
@@ -32,8 +33,12 @@ def _documents(monkeypatch, approved):
 
 
 def _upload(candidate_id, status, kinds=("Marksheet", "ID Proof", "Category Certificate")):
+    application = Application(candidate_id=candidate_id, status="Submitted",
+                              reference_number=f"ADM-ELIGIBILITY-{candidate_id}")
+    db.session.add(application)
+    db.session.commit()
     for kind in kinds:
-        db.session.add(Document(candidate_id=candidate_id, application_id=1, document_type=kind,
+        db.session.add(Document(candidate_id=candidate_id, application_id=application.id, document_type=kind,
                                 stored_name=f"{candidate_id}-{kind}-{status}.pdf", status=status))
     db.session.commit()
 

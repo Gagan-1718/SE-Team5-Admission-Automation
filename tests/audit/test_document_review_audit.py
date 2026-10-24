@@ -2,6 +2,7 @@
 import pytest
 
 from app.audit.models import AuditLog
+from app.application.models import Application
 from app.documents.models import Document
 from app.extensions import db
 from tests.catalogue.helpers import login_client
@@ -9,7 +10,12 @@ from tests.catalogue.helpers import login_client
 
 @pytest.fixture
 def document(app):
-    item = Document(candidate_id=77, application_id=1, document_type="Marksheet",
+    candidate = login_client(app, "candidate", 77)
+    application = Application(candidate_id=candidate.user_id, status="Submitted",
+                              reference_number="ADM-AUDIT-TEST")
+    db.session.add(application)
+    db.session.commit()
+    item = Document(candidate_id=candidate.user_id, application_id=application.id, document_type="Marksheet",
                     stored_name="audit-review.pdf", status="Pending")
     db.session.add(item)
     db.session.commit()
