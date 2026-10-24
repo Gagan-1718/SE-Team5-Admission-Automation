@@ -45,12 +45,14 @@ rejection, candidate resubmission and administrator approval, then verifies logo
 revokes access. Final execution of the updated suite is pending: the agent's
 terminal could not access the venv's installed Python runtime.
 
-## Remaining team integration
+## Sprint One wrap-up (24 October 2026)
 
-Catalogue, eligibility, dashboard and audit contain placeholders in this checkout.
-Their shared services are not yet available for document audit/eligibility events.
-The documents table still uses integer links without database foreign keys;
-route-level ownership/application checks are enforced, but an agreed migration
-and existing-data validation remain necessary for database-level constraints.
-No existing database or uploaded files were migrated or reset during this change.
-Repeat browser acceptance checks with real candidate and administrator accounts.
+Main now provides catalogue, eligibility, dashboard and audit services. Document
+reviews are audited and eligibility uses all_documents_approved(candidate_id).
+
+The local wrap-up adds both document foreign keys and limits new uploads to the
+three agreed types. Existing databases need the explicit upgrade-document-references
+command documented in README.md. No personal database or upload was migrated or reset.
+
+See docs/evidence/dikshith.md for current executed test evidence. Repeat browser
+acceptance checks after applying the upgrade to a backed-up local database.
