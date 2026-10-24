@@ -8,10 +8,14 @@ Admin:      GET  /admin/colleges                all colleges, branches and seat 
             GET/POST /admin/branches/<id>/edit  rename a branch
             GET/POST /admin/branches/<id>/seats category-wise seat capacity
 
+Every successful admin change is written to the audit log (app.audit).
+Admin pages need the administrator role: 401 anonymous, 403 candidate.
+
 Discovered automatically by app/__init__.py (blueprint named ``bp``).
 """
 from flask import Blueprint, flash, redirect, render_template, request, url_for
 
+from app.audit.services import record_admin_action
 from app.extensions import db
 
 from .access import admin_required
@@ -76,6 +80,7 @@ def college_new():
             return render_template(
                 "catalogue/college_form.html", college=None, form=form, error=str(exc)
             ), _error_status(exc)
+        record_admin_action("college.create", "college", college.id)
         flash(f"College '{college.name}' added.")
         return redirect(url_for("catalogue.admin_index"))
     return render_template("catalogue/college_form.html", college=None, form=form, error=None)
@@ -95,6 +100,7 @@ def college_edit(college_id):
             return render_template(
                 "catalogue/college_form.html", college=college, form=form, error=str(exc)
             ), _error_status(exc)
+        record_admin_action("college.update", "college", college.id)
         flash(f"College '{college.name}' updated.")
         return redirect(url_for("catalogue.admin_index"))
     return render_template("catalogue/college_form.html", college=college, form=form, error=None)
@@ -113,6 +119,7 @@ def branch_new(college_id):
             return render_template(
                 "catalogue/branch_form.html", college=college, branch=None, form=form, error=str(exc)
             ), _error_status(exc)
+        record_admin_action("branch.create", "branch", branch.id)
         flash(f"Branch '{branch.name}' added to {college.name}. Now set its seat capacity.")
         return redirect(url_for("catalogue.seats_edit", branch_id=branch.id))
     return render_template(
@@ -138,6 +145,7 @@ def branch_edit(branch_id):
                 form=form,
                 error=str(exc),
             ), _error_status(exc)
+        record_admin_action("branch.update", "branch", branch.id)
         flash(f"Branch '{branch.name}' updated.")
         return redirect(url_for("catalogue.admin_index"))
     return render_template(
@@ -170,6 +178,7 @@ def seats_edit(branch_id):
                 values=values,
                 error=str(exc),
             ), _error_status(exc)
+        record_admin_action("seats.update", "branch", branch.id)
         flash(f"Seat capacity saved for {branch.name}.")
         return redirect(url_for("catalogue.admin_index"))
     return render_template(
