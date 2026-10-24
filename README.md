@@ -6,7 +6,7 @@ Start with SPRINT_ONE_START_HERE.md for responsibilities and the proposed Octobe
 
 ## Status
 
-Merged into `main`: shared Flask foundation, accounts (registration, login, roles, seeded exam details), application draft and submission, documents (upload, administrator review, resubmission), the college catalogue, eligibility rules, HTTPS and a CI check. Eligibility still runs on sample inputs, and the audit log, the admin dashboard and some links between modules are not finished. **`python -m pytest -q tests/integration/test_demo_flow.py -rx` is the live checklist:** the passing test is the working demo flow, and every item listed as XFAIL says what is still missing and who owns it. Acceptance tests TC-001 to TC-030 are only marked passed in `docs/evidence/` after they were actually run.
+Sprint One is complete on `main`: shared Flask foundation, accounts (registration, login, roles, seeded exam details with a profile form), application draft and submission, documents (upload of three required types, administrator review, resubmission, database links to users and applications), the college catalogue with administrator management, eligibility on the real exam details and document approvals, the administrator dashboard, an append-only audit log, HTTPS and a CI check. **`python -m pytest -q` is the regression check, and `tests/integration/test_demo_flow.py` runs the whole demonstration.** Known gaps and every difference from the submitted documents are in `docs/DEVIATIONS.md` (for example no CSRF token on most forms yet). Test evidence for each owner is in `docs/evidence/`; a test case is only marked passed there after it was actually run. Sprint Two (choices, allotment, results) has not started.
 
 ### Application module (draft and submission, issues #2 and #3)
 
@@ -80,7 +80,11 @@ Exam details a candidate can enter (only these exact combinations exist; anythin
 | COMEDK | 800 | General | 190.0 |
 | COMEDK | 6000 | OBC | 155.0 |
 
-Flow: register at `/accounts/register`, log in, enter the exam details (the profile page has no exam-details form yet, so for now send `PUT /accounts/exam-details` with `exam_type`, `rank`, `category` and `score`; the form is being added), open `/application` and save a draft, log out and in again (the draft is still there), submit (you get a reference such as `ADM-2026-000001`), upload the three documents (Marksheet, ID Proof, Category Certificate; PDF, JPEG or PNG up to 2 MB), then log in as the administrator at `/admin/documents` to approve, or reject with a reason. The candidate sees the reason on `/documents` and can resubmit. Candidates browse colleges at `/colleges`.
+Flow: register at `/accounts/register`, log in, enter the exam details on the profile page, open `/application` and save a draft, log out and in again (the draft is still there), submit (you get a reference such as `ADM-2026-000001`), upload the three documents (Marksheet, ID Proof, Category Certificate; PDF, JPEG or PNG up to 2 MB), then log in as the administrator at `/admin/documents` to approve, or reject with a reason. The candidate sees the reason on `/documents` and can resubmit. Candidates browse colleges at `/colleges`.
+
+### Recording the demo video
+
+`python scripts/prepare_demo.py --yes --with-candidate` resets your local database to a known demo state (administrator, seed data, one ready candidate; passwords come from `ADMIN_SEED_PASSWORD` and `DEMO_CANDIDATE_PASSWORD`). The step-by-step script, the data to type, the sample files (`docs/demo/sample_files/`) and a ready prompt for an AI recording agent are in `docs/demo/VIDEO_SCRIPT.md`. The finished video is kept in `docs/video/`.
 
 ## Database commands
 
