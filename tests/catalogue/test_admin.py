@@ -222,3 +222,59 @@ def test_new_record_appears_for_candidates_immediately(admin_access, client):
     assert b"Test College One" in page.data
     assert b"Civil Engineering" in page.data
     assert b"12 / 12" in page.data
+
+def catalogue_snapshot():
+    return {
+        model.__tablename__: [
+            tuple(getattr(row, column.name) for column in model.__table__.columns)
+            for row in db.session.execute(db.select(model).order_by(model.id)).scalars()
+        ]
+        for model in (College, Branch, Seat)
+    }
+
+
+@pytest.mark.parametrize("role,expected", [(None, 401), ("candidate", 403)])
+def test_all_admin_routes_deny_unauthorized_users_without_changes(seeded, role, expected):
+    client = login_client(seeded, role, 2) if role else seeded.test_client()
+    # The obsolete development hook must never bypass the real session check.
+    seeded.config["CATALOGUE_ADMIN_GUARD"] = lambda: True
+    college = get_college(MERIDIAN)
+    branch = get_branch(MERIDIAN, CSE)
+    paths = [
+        ("/admin/colleges/new", {"name": "Unauthorized College"}),
+        (f"/admin/colleges/{college.id}/edit", {"name": "Unauthorized Rename"}),
+        (f"/admin/colleges/{college.id}/branches/new", {"name": "Unauthorized Branch"}),
+        (f"/admin/branches/{branch.id}/edit", {"name": "Unauthorized Rename"}),
+        (f"/admin/branches/{branch.id}/seats", {"General": "99"}),
+    ]
+    before = catalogue_snapshot()
+    assert client.get("/admin/colleges").status_code == expected
+    for path, data in paths:
+        assert client.get(path).status_code == expected
+        assert client.post(path, data=data).status_code == expected
+        assert client.post(path, json=data).status_code == expected
+    db.session.expire_all()
+    assert catalogue_snapshot() == before
+    assert client.get("/colleges").status_code == 200
+
+
+def test_real_admin_can_open_all_pages_without_development_guard(seeded, admin_access, client):
+    seeded.config.pop("CATALOGUE_ADMIN_GUARD", None)
+    college = get_college(MERIDIAN)
+    branch = get_branch(MERIDIAN, CSE)
+    for path in (
+        "/admin/colleges", "/admin/colleges/new",
+        f"/admin/colleges/{college.id}/edit",
+        f"/admin/colleges/{college.id}/branches/new",
+        f"/admin/branches/{branch.id}/edit",
+        f"/admin/branches/{branch.id}/seats",
+    ):
+        assert client.get(path).status_code == 200
+
+
+def test_logout_revokes_catalogue_admin_access(admin_access, client):
+    assert client.get("/admin/colleges").status_code == 200
+    assert client.post("/accounts/logout").status_code == 204
+    assert client.get("/admin/colleges").status_code == 401
+    assert client.post("/admin/colleges/new", data={"name": "Denied"}).status_code == 401
+    assert count(College) == 0
