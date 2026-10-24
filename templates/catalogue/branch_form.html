@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Rename branch' if branch else 'Add branch' }}{% endblock %}
+{% block content %}
+{% include "catalogue/_styles.html" %}
+<section class="card">
+  <h1>{{ 'Rename branch' if branch else 'Add branch' }}</h1>
+  <p class="note">College: {{ college.name }}</p>
+  {% include "catalogue/_messages.html" %}
+  <form method="post" class="cat-form">
+    <label for="name">Branch name</label>
+    <input type="text" id="name" name="name" value="{{ form.name }}" maxlength="120" required>
+    <p>
+      <button class="button" type="submit">Save branch</button>
+      <a href="{{ url_for('catalogue.admin_index') }}">Cancel</a>
+    </p>
+  </form>
+</section>
+{% endblock %}

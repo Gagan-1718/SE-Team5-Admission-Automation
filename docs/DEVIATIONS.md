@@ -1,6 +1,6 @@
 # Deviations from the submitted SRS, SAD and Test Plan
 
-Status date: **20 October 2026** (Sprint One, day 2). This file records every place where the product differs from the documents we submitted, why, and what we will say in the final demo. The SRS stays authoritative: **no functional or security requirement was dropped or changed**; the differences below are design and implementation choices. Items marked *Pending* will be completed when the owner's module is merged.
+Status date: **21 October 2026** (Sprint One, day 3). This file records every place where the product differs from the documents we submitted, why, and what we will say in the final demo. The SRS stays authoritative: **no functional or security requirement was dropped or changed**; the differences below are design and implementation choices. Items in section 3 are not finished yet; `python -m pytest -q tests/integration/test_demo_flow.py -rx` lists them as expected failures with the reason.
 
 ## 1. Technology (documented earlier)
 
@@ -25,15 +25,21 @@ Status date: **20 October 2026** (Sprint One, day 2). This file records every pl
 | D-10 | HTTPS | HTTPS/TLS with a locally generated certificate acceptable (A-16) | Cheroot server with a self-signed certificate for `localhost`, TLS 1.2 or newer, HTTP redirects to HTTPS, HSTS header. Run with `python scripts/serve_https.py`. | A-16. | Lab setup only, not an internet deployment. Browsers show "Not secure" because the certificate is self-signed. |
 | D-11 | Administrator account | Created by a seed script (A-05) | As designed, with the password read from the `ADMIN_SEED_PASSWORD` environment variable (or generated and printed once); never stored in Git | (no deviation) | Meets the "no secrets in Git" rule. |
 | D-12 | Candidate pages | HTML5, CSS/Bootstrap, minimal JavaScript | Jinja pages with plain CSS (no Bootstrap); the account pages call the JSON API with JavaScript | Fewer external dependencies. | Same screens as SAD 4.5. |
+| D-13 | Document endpoints | `POST /documents`, `GET /documents`, `PUT /documents/{id}`, `GET /admin/documents?status=Pending`, `PUT /admin/documents/{id}/review` | `GET/POST /documents/upload`, `GET /documents`, `POST /documents/<id>/resubmit`, `GET /admin/documents` and `/admin/documents.json`, `POST /admin/documents/<id>/review`, `GET /admin/documents/<id>/file`. Upload, resubmission and review forms carry a form token. Uploads are stored in `instance/uploads/` under random names; PDF and image contents are checked, not just the extension. | HTML forms use POST; the file view and the content checks were added for safety. | Same behaviour as SAD 4.3.3 (415 and 413 become a form error with 400). This also partly answers D-03: the document forms have a CSRF token. |
+| D-14 | Catalogue endpoints | `GET /colleges?search=`, `POST/PUT /admin/colleges`, `/admin/colleges/{id}/branches`, `/admin/seat-matrix` (JSON) | `GET /colleges` with filters `q` and `college_id`; admin pages `/admin/colleges`, `/admin/colleges/new`, `/admin/colleges/<id>/edit`, `/admin/colleges/<id>/branches/new`, `/admin/branches/<id>/edit`, `/admin/branches/<id>/seats` (HTML forms). Duplicates return 409 and invalid capacity 422. Seat categories: General, OBC, SC, ST, EWS. | Server-rendered admin screens fit the Flask design. | Same rules as ADM-F-010 and ADM-F-011. The admin guard denies by default and still has to be connected to the administrator login. |
+| D-15 | Eligibility | Rules as editable data, status with reason (ADM-F-009) | Pure decision function with `eligibility_rules` rows (category, cut-off rank, active). Order: Pending while documents are not all approved, Not Eligible if the rank is above the cut-off or no rule exists, otherwise Eligible. Cut-offs are fictional sample data. | SAD A-08 and A-06. | Rules are data, not code. Not yet connected to the real exam details and documents (section 3). |
 
-## 3. Pending: will be completed or documented when merged
+## 3. Not finished yet (status 21 October 2026)
 
-| # | Area | What to confirm |
-|---|---|---|
-| P-01 | Documents module (Dikshith) | Final endpoint paths versus SAD 4.3.3; document type list (Marksheet, ID Proof, Category Certificate, proposed); resubmission replaces the stored file and resets to Pending. |
-| P-02 | Catalogue (Tasya) | Endpoint paths versus SAD 4.3.4; seat categories General, OBC, SC, ST, EWS. |
-| P-03 | Eligibility, audit log, admin dashboard (Tasya) | Cut-off rules are fictional sample data (rank limits per category), editable data, not hard-coded. Audit log: append-only through database triggers, as in SAD A-17. |
-| P-04 | Test evidence | Results recorded in `docs/evidence/` by each owner. A test case is only marked passed after it was run. |
+| # | Area | What is missing | Owner |
+|---|---|---|---|
+| P-01 | Candidate exam details in the browser | The API `PUT /accounts/exam-details` works, but the profile page has no exam-details form yet. | Varun |
+| P-02 | `all_documents_approved(candidate_id)` and the required document types | Not in `app/documents/services.py` yet; the upload accepts any document type text instead of only Marksheet, ID Proof and Category Certificate (proposed). Documents are not yet linked to users and applications by foreign keys, and review actions do not write audit entries. | Dikshith |
+| P-03 | Eligibility connection | Eligibility still uses sample inputs (rank 1000, General) and its pages are not login-protected. It must read the real exam details and the document approval status. | Tasya |
+| P-04 | Catalogue admin access | The admin pages deny everyone because the guard is not connected to the administrator login yet. | Tasya |
+| P-05 | Audit log and admin dashboard (SEC-F-005, ADM-F-020) | Not built yet. The audit log will be append-only through database triggers, as in SAD A-17. | Tasya |
+| P-06 | CSRF protection | Not on the accounts, application, catalogue and eligibility forms (only the document forms have a token). Planned for Sprint Two. | Team |
+| P-07 | Test evidence | Results are recorded in `docs/evidence/` by each owner. A test case is only marked passed after it was run. | Everyone |
 
 ## 4. Out of Sprint One scope (by design, Sprint Two)
 

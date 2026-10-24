@@ -21,8 +21,12 @@
       <a href="{{ url_for('accounts.profile_page') }}">My profile</a>
       <a href="{{ url_for('application.draft_form') }}">My application</a>
       <a href="{{ url_for('documents.status_page') }}">My documents</a>
+      <a href="/colleges">Colleges</a>
+      <a href="/eligibility">Eligibility</a>
       {% elif g.current_user.role == 'administrator' %}
-      <a href="{{ url_for('documents.review_queue') }}">Review documents</a>
+      {# literal path: that view has two routes and url_for would pick the raw JSON one #}
+      <a href="/admin/documents">Review documents</a>
+      <a href="/admin/colleges">Manage colleges</a>
       {% endif %}
       <button type="button" id="logout-button">Log out</button>
       <script>

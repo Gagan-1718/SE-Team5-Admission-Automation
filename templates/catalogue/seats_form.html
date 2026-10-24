@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Seat capacity{% endblock %}
+{% block content %}
+{% include "catalogue/_styles.html" %}
+<section class="card">
+  <h1>Seat capacity</h1>
+  <p class="note">{{ branch.college.name }} &middot; {{ branch.name }}</p>
+  {% include "catalogue/_messages.html" %}
+  <form method="post" class="cat-form">
+    <table class="cat-table">
+      <thead><tr><th>Category</th><th class="num">Capacity</th><th class="num">Filled</th></tr></thead>
+      <tbody>
+        {% for category in categories %}
+        {% set seat = branch.seat_for(category) %}
+        <tr>
+          <td><label for="seat-{{ category }}" style="margin:0">{{ category }}</label></td>
+          <td class="num">
+            <input type="number" id="seat-{{ category }}" name="{{ category }}" value="{{ values[category] }}" min="0" step="1" style="min-width:6rem">
+          </td>
+          <td class="num">{{ seat.filled if seat else 0 }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <p class="note">Leave a category blank to keep it unset. Capacity cannot be negative or below the filled seats.</p>
+    <p>
+      <button class="button" type="submit">Save seats</button>
+      <a href="{{ url_for('catalogue.admin_index') }}">Cancel</a>
+    </p>
+  </form>
+</section>
+{% endblock %}

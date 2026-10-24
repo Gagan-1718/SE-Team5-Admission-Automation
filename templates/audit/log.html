@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Audit log{% endblock %}
+{% block content %}
+{% include "catalogue/_styles.html" %}
+<section class="card">
+  <h1>Audit log</h1>
+  <p class="note">Read-only. Entries cannot be edited or deleted.</p>
+  <form class="cat-filter" method="get" action="/admin/audit-logs">
+    <div>
+      <label for="action_type">Action type</label>
+      <input type="text" id="action_type" name="action_type" value="{{ action_type }}" placeholder="e.g. college.create">
+    </div>
+    <button type="submit">Filter</button>
+  </form>
+  {% if entries %}
+  <table class="cat-table">
+    <thead><tr><th>#</th><th>Time (UTC)</th><th>Actor</th><th>Action</th><th>Target</th><th>Outcome</th></tr></thead>
+    <tbody>
+      {% for e in entries %}
+      <tr>
+        <td>{{ e.id }}</td>
+        <td>{{ e.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+        <td>{{ e.actor_role }} #{{ e.actor_id }}</td>
+        <td>{{ e.action_type }}</td>
+        <td>{% if e.target_type %}{{ e.target_type }} #{{ e.target_id }}{% else %}-{% endif %}</td>
+        <td>{{ e.outcome }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p>No audit entries yet.</p>
+  {% endif %}
+</section>
+{% endblock %}

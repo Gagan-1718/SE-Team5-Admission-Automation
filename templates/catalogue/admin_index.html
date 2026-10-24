@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Manage catalogue{% endblock %}
+{% block content %}
+{% include "catalogue/_styles.html" %}
+<section class="card">
+  <h1>Manage colleges, branches and seats</h1>
+  {% include "catalogue/_messages.html" %}
+  <p><a class="button" href="{{ url_for('catalogue.college_new') }}">Add college</a></p>
+
+  {% for college in colleges %}
+  <div class="cat-college">
+    <h2>{{ college.name }}{% if college.city %} <small class="note">&middot; {{ college.city }}</small>{% endif %}</h2>
+    <p class="cat-actions">
+      <a href="{{ url_for('catalogue.college_edit', college_id=college.id) }}">Edit college</a>
+      <a href="{{ url_for('catalogue.branch_new', college_id=college.id) }}">Add branch</a>
+    </p>
+    {% if college.branches %}
+    <table class="cat-table">
+      <thead>
+        <tr><th>Branch</th><th class="num">Total capacity</th><th class="num">Available</th><th>Actions</th></tr>
+      </thead>
+      <tbody>
+        {% for branch in college.branches %}
+        <tr>
+          <td>{{ branch.name }}</td>
+          <td class="num">{{ branch.seats_total }}</td>
+          <td class="num">{{ branch.seats_available }}</td>
+          <td class="cat-actions">
+            <a href="{{ url_for('catalogue.branch_edit', branch_id=branch.id) }}">Rename</a>
+            <a href="{{ url_for('catalogue.seats_edit', branch_id=branch.id) }}">Seats</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="note">No branches yet.</p>
+    {% endif %}
+  </div>
+  {% else %}
+  <p>No colleges yet. Add one, or run <code>flask --app app seed-db</code>.</p>
+  {% endfor %}
+</section>
+{% endblock %}
