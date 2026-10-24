@@ -1,27 +1,129 @@
 {% extends "base.html" %}
 {% block title %}Candidate profile{% endblock %}
 {% block content %}
-<h1>Candidate profile</h1>
-<form method="post" id="profile-form">
-  <label for="name">Name</label><input id="name" name="name" required>
-  <label for="email">Email</label><input id="email" name="email" type="email" readonly>
-  <label for="mobile">Mobile</label><input id="mobile" name="mobile" inputmode="numeric" required>
-  <button type="submit">Save profile</button>
-  <p id="message" role="alert"></p>
-</form>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/accounts.css') }}">
+<div class="profile-layout">
+  <section class="profile-card" aria-labelledby="profile-heading">
+    <div class="eyebrow">Candidate portal</div>
+    <h1 id="profile-heading">Candidate profile</h1>
+    <form method="post" id="profile-form" class="profile-form">
+      <div class="profile-field">
+        <label for="name">Name</label>
+        <input id="name" name="name" required>
+      </div>
+      <div class="profile-field">
+        <label for="email">Email</label>
+        <input id="email" name="email" type="email" readonly>
+      </div>
+      <div class="profile-field">
+        <label for="mobile">Mobile</label>
+        <input id="mobile" name="mobile" inputmode="numeric" required>
+      </div>
+      <button type="submit" class="primary-button">Save profile</button>
+      <p id="message" class="form-message" role="alert" aria-live="polite" hidden></p>
+    </form>
+  </section>
+
+  <section class="profile-card" aria-labelledby="exam-details-heading">
+    <div class="eyebrow">Admission record</div>
+    <h2 id="exam-details-heading">Exam details</h2>
+    <p class="profile-intro">Select the fictional exam record that matches your result.</p>
+    <form method="post" id="exam-details-form" class="profile-form">
+      <div class="profile-field">
+        <label for="exam_type">Exam type</label>
+        <select id="exam_type" name="exam_type" required>
+          {% for exam_type in exam_types %}
+            <option value="{{ exam_type }}">{{ exam_type }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="profile-field">
+        <label for="rank">Rank</label>
+        <input id="rank" name="rank" type="number" min="1" step="1" required>
+      </div>
+      <div class="profile-field">
+        <label for="category">Category</label>
+        <select id="category" name="category" required>
+          {% for category in categories %}
+            <option value="{{ category }}">{{ category }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="profile-field">
+        <label for="score">Score</label>
+        <input id="score" name="score" type="number" min="0" step="any" required>
+      </div>
+      <button type="submit" class="primary-button" id="save-exam-details">Save exam details</button>
+      <p id="exam-details-message" class="form-message" role="alert" aria-live="polite" hidden></p>
+    </form>
+  </section>
+</div>
 <script>
-const form = document.getElementById("profile-form");
-fetch("{{ url_for('accounts.profile') }}").then(response => response.json()).then(data => {
-  for (const field of ["name", "email", "mobile"]) form.elements[field].value = data[field] ?? "";
-});
-form.addEventListener("submit", async (event) => {
+const profileForm = document.getElementById("profile-form");
+const profileMessage = document.getElementById("message");
+const examForm = document.getElementById("exam-details-form");
+const examMessage = document.getElementById("exam-details-message");
+const examButton = document.getElementById("save-exam-details");
+
+function showMessage(element, message, kind, role = "status") {
+  element.textContent = message;
+  element.className = `form-message is-${kind}`;
+  element.setAttribute("role", role);
+  element.hidden = false;
+}
+
+fetch("{{ url_for('accounts.profile') }}")
+  .then(response => response.json())
+  .then(data => {
+    for (const field of ["name", "email", "mobile"]) {
+      profileForm.elements[field].value = data[field] ?? "";
+    }
+    if (data.rank != null) examForm.elements.rank.value = data.rank;
+    if (data.category) examForm.elements.category.value = data.category;
+  })
+  .catch(() => showMessage(profileMessage, "Unable to load your profile.", "error", "alert"));
+
+profileForm.addEventListener("submit", async (event) => {
   event.preventDefault();
-  const response = await fetch("{{ url_for('accounts.update_profile') }}", {
-    method: "PUT", headers: {"Content-Type": "application/json"},
-    body: JSON.stringify(Object.fromEntries(new FormData(form)))
-  });
-  const data = await response.json();
-  document.getElementById("message").textContent = data.message || "Profile update failed.";
+  try {
+    const response = await fetch("{{ url_for('accounts.update_profile') }}", {
+      method: "PUT", headers: {"Content-Type": "application/json"},
+      body: JSON.stringify(Object.fromEntries(new FormData(profileForm)))
+    });
+    const data = await response.json();
+    showMessage(profileMessage, response.ok ? data.message : (data.message || "Profile update failed."), response.ok ? "success" : "error", response.ok ? "status" : "alert");
+  } catch (error) {
+    showMessage(profileMessage, "Unable to update your profile.", "error", "alert");
+  }
+});
+
+examForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  examButton.disabled = true;
+  showMessage(examMessage, "Saving exam details...", "success");
+  const values = Object.fromEntries(new FormData(examForm));
+  values.rank = Number(values.rank);
+  values.score = Number(values.score);
+  try {
+    const response = await fetch("{{ url_for('accounts.update_exam_details') }}", {
+      method: "PUT", headers: {"Content-Type": "application/json"}, body: JSON.stringify(values)
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      showMessage(examMessage, data.message || "No matching exam record was found.", "error", "alert");
+      return;
+    }
+    const saved = data.exam_details || {};
+    if (saved.rank != null) examForm.elements.rank.value = saved.rank;
+    if (saved.category) examForm.elements.category.value = saved.category;
+    if (saved.exam_type) examForm.elements.exam_type.value = saved.exam_type;
+    if (saved.score != null) examForm.elements.score.value = saved.score;
+    showMessage(examMessage, data.message || "Exam details saved successfully.", "success");
+  } catch (error) {
+    showMessage(examMessage, "Unable to save exam details. Try again.", "error", "alert");
+  } finally {
+    examButton.disabled = false;
+  }
 });
 </script>
 {% endblock %}

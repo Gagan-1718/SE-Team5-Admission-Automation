@@ -160,7 +160,11 @@ def profile():
 @bp.get("/profile-page")
 @page_login_required
 def profile_page():
-    return render_template("accounts/profile.html")
+    return render_template(
+        "accounts/profile.html",
+        exam_types=EXAM_TYPES,
+        categories=ALLOWED_CATEGORIES,
+    )
 
 
 @bp.put("/profile")
