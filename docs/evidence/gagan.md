@@ -66,3 +66,33 @@ Automated: `tests/application/test_submit.py` and `test_identity.py` pass.
 **Not working yet (expected failures, owners in brackets):** the administrator cannot open `/admin/colleges` because the guard is not connected to the login (Tasya); eligibility always says Eligible, ignores the real exam details and is not login-protected (Tasya); `/admin/dashboard` and `/admin/audit-logs` do not exist (Tasya); `all_documents_approved()` and `REQUIRED_DOCUMENT_TYPES` are missing and any document type text is accepted (Dikshith); documents have no foreign keys to users and applications (Dikshith); the profile page has no exam-details form (Varun).
 
 **Therefore not marked passed:** TC-009 (eligibility with real inputs), TC-011 (administrator seat management through the login), TC-020 (dashboard), TC-025 (audit log).
+
+## Final state at the end of Sprint One (24 October 2026)
+
+**Run:** `python -m pytest -q` on the branch `docs/sprint1-final` (= `main` at `470529d` plus the final documentation, demo tests and demo preparation script).
+**Observed: 455 passed, 0 failed, 0 expected failures.** GitHub Actions ran the same suite on every merge into `main` and reported success.
+
+`tests/integration/test_demo_flow.py` now passes completely with real seeds, real logins and real routes (12 tests):
+
+| Step | Result |
+|---|---|
+| Register, duplicate refused, wrong password refused, login | PASS (TC-001, TC-002) |
+| Made-up rank refused, seeded exam details accepted | PASS (TC-003) |
+| Draft saved, survives logout and login | PASS (TC-004) |
+| Incomplete submit refused, complete submit gives `ADM-YYYY-NNNNNN`, second submit refused | PASS (TC-005) |
+| Wrong file type refused; Marksheet, ID Proof and Category Certificate uploaded | PASS (TC-006) |
+| Eligibility is **Pending** while the documents are not approved | PASS (TC-009) |
+| Administrator rejects without a reason (422), then with a reason; candidate sees it; the others approved | PASS (TC-007) |
+| Candidate resubmits the rejected document; it returns to Pending and is approved | PASS (TC-008) |
+| Rank 1000 General is **Eligible** with a reason; rank 90000 General is **Not Eligible** once documents are approved; no exam details gives 422 | PASS (TC-009) |
+| Catalogue visible to the candidate; administrator opens the catalogue admin page | PASS (TC-010, TC-011) |
+| Dashboard counts (Submitted 1, Approved 3) match the data | PASS (TC-020) |
+| Audit log shows `document.reject` and `document.approve`, holds no rejection reason, and cannot be updated or deleted (database triggers) | PASS (TC-025) |
+| Candidate gets 403 on admin pages; anonymous visitors are redirected to login | PASS (TC-021, TC-022) |
+| HTTPS: TLS 1.2 or newer, redirect from HTTP, `Secure` and `HttpOnly` session cookie, password not visible in a captured network stream | PASS (TC-024) |
+
+**Test checked to be able to fail:** with `all_documents_approved()` forced to always return True, 4 of these tests failed; the file was then restored.
+
+**Demo preparation:** `python scripts/prepare_demo.py --yes --with-candidate` was run for real against a temporary database, followed by `scripts/serve_https.py`: home 200, candidate login 200, wrong password 401, administrator login 200, profile page contains the exam-details form, HTTP redirects to HTTPS, session cookie `HttpOnly` and `Secure`.
+
+**Not marked passed / still open:** the one-minute video is being recorded (`docs/demo/VIDEO_SCRIPT.md`); Tasya's evidence file is not in the repository yet; TC-023 (inspection of stored password hashes) is covered by the accounts tests, and the CSRF gaps are listed in `docs/DEVIATIONS.md` (P-06).
