@@ -137,3 +137,37 @@ def test_commit_failure_rolls_back_review(app, document, monkeypatch):
 def test_json_requires_session_token(admin, document):
     assert admin[0].post(f'/admin/documents/{document.id}/review',
                          json={'decision': 'Approved'}).status_code == 400
+
+
+def test_html_and_json_review_endpoints_build_distinct_urls(app):
+    from flask import url_for
+    with app.test_request_context():
+        assert url_for("documents.review_queue") == "/admin/documents"
+        assert url_for("documents.review_queue_json") == "/admin/documents.json"
+
+
+def test_admin_login_page_targets_html_review_queue(client):
+    page = client.get("/accounts/login")
+    assert page.status_code == 200
+    assert b'? "/admin/documents"' in page.data
+    assert b"/admin/documents.json" not in page.data
+
+
+def test_review_pages_keep_html_and_json_responses(admin, document):
+    client, _ = admin
+    html = client.get("/admin/documents")
+    assert html.status_code == 200
+    assert html.mimetype == "text/html"
+    json_response = client.get("/admin/documents.json")
+    assert json_response.status_code == 200
+    assert json_response.is_json
+    assert json_response.json["documents"][0]["id"] == document.id
+
+
+def test_successful_html_review_redirects_to_html_queue(admin, document):
+    client, token = admin
+    response = client.post(f"/admin/documents/{document.id}/review", data={
+        "decision": "Approved", "csrf_token": token,
+    })
+    assert response.status_code == 302
+    assert response.headers["Location"] == "/admin/documents"
