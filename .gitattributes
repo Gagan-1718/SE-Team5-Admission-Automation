@@ -6,3 +6,11 @@
 *.ini  text eol=lf
 .gitignore     text eol=lf
 .gitattributes text eol=lf
+
+# Binary files: never convert line endings (a converted PDF is corrupted and the upload check rejects it)
+*.pdf  binary
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.mp4  binary
+docs/demo/sample_files/** -text
