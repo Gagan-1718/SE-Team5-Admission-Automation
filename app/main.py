@@ -8,6 +8,21 @@ from .extensions import db
 bp = Blueprint("main", __name__)
 
 
+@bp.app_errorhandler(403)
+def forbidden(_error):
+    return render_template("403.html"), 403
+
+
+@bp.app_errorhandler(404)
+def not_found(_error):
+    return render_template("404.html"), 404
+
+
+@bp.app_errorhandler(500)
+def server_error(_error):
+    return render_template("500.html"), 500
+
+
 @bp.get("/")
 def home():
     return render_template("home.html")

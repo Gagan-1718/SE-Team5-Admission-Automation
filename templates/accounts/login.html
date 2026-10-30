@@ -1,19 +1,14 @@
 {% extends "base.html" %}
+{% import "_ui.html" as ui %}
 {% block title %}Welcome back{% endblock %}
 {% block content %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/accounts.css') }}">
 <section class="auth-layout" aria-labelledby="login-heading">
-  <div class="auth-card">
-    <div class="eyebrow">Candidate portal</div>
-    <h1 id="login-heading">Welcome back</h1>
-    <p class="intro">Sign in securely to view your admission profile and application details.</p>
-
+  {% call ui.card(class_name="card auth-card") %}
+    {% call ui.page_header("Welcome back", "Sign in securely to view your admission profile and application details.", "Candidate portal", "login-heading") %}{% endcall %}
     <form method="post" id="login-form" class="auth-form">
-      <div class="form-field">
-        <label for="identifier">Email or mobile number</label>
-        <input id="identifier" name="identifier" type="text" autocomplete="username" required>
-      </div>
-      <div class="form-field">
+      {{ ui.field("Email or mobile number", name="identifier", type="text", required=True, autocomplete="username", id="identifier") }}
+      <div class="field form-field">
         <label for="password">Password</label>
         <div class="password-field">
           <input id="password" name="password" type="password" autocomplete="current-password" required>
@@ -23,9 +18,8 @@
       <button type="submit" class="primary-button">Sign in</button>
       <p id="message" class="form-message" role="alert" aria-live="polite" hidden></p>
     </form>
-
     <p class="auth-switch">New candidate? <a href="{{ url_for('accounts.registration_page') }}">Create an account</a></p>
-  </div>
+  {% endcall %}
 </section>
 <script>
 const form = document.getElementById("login-form");

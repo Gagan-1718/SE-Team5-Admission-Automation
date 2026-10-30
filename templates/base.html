@@ -1,54 +1,68 @@
+{% import "_ui.html" as ui %}
 <!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}Admission Automation{% endblock %} | Team 5</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/site.css') }}">
 </head>
-<body>
-  <header class="site-header">
-    <div class="container">
-      <a class="brand" href="{{ url_for('main.home') }}">Admission Automation</a>
-      <span class="tagline">Team 5 &middot; fictional exam data only</span>
-    </div>
-  </header>
-
-  <nav class="container" aria-label="Main navigation">
-    <a href="{{ url_for('main.home') }}">Home</a>
-    {% if g.current_user %}
-      {% if g.current_user.role == 'candidate' %}
-      <a href="{{ url_for('accounts.profile_page') }}">My profile</a>
-      <a href="{{ url_for('application.draft_form') }}">My application</a>
-      <a href="{{ url_for('documents.status_page') }}">My documents</a>
-      <a href="/colleges">Colleges</a>
-      <a href="/eligibility">Eligibility</a>
-      {% elif g.current_user.role == 'administrator' %}
-      {# literal path: that view has two routes and url_for would pick the raw JSON one #}
-      <a href="/admin/documents">Review documents</a>
-      <a href="/admin/colleges">Manage colleges</a>
+<body class="app-body">
+{% if g.current_user %}
+  {% set is_admin = g.current_user.role == 'administrator' %}
+  <div class="app-shell">
+    <aside class="app-sidebar" aria-label="{{ 'Administrator' if is_admin else 'Candidate' }} navigation">
+      <a class="brandmark" href="{{ url_for('main.home') }}"><span class="brandmark-mark" aria-hidden="true">A</span>Admission Automation</a>
+      {% if is_admin %}
+        <a class="app-nav-link{% if request.path == '/admin/dashboard' %} active{% endif %}" href="/admin/dashboard"><span class="nav-icon" aria-hidden="true">⌂</span>Dashboard</a>
+        <div class="nav-group">People</div>
+        <a class="app-nav-link locked" href="/admin/candidates" aria-disabled="true" aria-describedby="lock-admin-candidates" data-locked title="Candidate records will be available when the candidate-management module is merged."><span class="nav-icon" aria-hidden="true">♙</span>Candidates <span class="nav-lock" aria-label="Locked">🔒</span><span class="sr-only" id="lock-admin-candidates">Candidate records will be available when the candidate-management module is merged.</span></a>
+        <a class="app-nav-link{% if request.path == '/admin/documents' %} active{% endif %}" href="/admin/documents"><span class="nav-icon" aria-hidden="true">▤</span>Documents</a>
+        <div class="nav-group">Setup</div>
+        <a class="app-nav-link{% if request.path == '/admin/colleges' %} active{% endif %}" href="/admin/colleges"><span class="nav-icon" aria-hidden="true">⌂</span>Colleges and seats</a>
+        <a class="app-nav-link locked" href="/admin/eligibility-rules" aria-disabled="true" aria-describedby="lock-admin-rules" data-locked title="Eligibility rule editing will be available when the rules module is merged."><span class="nav-icon" aria-hidden="true">☷</span>Eligibility rules <span class="nav-lock" aria-label="Locked">🔒</span><span class="sr-only" id="lock-admin-rules">Eligibility rule editing will be available when the rules module is merged.</span></a>
+        <div class="nav-group">Allotment</div>
+        <a class="app-nav-link locked" href="/admin/allotment" aria-disabled="true" aria-describedby="lock-admin-allotment" data-locked title="The allotment console will be available when the allotment module is merged."><span class="nav-icon" aria-hidden="true">▣</span>Run and publish <span class="nav-lock" aria-label="Locked">🔒</span><span class="sr-only" id="lock-admin-allotment">The allotment console will be available when the allotment module is merged.</span></a>
+        <a class="app-nav-link{% if request.path == '/admin/audit-logs' %} active{% endif %}" href="/admin/audit-logs"><span class="nav-icon" aria-hidden="true">▥</span>Audit log</a>
+      {% else %}
+        <a class="app-nav-link{% if request.path == '/dashboard' %} active{% endif %}" href="/dashboard"><span class="nav-icon" aria-hidden="true">⌂</span>Dashboard</a>
+        <div class="nav-group">My admission</div>
+        <a class="app-nav-link{% if request.path == '/accounts/profile-page' %} active{% endif %}" href="{{ url_for('accounts.profile_page') }}"><span class="nav-icon" aria-hidden="true">♙</span>Profile and exam</a>
+        <a class="app-nav-link{% if request.path == '/application' %} active{% endif %}" href="/application"><span class="nav-icon" aria-hidden="true">▤</span>Application</a>
+        <a class="app-nav-link{% if request.path.startswith('/documents') %} active{% endif %}" href="/documents"><span class="nav-icon" aria-hidden="true">▤</span>Documents</a>
+        <a class="app-nav-link{% if request.path == '/eligibility' %} active{% endif %}" href="/eligibility"><span class="nav-icon" aria-hidden="true">✓</span>Eligibility</a>
+        <a class="app-nav-link locked" href="/choices" aria-disabled="true" aria-describedby="lock-choices" data-locked title="Choice filling opens after eligibility is confirmed."><span class="nav-icon" aria-hidden="true">☷</span>Choices <span class="nav-lock" aria-label="Locked">🔒</span><span class="sr-only" id="lock-choices">Choice filling opens after eligibility is confirmed.</span></a>
+        <a class="app-nav-link locked" href="/result" aria-disabled="true" aria-describedby="lock-result" data-locked title="Results appear after the administrator publishes allotment."><span class="nav-icon" aria-hidden="true">▣</span>Result <span class="nav-lock" aria-label="Locked">🔒</span><span class="sr-only" id="lock-result">Results appear after the administrator publishes allotment.</span></a>
+        <div class="nav-group">Explore</div>
+        <a class="app-nav-link{% if request.path == '/colleges' %} active{% endif %}" href="/colleges"><span class="nav-icon" aria-hidden="true">⌂</span>Colleges</a>
       {% endif %}
-      <button type="button" id="logout-button">Log out</button>
-      <script>
-      document.getElementById('logout-button').addEventListener('click', async () => {
-        const response = await fetch({{ url_for('accounts.logout')|tojson }}, {method: 'POST'});
-        if (response.ok) window.location.href = {{ url_for('accounts.login_page')|tojson }};
-      });
-      </script>
-    {% else %}
-      <a href="{{ url_for('accounts.login_page') }}">Log in</a>
-      <a href="{{ url_for('accounts.registration_page') }}">Register</a>
-    {% endif %}
-  </nav>
-  <main class="container">
-    {% for message in get_flashed_messages() %}
-      <p class="flash" role="status">{{ message }}</p>
-    {% endfor %}
-    {% block content %}{% endblock %}
-  </main>
-
-  <footer class="site-footer">
-    <div class="container">Software Engineering project &middot; Sprint One</div>
-  </footer>
+      <div class="app-user"><strong>{{ g.current_user.name }}</strong>{{ 'Administrator' if is_admin else 'Candidate' }} · <button type="button" id="logout-button">Log out</button></div>
+    </aside>
+    <div class="app-main">
+      <div class="app-topbar"><span class="breadcrumb"><strong>{% block breadcrumb %}Admission Automation{% endblock %}</strong></span><div class="spacer"><span class="app-avatar" aria-hidden="true">{{ g.current_user.name[:1]|upper }}</span></div></div>
+{% else %}
+  <div class="app-anonymous">
+    <header class="anonymous-topbar"><a class="brandmark" href="{{ url_for('main.home') }}"><span class="brandmark-mark" aria-hidden="true">A</span>Admission Automation</a><nav class="spacer" aria-label="Public navigation"><a href="{{ url_for('accounts.login_page') }}">Log in</a><a class="btn primary sm" href="{{ url_for('accounts.registration_page') }}">Register</a></nav></header>
+{% endif %}
+    <main class="app-content">
+      <div class="flash-stack" aria-live="polite">{% for category, message in get_flashed_messages(with_categories=true) %}<p class="flash {{ category }}" role="status">{{ message }}</p>{% endfor %}</div>
+      {% block content %}{% endblock %}
+    </main>
+{% if g.current_user %}
+    </div>
+  </div>
+  <script>
+  document.querySelectorAll('[data-locked]').forEach((link) => {
+    link.addEventListener('click', (event) => event.preventDefault());
+  });
+  document.getElementById('logout-button').addEventListener('click', async () => {
+    const response = await fetch({{ url_for('accounts.logout')|tojson }}, {method: 'POST'});
+    if (response.ok) window.location.href = {{ url_for('accounts.login_page')|tojson }};
+  });
+  </script>
+{% else %}
+  </div>
+{% endif %}
 </body>
 </html>

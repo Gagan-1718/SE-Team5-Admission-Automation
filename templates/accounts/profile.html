@@ -1,58 +1,37 @@
 {% extends "base.html" %}
+{% import "_ui.html" as ui %}
 {% block title %}Candidate profile{% endblock %}
 {% block content %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/accounts.css') }}">
 <div class="profile-layout">
   <section class="profile-card" aria-labelledby="profile-heading">
-    <div class="eyebrow">Candidate portal</div>
-    <h1 id="profile-heading">Candidate profile</h1>
+    {% call ui.page_header("Candidate profile", None, "Candidate portal", "profile-heading") %}{% endcall %}
     <form method="post" id="profile-form" class="profile-form">
-      <div class="profile-field">
-        <label for="name">Name</label>
-        <input id="name" name="name" required>
-      </div>
-      <div class="profile-field">
-        <label for="email">Email</label>
-        <input id="email" name="email" type="email" readonly>
-      </div>
-      <div class="profile-field">
-        <label for="mobile">Mobile</label>
-        <input id="mobile" name="mobile" inputmode="numeric" required>
-      </div>
+      {{ ui.field("Name", name="name", required=True, id="name") }}
+      {{ ui.field("Email", name="email", type="email", readonly=True, id="email") }}
+      {{ ui.field("Mobile", name="mobile", required=True, inputmode="numeric", id="mobile") }}
       <button type="submit" class="primary-button">Save profile</button>
       <p id="message" class="form-message" role="alert" aria-live="polite" hidden></p>
     </form>
   </section>
 
   <section class="profile-card" aria-labelledby="exam-details-heading">
-    <div class="eyebrow">Admission record</div>
-    <h2 id="exam-details-heading">Exam details</h2>
-    <p class="profile-intro">Select the fictional exam record that matches your result.</p>
+    {% call ui.page_header("Exam details", "Select the fictional exam record that matches your result.", "Admission record", "exam-details-heading") %}{% endcall %}
     <form method="post" id="exam-details-form" class="profile-form">
-      <div class="profile-field">
+      <div class="profile-field field">
         <label for="exam_type">Exam type</label>
         <select id="exam_type" name="exam_type" required>
-          {% for exam_type in exam_types %}
-            <option value="{{ exam_type }}">{{ exam_type }}</option>
-          {% endfor %}
+          {% for exam_type in exam_types %}<option value="{{ exam_type }}">{{ exam_type }}</option>{% endfor %}
         </select>
       </div>
-      <div class="profile-field">
-        <label for="rank">Rank</label>
-        <input id="rank" name="rank" type="number" min="1" step="1" required>
-      </div>
-      <div class="profile-field">
+      {{ ui.field("Rank", name="rank", type="number", required=True, id="rank") }}
+      <div class="profile-field field">
         <label for="category">Category</label>
         <select id="category" name="category" required>
-          {% for category in categories %}
-            <option value="{{ category }}">{{ category }}</option>
-          {% endfor %}
+          {% for category in categories %}<option value="{{ category }}">{{ category }}</option>{% endfor %}
         </select>
       </div>
-      <div class="profile-field">
-        <label for="score">Score</label>
-        <input id="score" name="score" type="number" min="0" step="any" required>
-      </div>
+      {{ ui.field("Score", name="score", type="number", required=True, id="score") }}
       <button type="submit" class="primary-button" id="save-exam-details">Save exam details</button>
       <p id="exam-details-message" class="form-message" role="alert" aria-live="polite" hidden></p>
     </form>
@@ -75,9 +54,7 @@ function showMessage(element, message, kind, role = "status") {
 fetch("{{ url_for('accounts.profile') }}")
   .then(response => response.json())
   .then(data => {
-    for (const field of ["name", "email", "mobile"]) {
-      profileForm.elements[field].value = data[field] ?? "";
-    }
+    for (const field of ["name", "email", "mobile"]) profileForm.elements[field].value = data[field] ?? "";
     if (data.rank != null) examForm.elements.rank.value = data.rank;
     if (data.category) examForm.elements.category.value = data.category;
   })
@@ -92,9 +69,7 @@ profileForm.addEventListener("submit", async (event) => {
     });
     const data = await response.json();
     showMessage(profileMessage, response.ok ? data.message : (data.message || "Profile update failed."), response.ok ? "success" : "error", response.ok ? "status" : "alert");
-  } catch (error) {
-    showMessage(profileMessage, "Unable to update your profile.", "error", "alert");
-  }
+  } catch (error) { showMessage(profileMessage, "Unable to update your profile.", "error", "alert"); }
 });
 
 examForm.addEventListener("submit", async (event) => {
@@ -109,21 +84,15 @@ examForm.addEventListener("submit", async (event) => {
       method: "PUT", headers: {"Content-Type": "application/json"}, body: JSON.stringify(values)
     });
     const data = await response.json();
-    if (!response.ok) {
-      showMessage(examMessage, data.message || "No matching exam record was found.", "error", "alert");
-      return;
-    }
+    if (!response.ok) { showMessage(examMessage, data.message || "No matching exam record was found.", "error", "alert"); return; }
     const saved = data.exam_details || {};
     if (saved.rank != null) examForm.elements.rank.value = saved.rank;
     if (saved.category) examForm.elements.category.value = saved.category;
     if (saved.exam_type) examForm.elements.exam_type.value = saved.exam_type;
     if (saved.score != null) examForm.elements.score.value = saved.score;
     showMessage(examMessage, data.message || "Exam details saved successfully.", "success");
-  } catch (error) {
-    showMessage(examMessage, "Unable to save exam details. Try again.", "error", "alert");
-  } finally {
-    examButton.disabled = false;
-  }
+  } catch (error) { showMessage(examMessage, "Unable to save exam details. Try again.", "error", "alert"); }
+  finally { examButton.disabled = false; }
 });
 </script>
 {% endblock %}

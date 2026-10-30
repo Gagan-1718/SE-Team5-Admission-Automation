@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Page not found{% endblock %}
+{% block content %}
+{% set home_url = '/admin/dashboard' if g.current_user and g.current_user.role == 'administrator' else '/dashboard' if g.current_user else url_for('main.home') %}
+<section class="card error-page" aria-labelledby="error-title">
+  <h1 id="error-title">404</h1>
+  <h2>Page not found</h2>
+  <p>That page is not available in this prototype.</p>
+  <a class="btn primary" href="{{ home_url }}">Return to your home</a>
+</section>
+{% endblock %}
