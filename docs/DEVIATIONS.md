@@ -50,3 +50,13 @@ Choice filling, ordering and locking; seat allotment and Not Allocated; result p
 - One feature branch per task, pull requests into `main`, a CI check (`.github/workflows/ci.yml`) runs the tests on every push and pull request.
 - Fictional data only; no database file, upload, certificate, key or password is committed.
 - Pull requests are raised by each module owner and reviewed and merged by the repo owner on GitHub. Some early merges (foundation, accounts, application) were done from the command line to unblock the team; their pull requests were closed as "already merged into main".
+
+## 6. Sprint Two contract choices (30 October 2026)
+
+These are recorded for completeness when the choice, allotment and result tables were agreed (`SPRINT_TWO_START_HERE.md` section 4). No requirement changed.
+
+| # | Area | Submitted (SAD) | Built | Reason | Impact |
+|---|---|---|---|---|---|
+| D-16 | Where "published" is stored | SAD 4.1: the allotment run moves from Completed to Published | A separate `result_publications` table owned by the Result module, with a unique `run_id` | One owner per module; "publish once" becomes a database rule instead of a status the Allotment module would also have to change | ADM-F-017 behaves the same: results are hidden until the administrator publishes |
+| D-17 | Paths and pages | `/api/v1/choices`, `/api/v1/admin/allotment/run`, `/api/v1/allotment/result` and so on | Exactly those API paths, plus HTML pages `/choices`, `/result`, `/admin/allotment` | The SAD defines the API only; the pages are the Flask screens in SAD 4.5 | No deviation, recorded for completeness |
+| D-18 | Rules enforced by the database | A-07, A-13, ADM-NFR-003 describe the rules | `allotment_runs.cycle` is always 1 and unique (one cycle); run counts must add up; an `Allocated` result must have a branch, seat and choice number and a `Not Allocated` one must have none; `choices` refuses a branch twice per candidate; `seat_decisions` allows one row per result | Even a bug in application code cannot break these rules | Stricter than the SAD text, same intent |
