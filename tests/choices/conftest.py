@@ -43,13 +43,10 @@ def choice_data(app):
         ])
         db.session.add(EligibilityRule(category="General", max_rank=20000, active=True))
         db.session.commit()
-        return {"candidates": candidates, "colleges": [college, second_college], "branches": branches}
+        return {
+            "candidate_ids": [candidate.id for candidate in candidates],
+            "college_ids": [college.id, second_college.id],
+            "branch_ids": [branch.id for branch in branches],
+        }
 
 
-def login(client, user):
-    response = client.post(
-        "/accounts/login",
-        json={"identifier": user.email, "password": "fictional-password-123"},
-    )
-    assert response.status_code == 401 or response.status_code == 200
-    return response
