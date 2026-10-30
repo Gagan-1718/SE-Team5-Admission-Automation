@@ -170,7 +170,7 @@ def lock(candidate_id):
 
 
 def is_locked(candidate_id):
-    _todo("#23")
+    return db.session.get(ChoiceLock, candidate_id) is not None
 
 
 def locked_candidate_ids():
