@@ -125,6 +125,14 @@ def _require_unlocked(candidate_id):
         raise ChoicesLocked()
 
 
+def _renumber_priorities(candidate_id):
+    """Assign contiguous priorities to one candidate's current ordered rows."""
+    rows = list_choices(candidate_id)
+    for priority, row in enumerate(rows, start=1):
+        row.priority = priority
+    return rows
+
+
 def add_choice(candidate_id, branch_id):
     """Add a branch at the next priority. NotEligible | DuplicateChoice | ChoicesLocked | UnknownBranch."""
     _require_eligible(candidate_id)
@@ -166,9 +174,7 @@ def remove_choice(candidate_id, choice_id):
     _require_unlocked(candidate_id)
     db.session.delete(choice)
     db.session.flush()
-    remaining = list_choices(candidate_id)
-    for priority, row in enumerate(remaining, start=1):
-        row.priority = priority
+    remaining = _renumber_priorities(candidate_id)
     db.session.commit()
     return remaining
 
