@@ -1,8 +1,16 @@
 """Result publication and seat decision services (owner: Dikshith).
 
-CONTRACT STUBS: names, parameters and error types are agreed in SPRINT_TWO_START_HERE.md
-section 4.3. Dikshith replaces the bodies (issues #12, #13, #14); do not rename anything.
+Publication is implemented for issue #12. Candidate views and decisions remain
+contract stubs for the next small PRs. Shared names and schemas are unchanged.
 """
+
+from sqlalchemy.exc import IntegrityError
+
+from app.accounts.models import User
+from app.allotment.models import AllotmentRun
+from app.audit.services import record_audit
+from app.extensions import db
+from .models import ResultPublication
 
 NOT_PUBLISHED = "NOT_PUBLISHED"
 NOT_IN_RUN = "NOT_IN_RUN"
