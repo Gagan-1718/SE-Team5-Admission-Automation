@@ -75,6 +75,12 @@ class ChoiceNotFound(ChoiceError):
     status_code = 404
 
 
+class InvalidChoiceRequest(ChoiceError):
+    """The request body does not satisfy the JSON API contract."""
+
+    status_code = 400
+
+
 def _todo(issue):
     raise NotImplementedError(f"Contract stub: implement in issue {issue}.")
 
