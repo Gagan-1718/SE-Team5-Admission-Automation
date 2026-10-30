@@ -72,7 +72,9 @@ def test_api_preserves_candidate_ownership_and_locking(app, choice_data, eligibl
     assert first_client.delete(f"/api/v1/choices/{foreign_id}").status_code == 404
     created = first_client.post("/api/v1/choices", json={"branchId": choice_data["branch_ids"][1]}).get_json()
     assert first_client.post("/api/v1/choices/lock").status_code == 200
-    assert first_client.post("/api/v1/choices/lock").status_code == 409
+    repeated = first_client.post("/api/v1/choices/lock")
+    assert repeated.status_code == 409
+    assert repeated.get_json()["error"] == "AlreadyLocked"
     assert first_client.post("/api/v1/choices", json={"branchId": choice_data["branch_ids"][2]}).status_code == 409
     assert first_client.delete(f"/api/v1/choices/{created['choice']['id']}").status_code == 409
 

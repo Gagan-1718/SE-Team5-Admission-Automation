@@ -18,7 +18,8 @@ def test_candidate_removes_own_choice_and_remaining_priorities_are_contiguous(ap
         first = add_choice(candidate_id, first_id)
         add_choice(candidate_id, second_id)
         third = add_choice(candidate_id, third_id)
-        remaining = remove_choice(candidate_id, first.id)
+        assert remove_choice(candidate_id, first.id) is None
+        remaining = services.list_choices(candidate_id)
         assert [row.branch_id for row in remaining] == [second_id, third_id]
         assert [row.priority for row in remaining] == [1, 2]
 

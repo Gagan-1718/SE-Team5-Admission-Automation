@@ -17,7 +17,8 @@ def test_non_empty_list_locks_with_timestamp(app, choice_data, eligible):
     candidate_id = choice_data["candidate_ids"][0]
     with app.app_context():
         add_choice(candidate_id, choice_data["branch_ids"][0])
-        row = lock(candidate_id)
+        assert lock(candidate_id) is None
+        row = db.session.get(ChoiceLock, candidate_id)
         assert row.candidate_id == candidate_id
         assert row.locked_at is not None
         assert services.is_locked(candidate_id)
@@ -34,7 +35,7 @@ def test_locking_twice_is_rejected(app, choice_data, eligible):
     with app.app_context():
         add_choice(candidate_id, choice_data["branch_ids"][0])
         lock(candidate_id)
-        with pytest.raises(services.ChoicesLocked):
+        with pytest.raises(services.AlreadyLocked):
             lock(candidate_id)
         assert db.session.query(ChoiceLock).count() == 1
 

@@ -5,6 +5,7 @@ from flask import Blueprint, jsonify, request
 from app.accounts.auth import current_candidate_id, role_required
 from app.catalogue.models import Branch
 from app.extensions import db
+from .models import ChoiceLock
 
 from .services import (
     ChoiceError,
@@ -100,7 +101,8 @@ def choices_reorder():
 def choices_lock():
     candidate_id = current_candidate_id()
     try:
-        row = lock(candidate_id)
+        lock(candidate_id)
+        row = db.session.get(ChoiceLock, candidate_id)
         return jsonify(locked=True, lockedAt=row.locked_at.isoformat())
     except ChoiceError as exc:
         return _error(exc)

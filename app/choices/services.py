@@ -169,7 +169,7 @@ def add_choice(candidate_id, branch_id):
 
 
 def remove_choice(candidate_id, choice_id):
-    """Remove a choice and renumber. ChoicesLocked."""
+    """Remove a choice and renumber. Returns None after commit."""
     choice = db.session.scalar(
         db.select(Choice).where(
             Choice.id == choice_id, Choice.candidate_id == candidate_id
@@ -182,7 +182,7 @@ def remove_choice(candidate_id, choice_id):
     db.session.flush()
     remaining = _renumber_priorities(candidate_id)
     db.session.commit()
-    return remaining
+    return None
 
 
 def reorder(candidate_id, ordered_choice_ids):
@@ -204,8 +204,9 @@ def reorder(candidate_id, ordered_choice_ids):
 
 
 def lock(candidate_id):
-    """Lock the list for ever. AlreadyLocked | NothingToLock."""
-    _require_unlocked(candidate_id)
+    """Lock the list for ever. Returns None after commit."""
+    if is_locked(candidate_id):
+        raise AlreadyLocked()
     if not db.session.scalar(db.select(Choice.id).where(Choice.candidate_id == candidate_id)):
         raise NothingToLock()
     row = ChoiceLock(candidate_id=candidate_id)
@@ -215,7 +216,7 @@ def lock(candidate_id):
     except IntegrityError:
         db.session.rollback()
         raise AlreadyLocked() from None
-    return row
+    return None
 
 
 def is_locked(candidate_id):
