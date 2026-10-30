@@ -199,7 +199,17 @@ def reorder(candidate_id, ordered_choice_ids):
 
 def lock(candidate_id):
     """Lock the list for ever. AlreadyLocked | NothingToLock."""
-    _todo("#23")
+    _require_unlocked(candidate_id)
+    if not db.session.scalar(db.select(Choice.id).where(Choice.candidate_id == candidate_id)):
+        raise NothingToLock()
+    row = ChoiceLock(candidate_id=candidate_id)
+    db.session.add(row)
+    try:
+        db.session.commit()
+    except IntegrityError:
+        db.session.rollback()
+        raise AlreadyLocked() from None
+    return row
 
 
 def is_locked(candidate_id):
