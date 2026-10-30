@@ -48,5 +48,3 @@ def choice_data(app):
             "college_ids": [college.id, second_college.id],
             "branch_ids": [branch.id for branch in branches],
         }
-
-
