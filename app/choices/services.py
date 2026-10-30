@@ -156,7 +156,21 @@ def add_choice(candidate_id, branch_id):
 
 def remove_choice(candidate_id, choice_id):
     """Remove a choice and renumber. ChoicesLocked."""
-    _todo("#21")
+    choice = db.session.scalar(
+        db.select(Choice).where(
+            Choice.id == choice_id, Choice.candidate_id == candidate_id
+        )
+    )
+    if choice is None:
+        raise ChoiceNotFound()
+    _require_unlocked(candidate_id)
+    db.session.delete(choice)
+    db.session.flush()
+    remaining = list_choices(candidate_id)
+    for priority, row in enumerate(remaining, start=1):
+        row.priority = priority
+    db.session.commit()
+    return remaining
 
 
 def reorder(candidate_id, ordered_choice_ids):
