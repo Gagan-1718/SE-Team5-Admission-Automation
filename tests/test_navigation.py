@@ -10,7 +10,7 @@ PASSWORD = "fictional-password-1"
 
 def nav_links(client):
     html = client.get("/").data.decode()
-    return re.findall(r'<a href="([^"]+)"', html.split("<main")[0])
+    return re.findall(r'<a(?:\s+[^>]*?)?\s+href="([^"]+)"', html.split("<main")[0])
 
 
 def login(app, email, role, mobile):
@@ -31,14 +31,27 @@ def test_anonymous_visitor_sees_login_and_register(client):
 
 def test_candidate_sees_catalogue_eligibility_and_own_pages(app):
     links = nav_links(login(app, "nav.candidate@example.test", "candidate", "9000000011"))
-    for expected in ("/application", "/documents", "/colleges", "/eligibility"):
+    for expected in ("/dashboard", "/accounts/profile-page", "/application", "/documents", "/colleges", "/eligibility", "/choices", "/result"):
         assert expected in links
     assert "/admin/documents" not in links and "/admin/colleges" not in links
 
 
 def test_administrator_review_link_opens_the_page_not_the_json(app):
     links = nav_links(login(app, "nav.admin@example.test", "administrator", "9000000012"))
-    assert "/admin/documents" in links
+    for expected in ("/admin/dashboard", "/admin/documents", "/admin/colleges", "/admin/audit-logs", "/admin/candidates", "/admin/eligibility-rules", "/admin/allotment"):
+        assert expected in links
     assert "/admin/documents.json" not in links
-    assert "/admin/colleges" in links
     assert "/application" not in links
+
+
+def test_locked_navigation_has_explanation_and_lock_indicator(app):
+    client = login(app, "nav.locked@example.test", "candidate", "9000000013")
+    html = client.get("/").data.decode()
+    assert 'href="/choices"' in html
+    assert 'title="Choice filling opens after eligibility is confirmed."' in html
+    assert 'aria-label="Locked"' in html
+
+
+def test_navigation_uses_real_anchor_links(app):
+    html = login(app, "nav.anchor@example.test", "candidate", "9000000014").get("/").data.decode()
+    assert re.search(r'<a[^>]+href="/application"', html)

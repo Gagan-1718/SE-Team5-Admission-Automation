@@ -1,19 +1,16 @@
 {% extends "base.html" %}
-
-{% block title %}Home{% endblock %}
-
+{% import "_ui.html" as ui %}
+{% block title %}Admission Automation{% endblock %}
 {% block content %}
-<section class="card">
-  <h1>Admission Automation</h1>
-  <p>
-    Web application for engineering admission and counselling workflows.
-    Candidates apply and upload documents; administrators manage colleges and verify
-    documents; eligibility is checked by the software.
-  </p>
-  <p class="note">The shared Flask application is running. Feature modules are being added in Sprint One.</p>
-  <p>
-    <a class="button" href="{{ url_for('application.draft_form') }}">Start or continue application (draft)</a>
-    <a href="{{ url_for('main.health') }}">Check application health</a>
-  </p>
-</section>
+{% call ui.page_header("From application to seat, in one place.", "An educational prototype that guides candidates through each admission step and gives administrators a clear review trail.", "Team 5 · Sprint Two") %}
+  <div class="row"><a class="btn primary" href="{{ url_for('accounts.login_page') }}">Log in</a><a class="btn ghost" href="{{ url_for('accounts.registration_page') }}">Register</a></div>
+{% endcall %}
+{% call ui.card("Nine stages, one direction", "Each stage opens when the previous one is ready. Statuses explain what needs attention next.") %}
+  <ol class="stepper">
+    {% for item in [("Registration", "Create a candidate account.", "done"), ("Exam details", "Enter a seeded fictional record.", "current"), ("Application", "Save a draft and submit it.", "locked"), ("Documents", "Upload and receive verification.", "locked"), ("Eligibility", "Receive a rule-based decision.", "locked"), ("Choice filling", "Rank college and branch preferences.", "locked"), ("Allotment", "The administrator runs the single cycle.", "locked"), ("Results", "See the official published outcome.", "locked"), ("Seat decision", "Accept or reject once.", "locked")] %}
+    <li><span class="step-dot {{ item[2] }}" aria-hidden="true">{{ loop.index }}</span><div><b>{{ item[0] }}</b><span class="detail">{{ item[1] }}</span></div><span class="pill {{ 'ok' if item[2] == 'done' else 'info' if item[2] == 'current' else 'idle' }}">{{ item[2]|capitalize }}</span></li>
+    {% endfor %}
+  </ol>
+{% endcall %}
+{% call ui.card("A fictional, offline-friendly prototype") %}<p>Admission Automation uses fictional exam records and system fonts only. It is an educational software-engineering project, not an official KEA or COMEDK system.</p>{% endcall %}
 {% endblock %}

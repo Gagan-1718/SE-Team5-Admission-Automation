@@ -1,0 +1,3 @@
+{% extends "base.html" %}
+{% block title %}Something went wrong{% endblock %}
+{% block content %}<section class="card error-page" aria-labelledby="error-title"><h1 id="error-title">500</h1><h2>Something went wrong</h2><p>We could not complete that request. Please return home and try again.</p><a class="btn primary" href="{{ url_for('main.home') }}">Return home</a></section>{% endblock %}

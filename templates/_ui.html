@@ -1,0 +1,86 @@
+{% macro status_label(status) -%}
+  {%- set labels = {
+    "Pending": "Pending Verification",
+    "Draft": "Draft",
+    "Submitted": "Submitted",
+    "Approved": "Approved",
+    "Rejected": "Rejected",
+    "Eligible": "Eligible",
+    "Not Eligible": "Not Eligible",
+    "Locked": "Locked",
+    "Allocated": "Allocated",
+    "Not Allocated": "Not Allocated",
+    "Accepted": "Accepted"
+  } -%}
+  {{ labels.get(status, status or "Not started") }}
+{%- endmacro %}
+
+{% macro page_header(title, subtitle=None, eyebrow=None) -%}
+<header class="page-header">
+  <div>
+    {% if eyebrow %}<div class="eyebrow">{{ eyebrow }}</div>{% endif %}
+    <h1>{{ title }}</h1>
+    {% if subtitle %}<p>{{ subtitle }}</p>{% endif %}
+  </div>
+  {% if caller is defined %}{{ caller() }}{% endif %}
+</header>
+{%- endmacro %}
+
+{% macro card(title=None, hint=None) -%}
+<section class="card">
+  {% if title %}<h2>{{ title }}</h2>{% endif %}
+  {% if hint %}<p class="hint">{{ hint }}</p>{% endif %}
+  {% if caller is defined %}{{ caller() }}{% endif %}
+</section>
+{%- endmacro %}
+
+{% macro tile(label, value, detail=None) -%}
+<div class="tile"><div class="k">{{ label }}</div><div class="v">{{ value }}</div>{% if detail %}<div class="s">{{ detail }}</div>{% endif %}</div>
+{%- endmacro %}
+
+{% macro pill(status) -%}
+  {% set label = status_label(status)|trim %}
+  {% set kind = "ok" if status in ["Submitted", "Approved", "Eligible", "Allocated", "Accepted"] else "bad" if status in ["Rejected", "Not Eligible", "Not Allocated"] else "wait" if status in ["Pending", "Pending Verification"] else "info" if status == "List open" else "idle" %}
+  <span class="pill {{ kind }}" aria-label="{{ label }}">{{ label }}</span>
+{%- endmacro %}
+
+{% macro callout(kind="info", title=None) -%}
+<div class="callout {{ kind }}" role="status">
+  <div class="grow">{% if title %}<strong>{{ title }}</strong>{% endif %}{% if caller is defined %}{{ caller() }}{% endif %}</div>
+</div>
+{%- endmacro %}
+
+{% macro stepper(steps) -%}
+<ol class="stepper">
+  {% for step in steps %}
+  <li class="{{ step.state|default('locked') }}">
+    <span class="step-dot {{ step.state|default('locked') }}" aria-hidden="true">{{ loop.index }}</span>
+    <div><b>{{ step.label }}</b><span class="detail">{{ step.detail }}</span></div>
+    {% if step.state %}<span class="pill {{ 'ok' if step.state == 'done' else 'bad' if step.state == 'problem' else 'wait' if step.state == 'waiting' else 'info' if step.state == 'current' else 'idle' }}">{{ step.state|capitalize }}</span>{% endif %}
+  </li>
+  {% endfor %}
+</ol>
+{%- endmacro %}
+
+{% macro empty_state(title, message, href=None, action=None) -%}
+<div class="empty-state"><h2>{{ title }}</h2><p>{{ message }}</p>{% if href and action %}<a class="btn primary" href="{{ href }}">{{ action }}</a>{% endif %}</div>
+{%- endmacro %}
+
+{% macro field(label, error=None, name=None, value="", type="text", required=False, id=None) -%}
+<div class="field">
+  <label for="{{ id or name }}">{{ label }}</label>
+  <input id="{{ id or name }}" name="{{ name }}" type="{{ type }}" value="{{ value }}"{% if required %} required{% endif %}>
+  {% if error %}<span class="err" role="alert">{{ error }}</span>{% endif %}
+</div>
+{%- endmacro %}
+
+{% macro confirm_dialog(id, title, message) -%}
+<dialog id="{{ id }}" class="confirm-dialog" aria-labelledby="{{ id }}-title">
+  <h2 id="{{ id }}-title">{{ title }}</h2><p>{{ message }}</p>
+  {% if caller is defined %}{{ caller() }}{% endif %}
+</dialog>
+{%- endmacro %}
+
+{% macro data_table(headers, rows) -%}
+<div class="table-wrap"><table class="data-table"><thead><tr>{% for header in headers %}<th scope="col">{{ header }}</th>{% endfor %}</tr></thead><tbody>{% for row in rows %}<tr>{% for cell in row %}<td>{{ cell }}</td>{% endfor %}</tr>{% endfor %}</tbody></table></div>
+{%- endmacro %}
