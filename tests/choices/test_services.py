@@ -23,3 +23,15 @@ def test_choice_errors_have_safe_client_messages():
     assert str(services.DuplicateChoice()) == "That branch is already in your list."
     assert str(services.NothingToLock()) == "Add at least one choice first"
     assert str(services.ChoiceNotFound()) == "That choice was not found."
+
+
+def test_mutation_guard_rejects_non_eligible_candidates(monkeypatch):
+    monkeypatch.setattr(services, "get_eligibility", lambda candidate_id: {
+        "status": "Pending", "reason": "Documents are under review."
+    })
+    try:
+        services._require_eligible(1)
+    except services.NotEligible as exc:
+        assert str(exc) == "Documents are under review."
+    else:
+        raise AssertionError("pending candidate was not rejected")

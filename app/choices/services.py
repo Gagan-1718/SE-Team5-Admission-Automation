@@ -8,6 +8,7 @@ Each error carries the HTTP status the routes should use.
 from sqlalchemy.orm import selectinload
 
 from app.accounts.services import get_exam_details
+from app.eligibility.services import get_eligibility
 from app.extensions import db
 from app.catalogue.models import Branch
 
@@ -107,6 +108,20 @@ def preview_choice(choice, candidate_id):
         "seatsAvailable": seat.available if seat else 0,
         "seatCapacity": seat.capacity if seat else 0,
     }
+
+
+def _require_eligible(candidate_id):
+    """Reject pending and ineligible candidates using the shared eligibility service."""
+    result = get_eligibility(candidate_id)
+    if result.get("status") != "Eligible":
+        raise NotEligible(result.get("reason") or ERROR_MESSAGES["NotEligible"])
+    return result
+
+
+def _require_unlocked(candidate_id):
+    """Reject every mutation after the permanent lock row exists."""
+    if is_locked(candidate_id):
+        raise ChoicesLocked()
 
 
 def add_choice(candidate_id, branch_id):
