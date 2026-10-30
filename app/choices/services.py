@@ -181,7 +181,20 @@ def remove_choice(candidate_id, choice_id):
 
 def reorder(candidate_id, ordered_choice_ids):
     """Save a new order; returns the list. ChoicesLocked | OrderMismatch."""
-    _todo("#22")
+    _require_unlocked(candidate_id)
+    if not isinstance(ordered_choice_ids, (list, tuple)):
+        raise OrderMismatch()
+    rows = list_choices(candidate_id)
+    by_id = {row.id: row for row in rows}
+    submitted = list(ordered_choice_ids)
+    if len(submitted) != len(by_id) or len(set(submitted)) != len(submitted):
+        raise OrderMismatch()
+    if set(submitted) != set(by_id):
+        raise OrderMismatch()
+    for priority, choice_id in enumerate(submitted, start=1):
+        by_id[choice_id].priority = priority
+    db.session.commit()
+    return list_choices(candidate_id)
 
 
 def lock(candidate_id):
