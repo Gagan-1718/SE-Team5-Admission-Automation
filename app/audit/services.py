@@ -2,13 +2,19 @@
 from flask import g
 
 from app.extensions import db
-
 from .models import AuditLog
 
 
-def record_audit(actor_id, action_type, target_type=None, target_id=None,
-                 outcome="Success", actor_role="administrator"):
-    """Append one entry and commit it. There is deliberately no update or delete function."""
+def record_audit(
+    actor_id,
+    action_type,
+    target_type=None,
+    target_id=None,
+    outcome="Success",
+    actor_role="administrator",
+    commit=True,
+):
+    """Append one entry, optionally committing the current database transaction."""
     entry = AuditLog(
         actor_id=actor_id,
         actor_role=actor_role,
@@ -18,16 +24,34 @@ def record_audit(actor_id, action_type, target_type=None, target_id=None,
         outcome=outcome,
     )
     db.session.add(entry)
-    db.session.commit()
+
+    if commit:
+        db.session.commit()
+
     return entry
 
 
-def record_admin_action(action_type, target_type=None, target_id=None, outcome="Success"):
+def record_admin_action(
+    action_type,
+    target_type=None,
+    target_id=None,
+    outcome="Success",
+    commit=True,
+):
     """Record an action by the signed-in administrator of the current request."""
     user = getattr(g, "current_user", None)
     if user is None:
         raise RuntimeError("record_admin_action needs a signed-in user")
-    return record_audit(user.id, action_type, target_type, target_id, outcome, actor_role=user.role)
+
+    return record_audit(
+        user.id,
+        action_type,
+        target_type,
+        target_id,
+        outcome,
+        actor_role=user.role,
+        commit=commit,
+    )
 
 
 def list_audit(action_type=None, limit=200):
