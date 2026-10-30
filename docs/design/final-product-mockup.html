@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Admission Automation Final Product</title>
+<style>
+/* Layout idea: a spec page. Journey and rules first, then eight real screens built from one component set, then tokens and the route map.
+   The component CSS below is the starter for static/css/app.css: system fonts only, no downloads, works offline in the lab. */
+:root {
+  --ink: #10233b;
+  --ink-2: #4a5d73;
+  --line: #dbe3ec;
+  --paper: #f3f6fa;
+  --card: #ffffff;
+  --brand: #1b5fa7;
+  --brand-ink: #0f3d70;
+  --brand-wash: #e6f0fb;
+  --ok: #16794a;   --ok-wash: #e3f4ea;
+  --wait: #8a5a00; --wait-wash: #fdf1d3;
+  --bad: #b42323;  --bad-wash: #fde8e8;
+  --idle: #566678; --idle-wash: #e9eef4;
+  --font: "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
+  --radius: 12px;
+  --shadow: 0 1px 2px rgb(16 35 59 / 6%), 0 8px 24px rgb(16 35 59 / 7%);
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+html { background: var(--paper); }
+body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--font); line-height: 1.5; font-size: 16px; }
+h1, h2, h3, h4 { text-wrap: balance; line-height: 1.2; margin: 0; }
+p { margin: 0; }
+a { color: var(--brand); }
+:focus-visible { outline: 3px solid #7fb2ee; outline-offset: 2px; }
+.wrap { max-width: 1160px; margin: 0 auto; padding: 0 20px; }
+.num { font-variant-numeric: tabular-nums; }
+
+/* ---------- page chrome (this document, not the product) ---------- */
+.top { background: var(--ink); color: #fff; padding: 44px 0 40px; }
+.top .eyebrow { color: #9cc3ee; }
+.top h1 { font-size: clamp(1.9rem, 4vw, 2.7rem); letter-spacing: -0.02em; max-width: 22ch; }
+.top p.lede { color: #c9d8ea; max-width: 64ch; margin-top: 14px; font-size: 1.08rem; }
+.facts { display: flex; flex-wrap: wrap; gap: 12px 36px; margin-top: 26px; }
+.fact b { display: block; font-size: 1.7rem; font-variant-numeric: tabular-nums; }
+.fact span { color: #9cc3ee; font-size: .85rem; }
+.eyebrow { font-size: .74rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--brand); }
+section.block { padding: 48px 0 8px; }
+section.block > .wrap > h2 { font-size: 1.65rem; letter-spacing: -0.01em; margin-top: 6px; }
+section.block > .wrap > p.sub { color: var(--ink-2); max-width: 70ch; margin-top: 10px; }
+
+/* journey rail */
+.rail { list-style: none; margin: 26px 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; counter-reset: s; }
+.rail li { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px 16px 14px; counter-increment: s; position: relative; }
+.rail li::before { content: counter(s); position: absolute; top: 14px; right: 14px; width: 26px; height: 26px; border-radius: 50%; background: var(--brand-wash); color: var(--brand-ink); font-weight: 700; font-size: .85rem; display: grid; place-items: center; }
+.rail h3 { font-size: 1rem; padding-right: 34px; }
+.rail p { font-size: .88rem; color: var(--ink-2); margin-top: 6px; }
+.rail .gate { margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--line); font-size: .8rem; color: var(--ink); }
+.rail .gate b { color: var(--brand-ink); }
+.who { display: inline-block; font-size: .7rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; padding: 2px 8px; border-radius: 99px; margin-bottom: 8px; }
+.who.cand { background: var(--brand-wash); color: var(--brand-ink); }
+.who.adm { background: #efe6fb; color: #51269a; }
+.who.sys { background: var(--idle-wash); color: var(--idle); }
+
+/* rules */
+.rules { display: grid; grid-template-columns: repeat(auto-fit, minmax(330px, 1fr)); gap: 12px; margin-top: 22px; }
+.rule { background: var(--card); border: 1px solid var(--line); border-left: 4px solid var(--brand); border-radius: 8px; padding: 12px 14px; font-size: .92rem; }
+.rule b { display: block; margin-bottom: 2px; }
+.rule span { color: var(--ink-2); font-size: .85rem; }
+
+/* screen figures */
+figure.screen { margin: 34px 0 0; }
+figure.screen > figcaption { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 16px; margin-bottom: 12px; }
+figure.screen figcaption h3 { font-size: 1.15rem; }
+figure.screen figcaption .meta { font-size: .85rem; color: var(--ink-2); }
+figure.screen figcaption .meta b { color: var(--ink); }
+.why { color: var(--ink-2); font-size: .93rem; max-width: 80ch; margin: -4px 0 12px; }
+.frame { border: 1px solid #c5d1df; border-radius: 14px; overflow: hidden; background: var(--card); box-shadow: var(--shadow); }
+.frame .bar { background: #e7edf4; border-bottom: 1px solid #c5d1df; padding: 8px 14px; display: flex; align-items: center; gap: 12px; font-size: .78rem; color: var(--ink-2); }
+.frame .bar i { width: 10px; height: 10px; border-radius: 50%; background: #c0cbd8; display: inline-block; margin-right: 4px; }
+.frame .bar code { background: #fff; border: 1px solid #ccd6e2; border-radius: 6px; padding: 1px 10px; font-size: .78rem; color: var(--ink); }
+.scroll { overflow-x: auto; }
+.scroll > .app { min-width: 900px; }
+
+/* ================= PRODUCT COMPONENTS (starter for static/css/app.css) ================= */
+.app { display: grid; grid-template-columns: 208px 1fr; background: var(--paper); min-height: 520px; font-size: 15px; }
+.side { background: var(--ink); color: #c9d8ea; padding: 18px 12px; display: flex; flex-direction: column; gap: 4px; }
+.brandmark { display: flex; align-items: center; gap: 10px; color: #fff; font-weight: 700; padding: 2px 8px 16px; letter-spacing: -.01em; }
+.brandmark svg { width: 28px; height: 28px; }
+.side .grp { font-size: .68rem; letter-spacing: .12em; text-transform: uppercase; color: #7f9bbb; padding: 12px 10px 4px; }
+.side a { display: flex; align-items: center; gap: 10px; color: #c9d8ea; text-decoration: none; padding: 8px 10px; border-radius: 8px; font-size: .92rem; }
+.side a svg { width: 17px; height: 17px; flex: none; }
+.side a.on { background: #1f4a7c; color: #fff; }
+.side a.off { color: #6f88a6; cursor: not-allowed; }
+.side a .tag { margin-left: auto; font-size: .68rem; background: #2b5e97; color: #fff; padding: 0 7px; border-radius: 99px; }
+.side a .tag.red { background: #c0392b; }
+.side .me { margin-top: auto; padding: 10px; border-top: 1px solid #27466a; font-size: .82rem; color: #9fb6d1; }
+.side .me b { display: block; color: #fff; font-size: .9rem; }
+.main { min-width: 0; display: flex; flex-direction: column; }
+.topbar { background: var(--card); border-bottom: 1px solid var(--line); padding: 12px 24px; display: flex; align-items: center; gap: 12px; }
+.crumb { color: var(--ink-2); font-size: .85rem; }
+.crumb b { color: var(--ink); }
+.topbar .sp { margin-left: auto; display: flex; align-items: center; gap: 10px; font-size: .85rem; color: var(--ink-2); }
+.avatar { width: 30px; height: 30px; border-radius: 50%; background: var(--brand); color: #fff; display: grid; place-items: center; font-weight: 700; font-size: .8rem; }
+.content { padding: 22px 24px 28px; display: grid; gap: 16px; align-content: start; }
+.pagehead { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: flex-end; justify-content: space-between; }
+.pagehead h4 { font-size: 1.4rem; letter-spacing: -.01em; }
+.pagehead p { color: var(--ink-2); font-size: .92rem; margin-top: 2px; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; }
+.card h5 { font-size: 1rem; margin: 0 0 4px; }
+.card .hint { color: var(--ink-2); font-size: .86rem; }
+.grid { display: grid; gap: 16px; }
+.g2 { grid-template-columns: 1.55fr 1fr; }
+.g3 { grid-template-columns: repeat(3, 1fr); }
+.g4 { grid-template-columns: repeat(4, 1fr); }
+.tile { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; }
+.tile .k { font-size: .76rem; color: var(--ink-2); text-transform: uppercase; letter-spacing: .06em; font-weight: 600; }
+.tile .v { font-size: 1.55rem; font-weight: 700; margin-top: 2px; font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
+.tile .s { font-size: .82rem; color: var(--ink-2); margin-top: 2px; }
+.btn { font: inherit; font-size: .92rem; font-weight: 600; border-radius: 8px; padding: 8px 16px; border: 1px solid transparent; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; text-decoration: none; }
+.btn svg { width: 16px; height: 16px; }
+.btn.primary { background: var(--brand); color: #fff; }
+.btn.primary:hover { background: var(--brand-ink); }
+.btn.ghost { background: var(--card); color: var(--ink); border-color: #bccadb; }
+.btn.danger { background: var(--bad); color: #fff; }
+.btn.good { background: var(--ok); color: #fff; }
+.btn[disabled] { background: #dde4ec; color: #8497ad; border-color: transparent; cursor: not-allowed; }
+.btn.sm { padding: 4px 10px; font-size: .82rem; }
+.pill { display: inline-flex; align-items: center; gap: 6px; font-size: .78rem; font-weight: 600; padding: 2px 10px; border-radius: 99px; white-space: nowrap; }
+.pill::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.pill.ok { background: var(--ok-wash); color: var(--ok); }
+.pill.wait { background: var(--wait-wash); color: var(--wait); }
+.pill.bad { background: var(--bad-wash); color: var(--bad); }
+.pill.idle { background: var(--idle-wash); color: var(--idle); }
+.pill.info { background: var(--brand-wash); color: var(--brand-ink); }
+.callout { border-radius: var(--radius); padding: 14px 16px; display: flex; gap: 14px; align-items: flex-start; border: 1px solid; }
+.callout svg { width: 22px; height: 22px; flex: none; margin-top: 2px; }
+.callout.bad { background: var(--bad-wash); border-color: #f2c1c1; color: #7d1717; }
+.callout.info { background: var(--brand-wash); border-color: #bcd6f1; color: var(--brand-ink); }
+.callout.wait { background: var(--wait-wash); border-color: #efd9a0; color: #6a4500; }
+.callout.ok { background: var(--ok-wash); border-color: #b5dfc6; color: #0f5a37; }
+.callout .grow { flex: 1; }
+.callout b { display: block; }
+.callout p { font-size: .9rem; margin-top: 2px; }
+table.t { width: 100%; border-collapse: collapse; font-size: .9rem; }
+table.t th { text-align: left; font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-2); padding: 8px 10px; border-bottom: 1px solid var(--line); }
+table.t td { padding: 10px; border-bottom: 1px solid #edf1f6; vertical-align: middle; }
+table.t tr:last-child td { border-bottom: 0; }
+table.t td.r, table.t th.r { text-align: right; font-variant-numeric: tabular-nums; }
+.stepper { list-style: none; margin: 14px 0 0; padding: 0; display: grid; gap: 0; }
+.stepper li { display: grid; grid-template-columns: 30px 1fr auto; gap: 12px; align-items: start; padding: 10px 0; position: relative; }
+.stepper li:not(:last-child)::after { content: ""; position: absolute; left: 14px; top: 38px; bottom: -10px; width: 2px; background: var(--line); }
+.dot { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; border: 2px solid var(--line); background: var(--card); color: var(--idle); z-index: 1; }
+.dot svg { width: 15px; height: 15px; }
+.dot.done { background: var(--ok); border-color: var(--ok); color: #fff; }
+.dot.current { border-color: var(--brand); color: var(--brand); background: var(--brand-wash); }
+.dot.problem { background: var(--bad); border-color: var(--bad); color: #fff; }
+.dot.waiting { border-color: #d6a23c; color: var(--wait); background: var(--wait-wash); }
+.stepper b { display: block; font-size: .95rem; }
+.stepper .d { font-size: .84rem; color: var(--ink-2); }
+.stepper li.locked b { color: #7a8ba0; }
+.stepper.h li::after { display: none; }
+.bar-cell { width: 34%; min-width: 120px; }
+.field { display: grid; gap: 5px; margin-bottom: 14px; }
+.field label { font-size: .85rem; font-weight: 600; }
+.field input, .field select { font: inherit; border: 1px solid #b9cadb; border-radius: 8px; padding: 10px 12px; background: #fbfdff; color: var(--ink); min-height: 42px; }
+.field .err { color: var(--bad); font-size: .82rem; }
+.bar-track { height: 8px; background: var(--idle-wash); border-radius: 99px; overflow: hidden; }
+.bar-fill { height: 100%; background: var(--brand); border-radius: 99px; }
+.bar-fill.hi { background: #c77d0a; }
+.bar-fill.full { background: var(--bad); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { font-size: .76rem; background: var(--idle-wash); color: var(--ink); border-radius: 6px; padding: 2px 8px; }
+.chip.mine { background: var(--brand-wash); color: var(--brand-ink); font-weight: 600; }
+.chip.zero { background: var(--bad-wash); color: var(--bad); }
+.row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.mut { color: var(--ink-2); }
+.sm { font-size: .85rem; }
+.mt { margin-top: 12px; }
+
+/* sign-in */
+.signin { display: grid; grid-template-columns: 1.05fr 1fr; min-height: 470px; }
+.signin .l { background: linear-gradient(160deg, #0f2a47, #1b5fa7); color: #fff; padding: 36px; display: flex; flex-direction: column; gap: 18px; }
+.signin .l h4 { font-size: 1.7rem; letter-spacing: -.02em; max-width: 14ch; }
+.signin .l ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; color: #d6e4f5; font-size: .94rem; }
+.signin .l li { display: flex; gap: 10px; }
+.signin .l li svg { width: 18px; height: 18px; flex: none; margin-top: 3px; color: #9cc3ee; }
+.signin .l small { margin-top: auto; color: #9cc3ee; }
+.signin .r { padding: 40px 48px; display: grid; align-content: center; background: var(--card); }
+.signin .r h4 { font-size: 1.5rem; margin-bottom: 4px; }
+
+/* choices */
+.pick { display: grid; gap: 10px; }
+.college { border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.college > header { background: #f7f9fc; padding: 10px 14px; display: flex; justify-content: space-between; gap: 8px; border-bottom: 1px solid var(--line); }
+.college > header b { font-size: .95rem; }
+.branch { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; padding: 10px 14px; border-bottom: 1px solid #edf1f6; }
+.branch:last-child { border-bottom: 0; }
+.branch .n { font-size: .92rem; font-weight: 600; }
+.mylist { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 8px; }
+.mylist li { display: grid; grid-template-columns: 30px 1fr auto; gap: 10px; align-items: center; background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 9px 10px; }
+.mylist .p { width: 28px; height: 28px; border-radius: 50%; background: var(--brand); color: #fff; font-weight: 700; display: grid; place-items: center; font-size: .85rem; }
+.mylist .nm { font-size: .88rem; line-height: 1.3; }
+.mylist .nm small { display: block; color: var(--ink-2); }
+.mylist .ctl { display: flex; gap: 4px; }
+.ico { width: 28px; height: 28px; border-radius: 6px; border: 1px solid var(--line); background: #fff; color: var(--ink-2); display: grid; place-items: center; cursor: pointer; padding: 0; }
+.ico:hover { background: var(--brand-wash); color: var(--brand-ink); }
+.ico svg { width: 14px; height: 14px; }
+
+/* result ticket */
+.ticket { background: var(--card); border: 1px solid var(--line); border-radius: 16px; overflow: hidden; box-shadow: var(--shadow); }
+.ticket .hd { background: linear-gradient(120deg, #0f3d70, #1b5fa7); color: #fff; padding: 20px 24px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+.ticket .hd b { font-size: 1.25rem; display: block; }
+.ticket .hd span { color: #c8dcf3; font-size: .85rem; }
+.ticket .bd { padding: 22px 24px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+.ticket dt { font-size: .72rem; text-transform: uppercase; letter-spacing: .07em; color: var(--ink-2); font-weight: 600; }
+.ticket dd { margin: 2px 0 0; font-weight: 600; }
+.ticket .ft { border-top: 2px dashed var(--line); padding: 16px 24px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; background: #fafcfe; }
+
+/* ---------- tokens + route map ---------- */
+.swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; margin-top: 20px; }
+.sw { border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--card); font-size: .8rem; }
+.sw i { display: block; height: 52px; }
+.sw div { padding: 8px 10px; }
+.sw b { display: block; font-size: .84rem; }
+.sw code { color: var(--ink-2); }
+.spec { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; margin-top: 20px; }
+.spec .card h5 { margin-bottom: 8px; }
+.spec ul { margin: 0; padding-left: 18px; font-size: .9rem; color: var(--ink); display: grid; gap: 4px; }
+.tablewrap { overflow-x: auto; margin-top: 20px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--card); }
+.tablewrap table { min-width: 760px; }
+.st { font-size: .72rem; font-weight: 700; padding: 1px 8px; border-radius: 6px; }
+.st.new { background: var(--brand-wash); color: var(--brand-ink); }
+.st.re { background: var(--wait-wash); color: var(--wait); }
+.st.ok { background: var(--ok-wash); color: var(--ok); }
+footer.end { padding: 40px 0 60px; color: var(--ink-2); font-size: .88rem; }
+
+@media (max-width: 720px) {
+  .g2, .g3, .g4, .signin, .ticket .bd { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .btn, .ico { transition: background .15s ease, color .15s ease; }
+}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 11V8a4 4 0 018 0v3" fill="none" stroke="currentColor" stroke-width="2"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 7.5V12l3 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+    <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 4l9 16H3z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M12 10v4.5M12 17.2v.1" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 11v5M12 8v.1" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></symbol>
+    <symbol id="i-up" viewBox="0 0 24 24"><path d="M6 14l6-6 6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-down" viewBox="0 0 24 24"><path d="M6 10l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="M7 7l10 10M17 7L7 17" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></symbol>
+    <symbol id="i-home" viewBox="0 0 24 24"><path d="M4 11l8-7 8 7v8a1 1 0 01-1 1h-4v-6H9v6H5a1 1 0 01-1-1z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
+    <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8.5" r="3.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M5 20c.8-3.6 3.6-5.5 7-5.5s6.200 1.900 7 5.500" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+    <symbol id="i-doc" viewBox="0 0 24 24"><path d="M7 3h7l4 4v14H7z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M14 3v4h4M10 12h5M10 16h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+    <symbol id="i-list" viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11M4.500 6h.1M4.500 12h.1M4.500 18h.1" fill="none" stroke="currentColor" stroke-width="2.400" stroke-linecap="round"/></symbol>
+    <symbol id="i-school" viewBox="0 0 24 24"><path d="M3 9l9-5 9 5-9 5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M7 11.500V16c0 1.200 2.200 2.500 5 2.500s5-1.300 5-2.500v-4.500" fill="none" stroke="currentColor" stroke-width="2"/></symbol>
+    <symbol id="i-seat" viewBox="0 0 24 24"><path d="M6 4v9a2 2 0 002 2h8M6 4h3M9 15v5M17 15v5M17 11V4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5l11 7-11 7z" fill="currentColor"/></symbol>
+    <symbol id="i-log" viewBox="0 0 24 24"><path d="M5 4h14v16H5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M8.500 9h7M8.500 13h7M8.500 17h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+    <symbol id="i-sliders" viewBox="0 0 24 24"><path d="M5 7h14M5 17h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="9" cy="7" r="2.500" fill="var(--ink)" stroke="currentColor" stroke-width="2"/><circle cx="15" cy="17" r="2.500" fill="var(--ink)" stroke="currentColor" stroke-width="2"/></symbol>
+    <symbol id="i-logo" viewBox="0 0 32 32"><rect width="32" height="32" rx="8" fill="#1b5fa7"/><path d="M8 22V12l8-4 8 4v10" fill="none" stroke="#fff" stroke-width="2.400" stroke-linejoin="round"/><path d="M12 22v-5h8v5M16 8v3" fill="none" stroke="#9cc3ee" stroke-width="2.200" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  </defs>
+</svg>
+
+<header class="top">
+  <div class="wrap">
+    <div class="eyebrow">Team 5 &middot; Sprint Two target</div>
+    <h1>Admission Automation, finished</h1>
+    <p class="lede">One website where a candidate goes from registration to an accepted seat, and one administrator verifies documents, runs the single allotment and publishes the results. Every step is gated by the step before it, shown on screen, and written to an audit log.</p>
+    <div class="facts">
+      <div class="fact"><b>2</b><span>roles: candidate and administrator</span></div>
+      <div class="fact"><b>9</b><span>stages from sign-up to seat decision</span></div>
+      <div class="fact"><b>1</b><span>allotment cycle, run once</span></div>
+      <div class="fact"><b>20</b><span>screens, one shared design</span></div>
+    </div>
+  </div>
+</header>
+
+<section class="block">
+  <div class="wrap">
+    <div class="eyebrow">The story</div>
+    <h2>Nine stages, one direction</h2>
+    <p class="sub">Each stage opens only when the one before it is done. That is what makes the product logical: nobody can pick colleges before they are eligible, and nobody sees a result before the administrator publishes it.</p>
+    <ol class="rail">
+      <li><span class="who cand">Candidate</span><h3>Register and sign in</h3><p>Name, email, mobile, date of birth, password. Lands on a personal dashboard.</p><div class="gate"><b>Opens:</b> exam details</div></li>
+      <li><span class="who cand">Candidate</span><h3>Exam details</h3><p>Pick the seeded KCET or COMEDK record. Rank and category come from the record, never typed in freely.</p><div class="gate"><b>Opens:</b> application. Frozen once submitted.</div></li>
+      <li><span class="who cand">Candidate</span><h3>Application</h3><p>Save a draft, come back, submit. A unique reference such as ADM-2026-000007 is issued.</p><div class="gate"><b>Opens:</b> document upload</div></li>
+      <li><span class="who cand">Candidate</span> <span class="who adm">Admin</span><h3>Documents</h3><p>Upload Marksheet, ID Proof, Category Certificate. The administrator approves or rejects with a reason; rejected files can be replaced.</p><div class="gate"><b>Opens:</b> eligibility, when all three are approved</div></li>
+      <li><span class="who sys">System</span><h3>Eligibility</h3><p>Automatic. Pending until documents are approved, then Eligible or Not Eligible, with the rule that decided it.</p><div class="gate"><b>Opens:</b> choice filling, Eligible only</div></li>
+      <li><span class="who cand">Candidate</span><h3>Choices</h3><p>Add college and branch pairs, reorder by preference, then lock. Locking is final.</p><div class="gate"><b>Opens:</b> a place in the allotment run</div></li>
+      <li><span class="who adm">Admin</span><h3>Run allotment</h3><p>Once. Candidates in rank order, preferences in saved order, seats by category. Seat counts and results save together or not at all.</p><div class="gate"><b>Opens:</b> publishing</div></li>
+      <li><span class="who adm">Admin</span><h3>Publish results</h3><p>Results stay hidden from candidates until this one click.</p><div class="gate"><b>Opens:</b> result page for every candidate</div></li>
+      <li><span class="who cand">Candidate</span><h3>Seat decision</h3><p>Accept, or reject and withdraw. Exactly once. Not Allocated candidates see a clear explanation instead.</p><div class="gate"><b>Ends:</b> the cycle</div></li>
+    </ol>
+  </div>
+</section>
+
+<section class="block">
+  <div class="wrap">
+    <div class="eyebrow">Consistency</div>
+    <h2>Rules the product enforces</h2>
+    <p class="sub">These close the gaps a reviewer would find by clicking around. Each is enforced on the server, not only hidden in the interface, and each has a test.</p>
+    <div class="rules">
+      <div class="rule"><b>Exam details freeze at submission</b><span>A candidate cannot change rank or category after documents are approved or choices are locked.</span></div>
+      <div class="rule"><b>Submit needs exam details first</b><span>Eligibility needs rank and category, so the application refuses to submit without them.</span></div>
+      <div class="rule"><b>Documents need a submitted application</b><span>Already true today. The dashboard now explains why the Documents step is locked.</span></div>
+      <div class="rule"><b>Choices need Eligible</b><span>Not Eligible and Pending candidates see why, with a link to fix it. Direct API calls get 403.</span></div>
+      <div class="rule"><b>A locked list cannot change</b><span>Add, remove and reorder are refused in the page and in the API once locked. Lock needs at least one choice.</span></div>
+      <div class="rule"><b>Allotment runs once and refuses to waste the run</b><span>No locked lists means no run. A second run returns 409. A failed run leaves nothing behind.</span></div>
+      <div class="rule"><b>Eligibility is checked again at run time</b><span>If a cut-off or document changed after locking, the engine uses the current truth.</span></div>
+      <div class="rule"><b>Results are invisible until published</b><span>Candidates see "results not published yet". Administrators see the run summary.</span></div>
+      <div class="rule"><b>One decision per allotted seat</b><span>A database rule, not just a disabled button. Rejected seats are not released.</span></div>
+      <div class="rule"><b>Every privileged action is audited</b><span>Document review, catalogue and rule edits, candidate corrections, allotment run, publication. The log has no edit path.</span></div>
+      <div class="rule"><b>Everything needs a login</b><span>Including the college catalogue. Only the landing, sign-in and register pages are public.</span></div>
+      <div class="rule"><b>Forms and API calls carry a CSRF token</b><span>One central check instead of one per module.</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="block">
+  <div class="wrap">
+    <div class="eyebrow">The screens</div>
+    <h2>What people actually see</h2>
+    <p class="sub">Sample figures and fictional names. Every screen below is built from the same components in the design language section, so the finished product looks like one product instead of five modules.</p>
+
+    <!-- 1 SIGN IN -->
+    <figure class="screen">
+      <figcaption><h3>Sign in</h3><span class="meta"><b>Everyone</b> &middot; Varun, design system issue</span></figcaption>
+      <p class="why">The first impression. Candidates and administrators use the same form and are sent to their own dashboard afterwards.</p>
+      <div class="frame"><div class="bar"><span><i></i><i></i><i></i></span><code>/accounts/login</code></div>
+        <div class="scroll"><div class="signin" style="min-width:820px">
+          <div class="l">
+            <div class="brandmark"><svg><use href="#i-logo"/></svg>Admission Automation</div>
+            <h4>From application to seat, in one place.</h4>
+            <ul>
+              <li><svg><use href="#i-check"/></svg>See exactly which step you are on and what comes next</li>
+              <li><svg><use href="#i-check"/></svg>Know why a document was rejected and replace it in one click</li>
+              <li><svg><use href="#i-check"/></svg>Results appear only when they are official</li>
+            </ul>
+            <small>Fictional exam data. Educational prototype, not the KEA or COMEDK system.</small>
+          </div>
+          <div class="r">
+            <h4>Welcome back</h4>
+            <p class="mut sm" style="margin-bottom:20px">Sign in with your email or mobile number.</p>
+            <div class="field"><label for="m-id">Email or mobile number</label><input id="m-id" value="ananya.rao@example.test" readonly></div>
+            <div class="field"><label for="m-pw">Password</label><input id="m-pw" type="password" value="password123" readonly></div>
+            <button class="btn primary" type="button" style="justify-content:center">Sign in</button>
+            <p class="sm mut mt">New candidate? <a href="#route-map">Create an account</a></p>
+          </div>
+        </div></div>
+      </div>
+    </figure>
+
+    <!-- 2 CANDIDATE DASHBOARD -->
+    <figure class="screen">
+      <figcaption><h3>Candidate dashboard</h3><span class="meta"><b>Candidate</b> &middot; Varun &middot; each module supplies its own step status</span></figcaption>
+      <p class="why">Test case TC-002 says a candidate is redirected to a dashboard after login. This page tells them where they are, what is blocking them and the one thing to do next. Locked steps stay visible, so the whole journey is understood on day one.</p>
+      <div class="frame"><div class="bar"><span><i></i><i></i><i></i></span><code>/dashboard</code></div>
+        <div class="scroll"><div class="app">
+          <nav class="side" aria-label="Candidate navigation">
+            <div class="brandmark"><svg><use href="#i-logo"/></svg>Admissions</div>
+            <a class="on" href="#"><svg><use href="#i-home"/></svg>Dashboard</a>
+            <div class="grp">My admission</div>
+            <a href="#"><svg><use href="#i-user"/></svg>Profile and exam</a>
+            <a href="#"><svg><use href="#i-doc"/></svg>Application</a>
+            <a href="#"><svg><use href="#i-doc"/></svg>Documents<span class="tag red">1</span></a>
+            <a href="#"><svg><use href="#i-check"/></svg>Eligibility</a>
+            <a class="off" href="#"><svg><use href="#i-lock"/></svg>Choices</a>
+            <a class="off" href="#"><svg><use href="#i-lock"/></svg>Result</a>
+            <div class="grp">Explore</div>
+            <a href="#"><svg><use href="#i-school"/></svg>Colleges</a>
+            <div class="me"><b>Ananya Rao</b>Candidate &middot; Log out</div>
+          </nav>
+          <div class="main">
+            <div class="topbar"><span class="crumb">Dashboard</span><div class="sp"><span class="pill info">ADM-2026-000007</span><span class="avatar">AR</span></div></div>
+            <div class="content">
+              <div class="pagehead"><div><h4>Good afternoon, Ananya</h4><p>Step 3 of 7: your documents need attention.</p></div></div>
+              <div class="callout bad"><svg><use href="#i-alert"/></svg><div class="grow"><b>Your Category Certificate was rejected</b><p>Administrator's reason: "Scan is cut off at the bottom edge. Upload the full page."</p></div><a class="btn danger sm" href="#">Upload a new copy</a></div>
+              <div class="grid g4">
+                <div class="tile"><div class="k">Exam</div><div class="v num">KCET 4,500</div><div class="s">OBC &middot; score 160.5</div></div>
+                <div class="tile"><div class="k">Application</div><div class="v">Submitted</div><div class="s">Locked for editing</div></div>
+                <div class="tile"><div class="k">Documents</div><div class="v num">2 of 3</div><div class="s">approved</div></div>
+                <div class="tile"><div class="k">Eligibility</div><div class="v">Pending</div><div class="s">Waiting for documents</div></div>
+              </div>
+              <div class="card">
+                <h5>Your admission journey</h5>
+                <ol class="stepper">
+                  <li><span class="dot done"><svg><use href="#i-check"/></svg></span><div><b>Profile and exam details</b><span class="d">KCET rank 4,500, OBC. Frozen after submission.</span></div><span class="pill ok">Done</span></li>
+                  <li><span class="dot done"><svg><use href="#i-check"/></svg></span><div><b>Application</b><span class="d">Submitted as ADM-2026-000007.</span></div><span class="pill ok">Done</span></li>
+                  <li><span class="dot problem"><svg><use href="#i-alert"/></svg></span><div><b>Documents</b><span class="d">Marksheet and ID Proof approved. Category Certificate rejected.</span></div><span class="pill bad">Action needed</span></li>
+                  <li><span class="dot waiting"><svg><use href="#i-clock"/></svg></span><div><b>Eligibility</b><span class="d">Decided automatically once all three documents are approved.</span></div><span class="pill wait">Waiting</span></li>
+                  <li class="locked"><span class="dot"><svg><use href="#i-lock"/></svg></span><div><b>Choices</b><span class="d">Opens when you are Eligible.</span></div><span class="pill idle">Locked</span></li>
+                  <li class="locked"><span class="dot"><svg><use href="#i-lock"/></svg></span><div><b>Allotment result</b><span class="d">Visible after the administrator publishes results.</span></div><span class="pill idle">Locked</span></li>
+                  <li class="locked"><span class="dot"><svg><use href="#i-lock"/></svg></span><div><b>Seat decision</b><span class="d">Accept or reject, once.</span></div><span class="pill idle">Locked</span></li>
+                </ol>
+              </div>
+            </div>
+          </div>
+        </div></div>
+      </div>
+    </figure>
+
+    <!-- 3 ELIGIBILITY -->
+    <figure class="screen">
+      <figcaption><h3>Eligibility</h3><span class="meta"><b>Candidate</b> &middot; Tasya</span></figcaption>
+      <p class="why">ADM-F-009 asks for a human-readable reason. The checklist shows every input the decision used, so a Pending or Not Eligible result is never a mystery.</p>
+      <div class="frame"><div class="bar"><span><i></i><i></i><i></i></span><code>/eligibility</code></div>
+        <div class="scroll"><div class="app" style="min-height:0">
+          <nav class="side" aria-label="Candidate navigation">
+            <div class="brandmark"><svg><use href="#i-logo"/></svg>Admissions</div>
+            <a href="#"><svg><use href="#i-home"/></svg>Dashboard</a>
+            <div class="grp">My admission</div>
+            <a href="#"><svg><use href="#i-user"/></svg>Profile and exam</a>
+            <a href="#"><svg><use href="#i-doc"/></svg>Application</a>
+            <a href="#"><svg><use href="#i-doc"/></svg>Documents</a>
+            <a class="on" href="#"><svg><use href="#i-check"/></svg>Eligibility</a>
+            <a href="#"><svg><use href="#i-list"/></svg>Choices</a>
+            <a class="off" href="#"><svg><use href="#i-lock"/></svg>Result</a>
+          </nav>
+          <div class="main">
+            <div class="topbar"><span class="crumb">Dashboard / <b>Eligibility</b></span><div class="sp"><span class="avatar">AR</span></div></div>
+            <div class="content">
+              <div class="callout ok"><svg><use href="#i-check"/></svg><div class="grow"><b>You are eligible</b><p>Rank 4,500 is within the OBC cut-off of 30,000.</p></div><a class="btn good sm" href="#">Fill your choices</a></div>
+              <div class="card">
+                <h5>How this was decided</h5>
+                <table class="t"><tbody>
+                  <tr><td style="width:30px"><span class="pill ok" style="padding:2px 6px"></span></td><td><b>Exam details</b><div class="mut sm">KCET rank 4,500, category OBC</div></td><td class="r"><span class="pill ok">Met</span></td></tr>
+                  <tr><td><span class="pill ok" style="padding:2px 6px"></span></td><td><b>Application submitted</b><div class="mut sm">ADM-2026-000007</div></td><td class="r"><span class="pill ok">Met</span></td></tr>
+                  <tr><td><span class="pill ok" style="padding:2px 6px"></span></td><td><b>Required documents approved</b><div class="mut sm">Marksheet, ID Proof, Category Certificate</div></td><td class="r"><span class="pill ok">3 of 3</span></td></tr>
+                  <tr><td><span class="pill ok" style="padding:2px 6px"></span></td><td><b>Rank within the cut-off</b><div class="mut sm">OBC cut-off set by the administrator: 30,000</div></td><td class="r"><span class="pill ok">4,500 &le; 30,000</span></td></tr>
+                </tbody></table>
+              </div>
+            </div>
+          </div>
+        </div></div>
+      </div>
+    </figure>
+
+    <!-- 4 CHOICES -->
+    <figure class="screen">
+      <figcaption><h3>Choice filling</h3><span class="meta"><b>Candidate</b> &middot; Varun &middot; issues #21, #22, #23</span></figcaption>
+      <p class="why">Browse on the left, build your ranked list on the right. Seat chips show the seats left in <em>your</em> category, because the allotment only ever uses that row. A branch with none left is flagged before the candidate wastes a preference. Try the arrows.</p>
+      <div class="frame"><div class="bar"><span><i></i><i></i><i></i></span><code>/choices</code></div>
+        <div class="scroll"><div class="app" style="min-height:0">
+          <nav class="side" aria-label="Candidate navigation">
+            <div class="brandmark"><svg><use href="#i-logo"/></svg>Admissions</div>
+            <a href="#"><svg><use href="#i-home"/></svg>Dashboard</a>
+            <div class="grp">My admission</div>
+            <a href="#"><svg><use href="#i-user"/></svg>Profile and exam</a>
+            <a href="#"><svg><use href="#i-doc"/></svg>Application</a>
+            <a href="#"><svg><use href="#i-doc"/></svg>Documents</a>
+            <a href="#"><svg><use href="#i-check"/></svg>Eligibility</a>
+            <a class="on" href="#"><svg><use href="#i-list"/></svg>Choices</a>
+            <a class="off" href="#"><svg><use href="#i-lock"/></svg>Result</a>
+          </nav>
+          <div class="main">
+            <div class="topbar"><span class="crumb">Dashboard / <b>Choices</b></span><div class="sp"><span class="pill ok">Eligible</span><span class="avatar">AR</span></div></div>
+            <div class="content">
+              <div class="pagehead"><div><h4>Choose your colleges</h4><p>Your category: <b>OBC</b>. Seat chips show OBC seats left.</p></div><div class="row"><span class="pill info">List open</span></div></div>
+              <div class="grid g2">
+                <div class="card">
+                  <div class="field" style="margin-bottom:12px"><label for="m-search">Search colleges or branches</label><input id="m-search" placeholder="Try Computer or Cedarwood" readonly></div>
+                  <div class="pick">
+                    <div class="college"><header><b>Meridian Institute of Technology</b><span class="mut sm">Lakeview</span></header>
+                      <div class="branch"><div><div class="n">Computer Science and Engineering</div><div class="chips"><span class="chip mine">OBC 9 left</span><span class="chip">of 15</span></div></div><button class="btn ghost sm" type="button" data-add="Meridian Institute of Technology|Computer Science and Engineering">Add</button></div>
+                      <div class="branch"><div><div class="n">Electronics and Communication Engineering</div><div class="chips"><span class="chip mine">OBC 12 left</span><span class="chip">of 12</span></div></div><button class="btn ghost sm" type="button" data-add="Meridian Institute of Technology|Electronics and Communication Engineering">Add</button></div>
+                      <div class="branch"><div><div class="n">Mechanical Engineering</div><div class="chips"><span class="chip zero">OBC 0 left</span><span class="chip">of 9</span></div></div><button class="btn ghost sm" type="button" data-add="Meridian Institute of Technology|Mechanical Engineering">Add anyway</button></div>
+                    </div>
+                    <div class="college"><header><b>Cedarwood College of Engineering</b><span class="mut sm">Hillcrest</span></header>
+                      <div class="branch"><div><div class="n">Computer Science and Engineering</div><div class="chips"><span class="chip mine">OBC 10 left</span><span class="chip">of 10</span></div></div><button class="btn ghost sm" type="button" disabled>Added</button></div>
+                      <div class="branch"><div><div class="n">Information Science and Engineering</div><div class="chips"><span class="chip mine">OBC 8 left</span><span class="chip">of 8</span></div></div><button class="btn ghost sm" type="button" data-add="Cedarwood College of Engineering|Information Science and Engineering">Add</button></div>
+                    </div>
+                  </div>
+                </div>
+                <div class="card">
+                  <h5>My choices <span class="mut sm num" id="m-count">(3)</span></h5>
+                  <p class="hint">Top of the list is your first preference. Allotment follows this exact order.</p>
+                  <ol class="mylist" id="m-list">
+                    <li><span class="p">1</span><div class="nm">Computer Science and Engineering<small>Meridian Institute of Technology</small></div><div class="ctl"><button class="ico" type="button" aria-label="Move up" data-move="-1"><svg><use href="#i-up"/></svg></button><button class="ico" type="button" aria-label="Move down" data-move="1"><svg><use href="#i-down"/></svg></button><button class="ico" type="button" aria-label="Remove" data-remove><svg><use href="#i-x"/></svg></button></div></li>
+                    <li><span class="p">2</span><div class="nm">Computer Science and Engineering<small>Cedarwood College of Engineering</small></div><div class="ctl"><button class="ico" type="button" aria-label="Move up" data-move="-1"><svg><use href="#i-up"/></svg></button><button class="ico" type="button" aria-label="Move down" data-move="1"><svg><use href="#i-down"/></svg></button><button class="ico" type="button" aria-label="Remove" data-remove><svg><use href="#i-x"/></svg></button></div></li>
+                    <li><span class="p">3</span><div class="nm">Electronics and Communication Engineering<small>Meridian Institute of Technology</small></div><div class="ctl"><button class="ico" type="button" aria-label="Move up" data-move="-1"><svg><use href="#i-up"/></svg></button><button class="ico" type="button" aria-label="Move down" data-move="1"><svg><use href="#i-down"/></svg></button><button class="ico" type="button" aria-label="Remove" data-remove><svg><use href="#i-x"/></svg></button></div></li>
+                  </ol>
+                  <div class="callout wait mt"><svg><use href="#i-lock"/></svg><div class="grow"><b>Locking is final</b><p>You cannot add, remove or reorder after this. You will be asked to confirm.</p></div></div>
+                  <button class="btn primary mt" type="button" style="width:100%;justify-content:center"><svg><use href="#i-lock"/></svg>Lock my choices</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div></div>
+      </div>
+    </figure>
+
+    <!-- 5 RESULT -->
+    <figure class="screen">
+      <figcaption><h3>Allotment result and seat decision</h3><span class="meta"><b>Candidate</b> &middot; Dikshith &middot; issues #13, #14</span></figcaption>
+      <p class="why">Four honest states: not published yet, not part of the run (no locked list), Not Allocated, and Allocated. The allotted state is a printable letter with the decision buttons beneath it. Both buttons ask for confirmation, because the decision happens once.</p>
+      <div class="frame"><div class="bar"><span><i></i><i></i><i></i></span><code>/result</code></div>
+        <div class="scroll"><div class="app" style="min-height:0">
+          <nav class="side" aria-label="Candidate navigation">
+            <div class="brandmark"><svg><use href="#i-logo"/></svg>Admissions</div>
+            <a href="#"><svg><use href="#i-home"/></svg>Dashboard</a>
+            <div class="grp">My admission</div>
+            <a href="#"><svg><use href="#i-user"/></svg>Profile and exam</a>
+            <a href="#"><svg><use href="#i-doc"/></svg>Application</a>
+            <a href="#"><svg><use href="#i-doc"/></svg>Documents</a>
+            <a href="#"><svg><use href="#i-check"/></svg>Eligibility</a>
+            <a href="#"><svg><use href="#i-list"/></svg>Choices<span class="tag">Locked</span></a>
+            <a class="on" href="#"><svg><use href="#i-seat"/></svg>Result</a>
+          </nav>
+          <div class="main">
+            <div class="topbar"><span class="crumb">Dashboard / <b>Result</b></span><div class="sp"><span class="avatar">AR</span></div></div>
+            <div class="content">
+              <div class="pagehead"><div><h4>Your allotment result</h4><p>Published by the administrator. This is the only allotment cycle.</p></div></div>
+              <div class="ticket">
+                <div class="hd"><div><span>Seat allotted</span><b>Meridian Institute of Technology</b></div><div style="text-align:right"><span>Reference</span><b class="num">ADM-2026-000007</b></div></div>
+                <dl class="bd" style="margin:0">
+                  <div><dt>Branch</dt><dd>Computer Science and Engineering</dd></div>
+                  <div><dt>Seat category</dt><dd>OBC</dd></div>
+                  <div><dt>Your choice number</dt><dd>1 of 3</dd></div>
+                  <div><dt>Exam and rank</dt><dd class="num">KCET &middot; 4,500</dd></div>
+                  <div><dt>Status</dt><dd><span class="pill ok">Allocated</span></dd></div>
+                  <div><dt>Your decision</dt><dd><span class="pill idle">Not decided</span></dd></div>
+                </dl>
+                <div class="ft"><button class="btn good" type="button">Accept this seat</button><button class="btn ghost" type="button">Reject and withdraw</button><span class="mut sm" style="margin-left:auto">You can decide only once. A rejected seat is not released to others.</span></div>
+              </div>
+              <div class="grid g3">
+                <div class="callout info"><svg><use href="#i-info"/></svg><div class="grow"><b>Not published yet</b><p>"Results will appear here once the administrator publishes them."</p></div></div>
+                <div class="callout wait"><svg><use href="#i-info"/></svg><div class="grow"><b>Not part of this run</b><p>"You had not locked your choices when allotment ran."</p></div></div>
+                <div class="callout bad"><svg><use href="#i-alert"/></svg><div class="grow"><b>Not Allocated</b><p>"All your locked choices were full for your category."</p></div></div>
+              </div>
+            </div>
+          </div>
+        </div></div>
+      </div>
+    </figure>
+
+    <!-- 6 ADMIN DASHBOARD -->
+    <figure class="screen">
+      <figcaption><h3>Administrator dashboard</h3><span class="meta"><b>Administrator</b> &middot; Tasya &middot; issue #27 follow-up</span></figcaption>
+      <p class="why">Summary first, detail below. A cycle banner tells the administrator which stage the whole admission is in. The queue shows names, not database numbers, and links straight to the review.</p>
+      <div class="frame"><div class="bar"><span><i></i><i></i><i></i></span><code>/admin/dashboard</code></div>
+        <div class="scroll"><div class="app">
+          <nav class="side" aria-label="Administrator navigation">
+            <div class="brandmark"><svg><use href="#i-logo"/></svg>Admissions</div>
+            <a class="on" href="#"><svg><use href="#i-home"/></svg>Dashboard</a>
+            <div class="grp">People</div>
+            <a href="#"><svg><use href="#i-user"/></svg>Candidates</a>
+            <a href="#"><svg><use href="#i-doc"/></svg>Documents<span class="tag red">41</span></a>
+            <div class="grp">Setup</div>
+            <a href="#"><svg><use href="#i-school"/></svg>Colleges and seats</a>
+            <a href="#"><svg><use href="#i-sliders"/></svg>Eligibility rules</a>
+            <div class="grp">Allotment</div>
+            <a href="#"><svg><use href="#i-seat"/></svg>Run and publish</a>
+            <a href="#"><svg><use href="#i-log"/></svg>Audit log</a>
+            <div class="me"><b>Fictional Admin</b>Administrator &middot; Log out</div>
+          </nav>
+          <div class="main">
+            <div class="topbar"><span class="crumb"><b>Dashboard</b></span><div class="sp"><span class="avatar">FA</span></div></div>
+            <div class="content">
+              <div class="callout info"><svg><use href="#i-info"/></svg><div class="grow"><b>Cycle stage: verification and choice filling</b><p>Allotment has not run. 203 candidates have locked choices; 41 documents still wait for review.</p></div><a class="btn primary sm" href="#">Open allotment console</a></div>
+              <div class="grid g4">
+                <div class="tile"><div class="k">Candidates</div><div class="v num">312</div><div class="s">268 submitted</div></div>
+                <div class="tile"><div class="k">Documents pending</div><div class="v num">41</div><div class="s">12 rejected so far</div></div>
+                <div class="tile"><div class="k">Eligible</div><div class="v num">231</div><div class="s">19 not eligible</div></div>
+                <div class="tile"><div class="k">Choices locked</div><div class="v num">203</div><div class="s">of 231 eligible</div></div>
+              </div>
+              <div class="grid g2">
+                <div class="card"><h5>Verification queue</h5><p class="hint">Oldest first.</p>
+                  <table class="t"><thead><tr><th>Candidate</th><th>Document</th><th>Uploaded</th><th></th></tr></thead><tbody>
+                    <tr><td><b>Karthik Naidu</b><div class="mut sm">ADM-2026-000031</div></td><td>Marksheet</td><td>09:12</td><td class="r"><a class="btn ghost sm" href="#">Review</a></td></tr>
+                    <tr><td><b>Meera Pillai</b><div class="mut sm">ADM-2026-000044</div></td><td>ID Proof</td><td>09:40</td><td class="r"><a class="btn ghost sm" href="#">Review</a></td></tr>
+                    <tr><td><b>Rohan Gowda</b><div class="mut sm">ADM-2026-000052</div></td><td>Category Certificate</td><td>10:05</td><td class="r"><a class="btn ghost sm" href="#">Review</a></td></tr>
+                  </tbody></table>
+                </div>
+                <div class="card"><h5>Recent activity</h5><p class="hint">From the audit log.</p>
+                  <table class="t"><tbody>
+                    <tr><td><b>document.approve</b><div class="mut sm">Fictional Admin</div></td><td class="r mut sm">2 min ago</td></tr>
+                    <tr><td><b>rule.update</b><div class="mut sm">OBC cut-off 28,000 to 30,000</div></td><td class="r mut sm">1 h ago</td></tr>
+                    <tr><td><b>seats.update</b><div class="mut sm">Cedarwood &middot; Civil</div></td><td class="r mut sm">3 h ago</td></tr>
+                  </tbody></table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div></div>
+      </div>
+    </figure>
+
+    <!-- 7 ALLOTMENT CONSOLE -->
+    <figure class="screen">
+      <figcaption><h3>Allotment console</h3><span class="meta"><b>Administrator</b> &middot; Gagan (run) and Dikshith (publish) &middot; issues #5, #6, #8, #12</span></figcaption>
+      <p class="why">The most important admin screen, so it is the most guarded one. It works in order: check, run, review, publish. Run is a single irreversible action and says so. Publish stays disabled until a run exists. The consistency check proves ADM-NFR-003 on screen.</p>
+      <div class="frame"><div class="bar"><span><i></i><i></i><i></i></span><code>/admin/allotment</code></div>
+        <div class="scroll"><div class="app" style="min-height:0">
+          <nav class="side" aria-label="Administrator navigation">
+            <div class="brandmark"><svg><use href="#i-logo"/></svg>Admissions</div>
+            <a href="#"><svg><use href="#i-home"/></svg>Dashboard</a>
+            <div class="grp">People</div>
+            <a href="#"><svg><use href="#i-user"/></svg>Candidates</a>
+            <a href="#"><svg><use href="#i-doc"/></svg>Documents</a>
+            <div class="grp">Setup</div>
+            <a href="#"><svg><use href="#i-school"/></svg>Colleges and seats</a>
+            <a href="#"><svg><use href="#i-sliders"/></svg>Eligibility rules</a>
+            <div class="grp">Allotment</div>
+            <a class="on" href="#"><svg><use href="#i-seat"/></svg>Run and publish</a>
+            <a href="#"><svg><use href="#i-log"/></svg>Audit log</a>
+          </nav>
+          <div class="main">
+            <div class="topbar"><span class="crumb">Allotment / <b>Console</b></span><div class="sp"><span class="avatar">FA</span></div></div>
+            <div class="content">
+              <div class="card">
+                <ol class="stepper h" style="margin-top:0;grid-template-columns:repeat(4,1fr);gap:8px">
+                  <li style="grid-template-columns:30px 1fr"><span class="dot done"><svg><use href="#i-check"/></svg></span><div><b>1. Pre-run checks</b><span class="d">Passed</span></div></li>
+                  <li style="grid-template-columns:30px 1fr"><span class="dot done"><svg><use href="#i-check"/></svg></span><div><b>2. Run allotment</b><span class="d">Done in 0.8 s</span></div></li>
+                  <li style="grid-template-columns:30px 1fr"><span class="dot current"><svg><use href="#i-list"/></svg></span><div><b>3. Review result</b><span class="d">You are here</span></div></li>
+                  <li style="grid-template-columns:30px 1fr" class="locked"><span class="dot"><svg><use href="#i-lock"/></svg></span><div><b>4. Publish</b><span class="d">After review</span></div></li>
+                </ol>
+              </div>
+              <div class="grid g4">
+                <div class="tile"><div class="k">Processed</div><div class="v num">203</div><div class="s">in rank order</div></div>
+                <div class="tile"><div class="k">Allocated</div><div class="v num">171</div><div class="s">of 240 seats</div></div>
+                <div class="tile"><div class="k">Not Allocated</div><div class="v num">32</div><div class="s">no choice had a seat</div></div>
+                <div class="tile"><div class="k">Consistency</div><div class="v" style="color:var(--ok)">Passed</div><div class="s">30 seat rows, 0 mismatches</div></div>
+              </div>
+              <div class="grid g2">
+                <div class="card"><h5>Seats filled by branch</h5><p class="hint">Filled seats equal allotment records for every college, branch and category.</p>
+                  <table class="t"><tbody>
+                    <tr><td style="width:46%">Meridian &middot; Computer Science</td><td class="bar-cell"><div class="bar-track"><div class="bar-fill full" style="width:100%"></div></div></td><td class="r">60 / 60</td></tr>
+                    <tr><td>Meridian &middot; Electronics</td><td class="bar-cell"><div class="bar-track"><div class="bar-fill hi" style="width:90%"></div></div></td><td class="r">43 / 48</td></tr>
+                    <tr><td>Meridian &middot; Mechanical</td><td class="bar-cell"><div class="bar-track"><div class="bar-fill" style="width:50%"></div></div></td><td class="r">18 / 36</td></tr>
+                    <tr><td>Cedarwood &middot; Computer Science</td><td class="bar-cell"><div class="bar-track"><div class="bar-fill full" style="width:100%"></div></div></td><td class="r">40 / 40</td></tr>
+                    <tr><td>Cedarwood &middot; Information Science</td><td class="bar-cell"><div class="bar-track"><div class="bar-fill" style="width:25%"></div></div></td><td class="r">8 / 32</td></tr>
+                    <tr><td>Cedarwood &middot; Civil</td><td class="bar-cell"><div class="bar-track"><div class="bar-fill" style="width:12%"></div></div></td><td class="r">3 / 24</td></tr>
+                  </tbody></table>
+                </div>
+                <div class="card"><h5>Publish results</h5><p class="hint">Candidates cannot see anything until you publish. This is also recorded in the audit log.</p>
+                  <div class="callout wait mt"><svg><use href="#i-info"/></svg><div class="grow"><b>Run completed, not published</b><p>Allotment cannot be run again in this cycle.</p></div></div>
+                  <button class="btn primary mt" type="button" style="width:100%;justify-content:center"><svg><use href="#i-play"/></svg>Publish results to candidates</button>
+                  <button class="btn" type="button" disabled style="width:100%;justify-content:center;margin-top:8px">Run allotment (already completed)</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div></div>
+      </div>
+    </figure>
+
+  </div>
+</section>
+
+<section class="block" id="language">
+  <div class="wrap">
+    <div class="eyebrow">Design language</div>
+    <h2>One look across all 20 screens</h2>
+    <p class="sub">The tokens and components in this page's stylesheet are the starting point for <code>static/css/app.css</code>. System fonts only, so nothing downloads and the lab machines look the same as the laptops.</p>
+    <div class="swatches">
+      <div class="sw"><i style="background:#10233b"></i><div><b>Ink</b><code>--ink #10233b</code><br>Sidebar, text</div></div>
+      <div class="sw"><i style="background:#1b5fa7"></i><div><b>Brand</b><code>--brand #1b5fa7</code><br>Actions, links</div></div>
+      <div class="sw"><i style="background:#f3f6fa;border-bottom:1px solid #dbe3ec"></i><div><b>Paper</b><code>--paper #f3f6fa</code><br>App background</div></div>
+      <div class="sw"><i style="background:#16794a"></i><div><b>Ok</b><code>--ok #16794a</code><br>Approved, Eligible, Allocated</div></div>
+      <div class="sw"><i style="background:#8a5a00"></i><div><b>Wait</b><code>--wait #8a5a00</code><br>Pending, waiting</div></div>
+      <div class="sw"><i style="background:#b42323"></i><div><b>Bad</b><code>--bad #b42323</code><br>Rejected, Not Eligible</div></div>
+      <div class="sw"><i style="background:#566678"></i><div><b>Idle</b><code>--idle #566678</code><br>Draft, locked, not started</div></div>
+    </div>
+    <div class="spec">
+      <div class="card"><h5>Status words, one colour each</h5>
+        <div class="chips" style="gap:8px;margin-top:6px">
+          <span class="pill idle">Draft</span><span class="pill ok">Submitted</span><span class="pill wait">Pending Verification</span><span class="pill ok">Approved</span><span class="pill bad">Rejected</span><span class="pill ok">Eligible</span><span class="pill bad">Not Eligible</span><span class="pill info">List open</span><span class="pill idle">Locked</span><span class="pill ok">Allocated</span><span class="pill bad">Not Allocated</span><span class="pill ok">Accepted</span><span class="pill idle">Rejected seat</span>
+        </div>
+        <p class="hint mt">The database stores <code>Pending</code>. One helper maps it to "Pending Verification" on screen (deviation D-06).</p>
+      </div>
+      <div class="card"><h5>Components to build once</h5>
+        <ul>
+          <li>App shell: role-aware sidebar, top bar, user menu, flash messages</li>
+          <li>Page header, card, stat tile, callout (info, wait, bad, ok)</li>
+          <li>Status pill, button set (primary, ghost, danger, good, disabled)</li>
+          <li>Step tracker, data table, form field with inline error</li>
+          <li>Empty state, confirmation dialog for irreversible actions</li>
+        </ul>
+      </div>
+      <div class="card"><h5>Rules for every page</h5>
+        <ul>
+          <li>Show names and references, never raw database ids</li>
+          <li>Every blocked step says why and links to the fix</li>
+          <li>Irreversible actions (submit, lock, run, publish, decide) ask first</li>
+          <li>Works at 400 px wide, keyboard operable, visible focus, labelled inputs</li>
+          <li>Print stylesheet for the allotment letter</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="block" id="route-map">
+  <div class="wrap">
+    <div class="eyebrow">Completeness check</div>
+    <h2>Every screen, who builds it</h2>
+    <p class="sub">"Restyle" means the page exists and works today; its owner moves it onto the shared design on Day 2. "New" means it does not exist yet.</p>
+    <div class="tablewrap"><table class="t">
+      <thead><tr><th>Screen</th><th>Path</th><th>For</th><th>State</th><th>Owner</th></tr></thead>
+      <tbody>
+        <tr><td>Landing</td><td><code>/</code></td><td>Public</td><td><span class="st re">Restyle</span></td><td>Varun</td></tr>
+        <tr><td>Sign in</td><td><code>/accounts/login</code></td><td>Public</td><td><span class="st re">Restyle</span></td><td>Varun</td></tr>
+        <tr><td>Register (adds date of birth)</td><td><code>/accounts/register</code></td><td>Public</td><td><span class="st re">Restyle</span></td><td>Varun</td></tr>
+        <tr><td>Candidate dashboard</td><td><code>/dashboard</code></td><td>Candidate</td><td><span class="st new">New</span></td><td>Varun</td></tr>
+        <tr><td>Profile and exam details (adds address)</td><td><code>/accounts/profile-page</code></td><td>Candidate</td><td><span class="st re">Restyle</span></td><td>Varun</td></tr>
+        <tr><td>Application form</td><td><code>/application</code></td><td>Candidate</td><td><span class="st re">Restyle</span></td><td>Gagan</td></tr>
+        <tr><td>Upload documents</td><td><code>/documents/upload</code></td><td>Candidate</td><td><span class="st re">Restyle</span></td><td>Dikshith</td></tr>
+        <tr><td>My documents and resubmit</td><td><code>/documents</code></td><td>Candidate</td><td><span class="st re">Restyle</span></td><td>Dikshith</td></tr>
+        <tr><td>Eligibility with checklist</td><td><code>/eligibility</code></td><td>Candidate</td><td><span class="st re">Restyle</span></td><td>Tasya</td></tr>
+        <tr><td>College catalogue (login required)</td><td><code>/colleges</code></td><td>Candidate, Admin</td><td><span class="st re">Restyle</span></td><td>Tasya</td></tr>
+        <tr><td>Choice filling and lock</td><td><code>/choices</code></td><td>Candidate</td><td><span class="st new">New</span></td><td>Varun</td></tr>
+        <tr><td>Allotment result and seat decision</td><td><code>/result</code></td><td>Candidate</td><td><span class="st new">New</span></td><td>Dikshith</td></tr>
+        <tr><td>Administrator dashboard</td><td><code>/admin/dashboard</code></td><td>Admin</td><td><span class="st re">Restyle</span></td><td>Tasya</td></tr>
+        <tr><td>Candidate list and record</td><td><code>/admin/candidates</code></td><td>Admin</td><td><span class="st new">New</span></td><td>Tasya</td></tr>
+        <tr><td>Document verification</td><td><code>/admin/documents</code></td><td>Admin</td><td><span class="st re">Restyle</span></td><td>Dikshith</td></tr>
+        <tr><td>Colleges, branches, seats</td><td><code>/admin/colleges</code></td><td>Admin</td><td><span class="st re">Restyle</span></td><td>Tasya</td></tr>
+        <tr><td>Eligibility rules</td><td><code>/admin/eligibility-rules</code></td><td>Admin</td><td><span class="st new">New</span></td><td>Tasya</td></tr>
+        <tr><td>Allotment console (run, review, publish)</td><td><code>/admin/allotment</code></td><td>Admin</td><td><span class="st new">New</span></td><td>Gagan, Dikshith</td></tr>
+        <tr><td>Audit log</td><td><code>/admin/audit-logs</code></td><td>Admin</td><td><span class="st re">Restyle</span></td><td>Tasya</td></tr>
+        <tr><td>Error pages (403, 404, 500)</td><td>any</td><td>Everyone</td><td><span class="st new">New</span></td><td>Varun</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+</section>
+
+<footer class="end"><div class="wrap">Sample figures and fictional names throughout. Source: SRS, SAD and Test Plan in this repository; built on the Sprint One code in <code>main</code>.</div></footer>
+
+<script>
+/* Choice list demo: reorder, remove and add rows. Presentation only. */
+(function () {
+  var list = document.getElementById('m-list');
+  var count = document.getElementById('m-count');
+  if (!list) return;
+  var ctl = '<div class="ctl"><button class="ico" type="button" aria-label="Move up" data-move="-1"><svg><use href="#i-up"/></svg></button><button class="ico" type="button" aria-label="Move down" data-move="1"><svg><use href="#i-down"/></svg></button><button class="ico" type="button" aria-label="Remove" data-remove><svg><use href="#i-x"/></svg></button></div>';
+  function renumber() {
+    var rows = list.children;
+    for (var i = 0; i < rows.length; i++) rows[i].querySelector('.p').textContent = i + 1;
+    count.textContent = '(' + rows.length + ')';
+  }
+  document.addEventListener('click', function (e) {
+    var btn = e.target.closest('button');
+    if (!btn) return;
+    if (btn.hasAttribute('data-move')) {
+      var li = btn.closest('li');
+      if (!li || li.parentNode !== list) return;
+      if (btn.getAttribute('data-move') === '-1' && li.previousElementSibling) list.insertBefore(li, li.previousElementSibling);
+      if (btn.getAttribute('data-move') === '1' && li.nextElementSibling) list.insertBefore(li.nextElementSibling, li);
+      renumber();
+    } else if (btn.hasAttribute('data-remove')) {
+      var row = btn.closest('li');
+      if (row && row.parentNode === list) { list.removeChild(row); renumber(); }
+    } else if (btn.hasAttribute('data-add') && !btn.disabled) {
+      var parts = btn.getAttribute('data-add').split('|');
+      var li2 = document.createElement('li');
+      li2.innerHTML = '<span class="p"></span><div class="nm"></div>' + ctl;
+      var nm = li2.querySelector('.nm');
+      nm.appendChild(document.createTextNode(parts[1]));
+      var sm = document.createElement('small');
+      sm.textContent = parts[0];
+      nm.appendChild(sm);
+      list.appendChild(li2);
+      btn.textContent = 'Added';
+      btn.disabled = true;
+      renumber();
+    }
+  });
+})();
+</script>
+</body>
+</html>
