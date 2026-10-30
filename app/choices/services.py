@@ -5,6 +5,14 @@ section 4.3. Varun replaces the bodies (issues #21, #22, #23); do not rename any
 Each error carries the HTTP status the routes should use.
 """
 
+from sqlalchemy.orm import selectinload
+
+from app.accounts.services import get_exam_details
+from app.extensions import db
+from app.catalogue.models import Branch
+
+from .models import Choice, ChoiceLock
+
 
 ERROR_MESSAGES = {
     "NotEligible": "Choices are available only after eligibility is confirmed.",
@@ -71,7 +79,34 @@ def _todo(issue):
 
 def list_choices(candidate_id):
     """The candidate's Choice rows ordered by priority."""
-    _todo("#21")
+    return list(
+        db.session.scalars(
+            db.select(Choice)
+            .where(Choice.candidate_id == candidate_id)
+            .options(selectinload(Choice.branch).selectinload(Branch.college),
+                     selectinload(Choice.branch).selectinload(Branch.seats))
+            .order_by(Choice.priority, Choice.id)
+        ).all()
+    )
+
+
+def preview_choice(choice, candidate_id):
+    """Return frontend-safe display data for one loaded choice."""
+    details = get_exam_details(candidate_id) or {}
+    category = details.get("category")
+    seat = choice.branch.seat_for(category) if category else None
+    return {
+        "id": choice.id,
+        "priority": choice.priority,
+        "college": choice.branch.college.name,
+        "city": choice.branch.college.city,
+        "branch": choice.branch.name,
+        "branchId": choice.branch_id,
+        "collegeId": choice.branch.college_id,
+        "category": category,
+        "seatsAvailable": seat.available if seat else 0,
+        "seatCapacity": seat.capacity if seat else 0,
+    }
 
 
 def add_choice(candidate_id, branch_id):
