@@ -18,7 +18,11 @@ from config import Config, load_or_create_secret_key
 from .extensions import db
 
 # One owner per module (see the sprint guide). Order is also the seed order.
-MODULES = ("accounts", "application", "documents", "catalogue", "eligibility", "audit", "admin")
+MODULES = (
+    "accounts", "application", "documents", "catalogue", "eligibility",
+    "choices", "allotment", "results",
+    "audit", "admin",
+)
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 

@@ -36,7 +36,7 @@ What the user sees from your work: the allotment console at `/admin/allotment` (
 **Tasks**
 - [ ] Branch `chore/sprint2-contracts` from `main`. Add the three packages and models.
 - [ ] Write one test per new table that creates a valid row and checks the key constraint (duplicate choice, second run with `cycle=1`, second publication for a run, second decision for a result, `Allocated` with no branch).
-- [ ] Post in the group chat the moment it is merged: "pull main, run init-db --reset".
+- [ ] Post in the group chat the moment it is merged: "pull main, run `flask --app app init-db` (adds the new tables, keeps your data; no reset needed)".
 
 **Depends on:** nothing. **Blocks:** everyone's database work.
 **Test reference:** none (enabling work). **Story points:** 2 | **Sprint:** 2

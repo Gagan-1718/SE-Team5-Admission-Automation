@@ -90,6 +90,8 @@ Flow: register at `/accounts/register`, log in, enter the exam details (the prof
 | `flask --app app init-db --reset` | Drops every table first, then recreates them. Your local data is lost. |
 | `flask --app app seed-db` | Adds fictional seed data. Safe to run repeatedly (no duplicates). |
 
+`init-db` only creates tables that are missing; it never changes a table that already exists. So when a pull request adds new tables (the Sprint Two choice, allotment and result tables), run `flask --app app init-db` once and keep your data. Run `init-db --reset` only when a pull request changes the columns of an existing table, and that pull request will say so.
+
 Each developer has their own SQLite file at `instance/team5_admission.db`. Never commit it, and never share it through Git. Set `DATABASE_URL` (for example `sqlite:///C:/temp/mine.db`) to use a different file. Tests always use a temporary database and never touch yours.
 
 `SECRET_KEY` can be set as an environment variable. If it is not set, a random key is created in `instance/secret_key.txt` the first time the app starts. The `instance/` folder is ignored by Git.
@@ -108,6 +110,12 @@ app/
   documents/        Dikshith
   catalogue/        Tasya
   eligibility/      Tasya
+  choices/          Varun (choice filling and locking)
+  allotment/        Gagan (allotment engine and administrator console)
+  results/          Dikshith (publication and seat decision)
+  audit/            Tasya
+  admin/            Tasya
+  journey.py        the candidate journey contract; each module adds its own journey.py
 config.py           configuration (no secrets)
 templates/          Jinja templates (base.html, home.html, one folder per module)
 static/             CSS

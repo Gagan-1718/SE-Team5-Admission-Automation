@@ -55,7 +55,7 @@ The SRS is silent on these, and the product only makes sense if we all assume th
 | D2-12 | What may an administrator correct on a candidate record (SAD A-18)? | Name and mobile only. Never rank, category or exam details. Every change is audited. | Tasya | |
 | D2-13 | CSRF approach | One central check in `app/security.py` with a session-bound token, no new dependency (Flask-WTF is in the SAD but is not installed). Record as closing D-03. | Dikshith | |
 | D2-14 | Status wording | The database keeps `Pending`; screens say "Pending Verification" through one shared helper (D-06). | Varun | |
-| D2-15 | Schema change | After the Day 1 contracts PR everyone runs `flask --app app init-db --reset`, then `seed-db`, once. This deletes local data. | Everyone | |
+| D2-15 | Schema change | After the Day 1 contracts PR everyone runs `flask --app app init-db` once. It adds the six new tables and keeps your data. A reset (`--reset`, which deletes local data) is only needed when a pull request changes the columns of an existing table; that pull request will say so (Varun's date of birth and address change will). | Everyone | |
 
 ## Shared contracts
 
@@ -127,6 +127,7 @@ allotment.engine / allotment.services (Gagan)
 
 results.services (Dikshith)
   publish(run_id, actor_id)                        -> Publication  RunNotFound 404 | AlreadyPublished 409
+  is_published(run_id)                             -> bool         used by the administrator dashboard banner
   candidate_view(candidate_id)                     -> {state: NOT_PUBLISHED | NOT_IN_RUN | NOT_ALLOCATED | ALLOCATED, result?, decision?}
   decide(candidate_id, decision)                   -> SeatDecision NotPublished 404 | NotAllocated 422 | AlreadyDecided 409
 
@@ -203,7 +204,7 @@ Dates are relative on purpose. "Ready check" is the sentence that must be true b
 
 | Day | Gagan | Varun | Tasya | Dikshith | Ready check |
 |---|---|---|---|---|---|
-| **1** | First 90 minutes: contracts and schema PR, merge `docs/sprint1-final`, delete xfail markers. Then the pure `allot()` function with the Appendix B oracle test. | Design system and shell merged **by end of Day 1**. Choices models in use; services and API with tests. | First 30 minutes: `record_audit(commit=False)`. Then the demo dataset generator and the rules admin page. | Result services against fake allotment rows. Central CSRF check and tests. Book five first-time users and write the usability script. | Everyone has run `init-db --reset`. Oracle test is green in CI. Shell is on `main`. Choice API passes its tests. Dataset script runs. |
+| **1** | First 90 minutes: contracts and schema PR, merge `docs/sprint1-final`, delete xfail markers. Then the pure `allot()` function with the Appendix B oracle test. | Design system and shell merged **by end of Day 1**. Choices models in use; services and API with tests. | First 30 minutes: `record_audit(commit=False)`. Then the demo dataset generator and the rules admin page. | Result services against fake allotment rows. Central CSRF check and tests. Book five first-time users and write the usability script. | Everyone has run `init-db`. Oracle test is green in CI. Shell is on `main`. Choice API passes its tests. Dataset script runs. |
 | **2** | `run_allotment` on real data with transaction, rollback and two-run tests. Allotment console. Application rules and restyle. | Choices page with lock dialog. Candidate dashboard. Date of birth, address, exam freeze. Login redirects. Accounts pages on the new shell. | Admin dashboard v2, candidate list and record, audit expansion and screen, rules page finished, timing middleware, catalogue and eligibility pages restyled. | Publish card, `/result` and decision, CSRF in templates, documents pages restyled, full-cycle test, first usability sessions in the evening. | The whole cycle runs through the browser on seeded data. Nobody has work older than one day that is not on a pull request. |
 | **3 morning** | Performance (#7) and consistency (#8) evidence on the 300 and 600 candidate datasets. Bug fixing. | Re-run account and choice cases, mobile and keyboard pass, bug fixing. | Response-time measurement (#29), TC-030 end-to-end, bug fixing. | Finish usability sessions, fix the top three difficulties. | **12:00 feature freeze.** After this only bug fixes. |
 | **3 afternoon** | Full regression on `main`. DEVIATIONS and SAD updated. Tag. | Evidence files complete. | Test Summary Report and RTM. | Final demo video, README. | Everything in "Definition of done for the sprint" below. |
