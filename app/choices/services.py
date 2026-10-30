@@ -6,8 +6,23 @@ Each error carries the HTTP status the routes should use.
 """
 
 
+ERROR_MESSAGES = {
+    "NotEligible": "Choices are available only after eligibility is confirmed.",
+    "DuplicateChoice": "That branch is already in your list.",
+    "ChoicesLocked": "Your choices are locked and cannot be changed.",
+    "UnknownBranch": "The selected branch was not found.",
+    "OrderMismatch": "The submitted order must contain exactly your current choices.",
+    "AlreadyLocked": "Your choices are already locked.",
+    "NothingToLock": "Add at least one choice first",
+    "ChoiceNotFound": "That choice was not found.",
+}
+
+
 class ChoiceError(Exception):
     status_code = 400
+
+    def __init__(self, message=None):
+        super().__init__(message or ERROR_MESSAGES.get(type(self).__name__, "Choice operation failed."))
 
 
 class NotEligible(ChoiceError):
@@ -42,6 +57,12 @@ class AlreadyLocked(ChoiceError):
 class NothingToLock(ChoiceError):
     """Locking needs at least one choice."""
     status_code = 422
+
+
+class ChoiceNotFound(ChoiceError):
+    """The requested choice does not exist for the candidate."""
+
+    status_code = 404
 
 
 def _todo(issue):

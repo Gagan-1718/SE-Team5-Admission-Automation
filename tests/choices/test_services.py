@@ -11,8 +11,15 @@ def test_choice_error_types_expose_contract_status_codes():
     assert services.OrderMismatch.status_code == 400
     assert services.AlreadyLocked.status_code == 409
     assert services.NothingToLock.status_code == 422
+    assert services.ChoiceNotFound.status_code == 404
 
 
 def test_allotment_contract_functions_are_callable():
     assert callable(services.locked_candidate_ids)
     assert callable(services.get_locked_branch_ids)
+
+
+def test_choice_errors_have_safe_client_messages():
+    assert str(services.DuplicateChoice()) == "That branch is already in your list."
+    assert str(services.NothingToLock()) == "Add at least one choice first"
+    assert str(services.ChoiceNotFound()) == "That choice was not found."
