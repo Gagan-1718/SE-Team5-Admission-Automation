@@ -172,7 +172,7 @@ What the user sees from your work: the allotment console at `/admin/allotment` (
 
 ## Your release duties (not issues)
 
-- Review pull requests promptly; Tasya is your reviewer and you are hers.
+- You review and merge every pull request, in three fixed windows a day (see the start guide). Use the five-point check; do not hold a small pull request for polish. Your own pull requests: ask Tasya for a quick read on the allotment engine if you want one.
 - Day 2 evening: run the whole suite on `main` and read the full-cycle test (Dikshith's) end to end.
 - Day 3 afternoon: SAD revision 1.3 (real endpoint paths, new tables, deviations), final DEVIATIONS, defect triage, sprint review file, tag `v1.0`, close or merge every pull request, clear the board.
 

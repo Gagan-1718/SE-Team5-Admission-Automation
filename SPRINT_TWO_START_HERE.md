@@ -210,7 +210,13 @@ Dates are relative on purpose. "Ready check" is the sentence that must be true b
 
 ## The GitHub routine, with what we learned in Sprint One
 
-The routine is unchanged: Todo → In Progress → update local `main` → feature branch → implement and test → commit and push → pull request → one peer review → fix → merge → Done only when every acceptance criterion passes. Suggested reviewers stay the same: Gagan and Tasya review each other; Varun and Dikshith review each other. Cross-module changes also need the affected teammate.
+The routine is the same as Sprint One: Todo → In Progress → update local `main` → feature branch → implement and test → commit and push → pull request → **Gagan reviews and merges every pull request** (as in Sprint One, see DEVIATIONS section 5) → Done only when every acceptance criterion passes. A change that touches another person's module should name that person in the pull request so they can look.
+
+Because one person reviews everything, and Gagan is also building the allotment engine, reviewing has to be quick and predictable:
+
+- **Three review windows a day** (for example morning, after lunch, evening). Post "PR ready: <title>" in the group when you open one; it is looked at in the next window. Small pull requests are what make this possible.
+- **Gagan's five-point check:** CI is green; only the author's own module files changed; the new routes have tests for anonymous, wrong role and right role; the PR description says what was run and what passed; the issue's acceptance criteria are ticked honestly. If those hold, merge.
+- **Gagan's own pull requests** (the allotment engine is the core of the project): if you want a second pair of eyes, ask Tasya for a quick read of that one; otherwise merge and say so in the PR.
 
 What went wrong in Sprint One and the rule that prevents it this time:
 
