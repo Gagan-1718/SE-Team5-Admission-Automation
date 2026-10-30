@@ -6,6 +6,7 @@ Each error carries the HTTP status the routes should use.
 """
 
 from sqlalchemy.orm import selectinload
+from sqlalchemy.exc import IntegrityError
 
 from app.accounts.services import get_exam_details
 from app.eligibility.services import get_eligibility
@@ -126,7 +127,31 @@ def _require_unlocked(candidate_id):
 
 def add_choice(candidate_id, branch_id):
     """Add a branch at the next priority. NotEligible | DuplicateChoice | ChoicesLocked | UnknownBranch."""
-    _todo("#21")
+    _require_eligible(candidate_id)
+    _require_unlocked(candidate_id)
+    branch = db.session.get(Branch, branch_id)
+    if branch is None:
+        raise UnknownBranch()
+    duplicate = db.session.scalar(
+        db.select(Choice.id).where(
+            Choice.candidate_id == candidate_id, Choice.branch_id == branch_id
+        )
+    )
+    if duplicate is not None:
+        raise DuplicateChoice()
+    last_priority = db.session.scalar(
+        db.select(db.func.max(Choice.priority)).where(Choice.candidate_id == candidate_id)
+    ) or 0
+    choice = Choice(candidate_id=candidate_id, branch_id=branch_id, priority=last_priority + 1)
+    db.session.add(choice)
+    try:
+        db.session.commit()
+    except IntegrityError:
+        db.session.rollback()
+        if is_locked(candidate_id):
+            raise ChoicesLocked() from None
+        raise DuplicateChoice() from None
+    return choice
 
 
 def remove_choice(candidate_id, choice_id):
