@@ -1,3 +1,11 @@
 {% extends "base.html" %}
 {% block title %}Access denied{% endblock %}
-{% block content %}<section class="card error-page" aria-labelledby="error-title"><h1 id="error-title">403</h1><h2>Access denied</h2><p>You do not have permission to open this page.</p><a class="btn primary" href="{{ url_for('main.home') }}">Return home</a></section>{% endblock %}
+{% block content %}
+{% set home_url = '/admin/dashboard' if g.current_user and g.current_user.role == 'administrator' else '/dashboard' if g.current_user else url_for('main.home') %}
+<section class="card error-page" aria-labelledby="error-title">
+  <h1 id="error-title">403</h1>
+  <h2>Access denied</h2>
+  <p>You do not have permission to open this page.</p>
+  <a class="btn primary" href="{{ home_url }}">Return to your home</a>
+</section>
+{% endblock %}

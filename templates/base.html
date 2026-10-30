@@ -17,13 +17,13 @@
       {% if is_admin %}
         <a class="app-nav-link{% if request.path == '/admin/dashboard' %} active{% endif %}" href="/admin/dashboard"><span class="nav-icon" aria-hidden="true">⌂</span>Dashboard</a>
         <div class="nav-group">People</div>
-        <a class="app-nav-link locked" href="/admin/candidates" aria-disabled="true" title="Candidate records will be available when the candidate-management module is merged."><span class="nav-icon" aria-hidden="true">♙</span>Candidates <span class="nav-lock" aria-label="Locked">🔒</span></a>
+        <a class="app-nav-link locked" href="/admin/candidates" aria-disabled="true" aria-describedby="lock-admin-candidates" data-locked title="Candidate records will be available when the candidate-management module is merged."><span class="nav-icon" aria-hidden="true">♙</span>Candidates <span class="nav-lock" aria-label="Locked">🔒</span><span class="sr-only" id="lock-admin-candidates">Candidate records will be available when the candidate-management module is merged.</span></a>
         <a class="app-nav-link{% if request.path == '/admin/documents' %} active{% endif %}" href="/admin/documents"><span class="nav-icon" aria-hidden="true">▤</span>Documents</a>
         <div class="nav-group">Setup</div>
         <a class="app-nav-link{% if request.path == '/admin/colleges' %} active{% endif %}" href="/admin/colleges"><span class="nav-icon" aria-hidden="true">⌂</span>Colleges and seats</a>
-        <a class="app-nav-link locked" href="/admin/eligibility-rules" aria-disabled="true" title="Eligibility rule editing will be available when the rules module is merged."><span class="nav-icon" aria-hidden="true">☷</span>Eligibility rules <span class="nav-lock" aria-label="Locked">🔒</span></a>
+        <a class="app-nav-link locked" href="/admin/eligibility-rules" aria-disabled="true" aria-describedby="lock-admin-rules" data-locked title="Eligibility rule editing will be available when the rules module is merged."><span class="nav-icon" aria-hidden="true">☷</span>Eligibility rules <span class="nav-lock" aria-label="Locked">🔒</span><span class="sr-only" id="lock-admin-rules">Eligibility rule editing will be available when the rules module is merged.</span></a>
         <div class="nav-group">Allotment</div>
-        <a class="app-nav-link locked" href="/admin/allotment" aria-disabled="true" title="The allotment console will be available when the allotment module is merged."><span class="nav-icon" aria-hidden="true">▣</span>Run and publish <span class="nav-lock" aria-label="Locked">🔒</span></a>
+        <a class="app-nav-link locked" href="/admin/allotment" aria-disabled="true" aria-describedby="lock-admin-allotment" data-locked title="The allotment console will be available when the allotment module is merged."><span class="nav-icon" aria-hidden="true">▣</span>Run and publish <span class="nav-lock" aria-label="Locked">🔒</span><span class="sr-only" id="lock-admin-allotment">The allotment console will be available when the allotment module is merged.</span></a>
         <a class="app-nav-link{% if request.path == '/admin/audit-logs' %} active{% endif %}" href="/admin/audit-logs"><span class="nav-icon" aria-hidden="true">▥</span>Audit log</a>
       {% else %}
         <a class="app-nav-link{% if request.path == '/dashboard' %} active{% endif %}" href="/dashboard"><span class="nav-icon" aria-hidden="true">⌂</span>Dashboard</a>
@@ -32,8 +32,8 @@
         <a class="app-nav-link{% if request.path == '/application' %} active{% endif %}" href="/application"><span class="nav-icon" aria-hidden="true">▤</span>Application</a>
         <a class="app-nav-link{% if request.path.startswith('/documents') %} active{% endif %}" href="/documents"><span class="nav-icon" aria-hidden="true">▤</span>Documents</a>
         <a class="app-nav-link{% if request.path == '/eligibility' %} active{% endif %}" href="/eligibility"><span class="nav-icon" aria-hidden="true">✓</span>Eligibility</a>
-        <a class="app-nav-link locked" href="/choices" aria-disabled="true" title="Choice filling opens after eligibility is confirmed."><span class="nav-icon" aria-hidden="true">☷</span>Choices <span class="nav-lock" aria-label="Locked">🔒</span></a>
-        <a class="app-nav-link locked" href="/result" aria-disabled="true" title="Results appear after the administrator publishes allotment."><span class="nav-icon" aria-hidden="true">▣</span>Result <span class="nav-lock" aria-label="Locked">🔒</span></a>
+        <a class="app-nav-link locked" href="/choices" aria-disabled="true" aria-describedby="lock-choices" data-locked title="Choice filling opens after eligibility is confirmed."><span class="nav-icon" aria-hidden="true">☷</span>Choices <span class="nav-lock" aria-label="Locked">🔒</span><span class="sr-only" id="lock-choices">Choice filling opens after eligibility is confirmed.</span></a>
+        <a class="app-nav-link locked" href="/result" aria-disabled="true" aria-describedby="lock-result" data-locked title="Results appear after the administrator publishes allotment."><span class="nav-icon" aria-hidden="true">▣</span>Result <span class="nav-lock" aria-label="Locked">🔒</span><span class="sr-only" id="lock-result">Results appear after the administrator publishes allotment.</span></a>
         <div class="nav-group">Explore</div>
         <a class="app-nav-link{% if request.path == '/colleges' %} active{% endif %}" href="/colleges"><span class="nav-icon" aria-hidden="true">⌂</span>Colleges</a>
       {% endif %}
@@ -53,6 +53,9 @@
     </div>
   </div>
   <script>
+  document.querySelectorAll('[data-locked]').forEach((link) => {
+    link.addEventListener('click', (event) => event.preventDefault());
+  });
   document.getElementById('logout-button').addEventListener('click', async () => {
     const response = await fetch({{ url_for('accounts.logout')|tojson }}, {method: 'POST'});
     if (response.ok) window.location.href = {{ url_for('accounts.login_page')|tojson }};

@@ -49,7 +49,16 @@ def test_locked_navigation_has_explanation_and_lock_indicator(app):
     html = client.get("/").data.decode()
     assert 'href="/choices"' in html
     assert 'title="Choice filling opens after eligibility is confirmed."' in html
+    assert 'aria-describedby="lock-choices"' in html
+    assert 'data-locked' in html
     assert 'aria-label="Locked"' in html
+
+
+def test_locked_navigation_stays_focusable_but_prevents_activation(app):
+    html = login(app, "nav.prevent@example.test", "candidate", "9000000015").get("/").data.decode()
+    assert 'class="app-nav-link locked"' in html
+    assert 'href="/choices"' in html
+    assert "event.preventDefault()" in html
 
 
 def test_navigation_uses_real_anchor_links(app):

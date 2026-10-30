@@ -1,28 +1,20 @@
 {% extends "base.html" %}
+{% import "_ui.html" as ui %}
 {% block title %}Create your candidate account{% endblock %}
 {% block content %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/accounts.css') }}">
 <section class="auth-layout" aria-labelledby="registration-heading">
-  <div class="auth-card">
-    <div class="eyebrow">Candidate portal</div>
-    <h1 id="registration-heading">Create your candidate account</h1>
-    <p class="intro">Set up your account to continue with your admission application.</p>
-
+  {% call ui.card(class_name="card auth-card") %}
+    {% call ui.page_header("Create your candidate account", "Set up your account to continue with your admission application.", "Candidate portal", "registration-heading") %}{% endcall %}
     <form method="post" id="registration-form" class="auth-form">
-      <div class="form-field">
-        <label for="name">Full name</label>
-        <input id="name" name="name" type="text" autocomplete="name" required>
-      </div>
-      <div class="form-field">
-        <label for="email">Email address</label>
-        <input id="email" name="email" type="email" autocomplete="email" required>
-      </div>
-      <div class="form-field">
+      {{ ui.field("Full name", name="name", type="text", required=True, autocomplete="name", id="name") }}
+      {{ ui.field("Email address", name="email", type="email", required=True, autocomplete="email", id="email") }}
+      <div class="field form-field">
         <label for="mobile">Mobile number</label>
         <input id="mobile" name="mobile" type="tel" inputmode="numeric" autocomplete="tel" pattern="[0-9]{10}" required>
         <span class="field-hint">Enter a 10-digit mobile number.</span>
       </div>
-      <div class="form-field">
+      <div class="field form-field">
         <label for="password">Password</label>
         <div class="password-field">
           <input id="password" name="password" type="password" minlength="8" autocomplete="new-password" required>
@@ -33,9 +25,8 @@
       <button type="submit" class="primary-button">Create account</button>
       <p id="message" class="form-message" role="alert" aria-live="polite" hidden></p>
     </form>
-
     <p class="auth-switch">Already have an account? <a href="{{ url_for('accounts.login_page') }}">Sign in</a></p>
-  </div>
+  {% endcall %}
 </section>
 <script>
 const form = document.getElementById("registration-form");
