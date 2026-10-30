@@ -218,9 +218,19 @@ def is_locked(candidate_id):
 
 def locked_candidate_ids():
     """Ids of every candidate who has locked their list (used by the allotment run)."""
-    _todo("#23")
+    return list(
+        db.session.scalars(db.select(ChoiceLock.candidate_id).order_by(ChoiceLock.candidate_id)).all()
+    )
 
 
 def get_locked_branch_ids(candidate_id):
     """Branch ids in priority order for a locked list; [] when the list is not locked."""
-    _todo("#23")
+    if not is_locked(candidate_id):
+        return []
+    return list(
+        db.session.scalars(
+            db.select(Choice.branch_id)
+            .where(Choice.candidate_id == candidate_id)
+            .order_by(Choice.priority, Choice.id)
+        ).all()
+    )
