@@ -35,3 +35,20 @@ def test_mutation_guard_rejects_non_eligible_candidates(monkeypatch):
         assert str(exc) == "Documents are under review."
     else:
         raise AssertionError("pending candidate was not rejected")
+
+
+def test_mutation_guard_accepts_only_eligible_candidates(monkeypatch):
+    monkeypatch.setattr(services, "get_eligibility", lambda candidate_id: {
+        "status": "Not Eligible", "reason": "Rank is outside the cut-off."
+    })
+    try:
+        services._require_eligible(2)
+    except services.NotEligible:
+        pass
+    else:
+        raise AssertionError("not-eligible candidate was not rejected")
+
+    monkeypatch.setattr(services, "get_eligibility", lambda candidate_id: {
+        "status": "Eligible", "reason": "Rank is within the cut-off."
+    })
+    assert services._require_eligible(2)["status"] == "Eligible"
