@@ -32,7 +32,7 @@
         <a class="app-nav-link{% if request.path == '/application' %} active{% endif %}" href="/application"><span class="nav-icon" aria-hidden="true">▤</span>Application</a>
         <a class="app-nav-link{% if request.path.startswith('/documents') %} active{% endif %}" href="/documents"><span class="nav-icon" aria-hidden="true">▤</span>Documents</a>
         <a class="app-nav-link{% if request.path == '/eligibility' %} active{% endif %}" href="/eligibility"><span class="nav-icon" aria-hidden="true">✓</span>Eligibility</a>
-        <a class="app-nav-link locked" href="/choices" aria-disabled="true" aria-describedby="lock-choices" data-locked title="Choice filling opens after eligibility is confirmed."><span class="nav-icon" aria-hidden="true">☷</span>Choices <span class="nav-lock" aria-label="Locked">🔒</span><span class="sr-only" id="lock-choices">Choice filling opens after eligibility is confirmed.</span></a>
+        <a class="app-nav-link{% if request.path == '/choices' %} active{% endif %}" href="/choices"><span class="nav-icon" aria-hidden="true">☷</span>Choices</a>
         <a class="app-nav-link locked" href="/result" aria-disabled="true" aria-describedby="lock-result" data-locked title="Results appear after the administrator publishes allotment."><span class="nav-icon" aria-hidden="true">▣</span>Result <span class="nav-lock" aria-label="Locked">🔒</span><span class="sr-only" id="lock-result">Results appear after the administrator publishes allotment.</span></a>
         <div class="nav-group">Explore</div>
         <a class="app-nav-link{% if request.path == '/colleges' %} active{% endif %}" href="/colleges"><span class="nav-icon" aria-hidden="true">⌂</span>Colleges</a>
