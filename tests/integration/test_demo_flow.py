@@ -20,7 +20,7 @@ from app.extensions import db
 ADMIN_PASSWORD = "demo-admin-password-1"
 CANDIDATE_PASSWORD = "fictional-pass-1"
 CANDIDATE = {"name": "Fictional Candidate", "email": "demo.candidate@example.test",
-             "mobile": "9123456780", "password": CANDIDATE_PASSWORD}
+             "mobile": "9123456780", "date_of_birth": "2005-04-12", "password": CANDIDATE_PASSWORD}
 COMPLETE_APPLICATION = {"guardian_name": "Fictional Guardian", "guardian_mobile": "9876543210",
                         "school_name": "Fictional PU College", "board": "CBSE", "percentage": "88.5"}
 ELIGIBILITY_STATUSES = {"Pending", "Eligible", "Not Eligible"}

@@ -7,6 +7,7 @@ def registration_payload(**overrides):
         "name": "Fictional Candidate",
         "email": "candidate@example.test",
         "mobile": "9876543210",
+        "date_of_birth": "2005-04-12",
         "password": "fictional-password-123",
     }
     payload.update(overrides)

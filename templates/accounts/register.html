@@ -10,6 +10,11 @@
       {{ ui.field("Full name", name="name", type="text", required=True, autocomplete="name", id="name") }}
       {{ ui.field("Email address", name="email", type="email", required=True, autocomplete="email", id="email") }}
       <div class="field form-field">
+        <label for="date_of_birth">Date of birth</label>
+        <input id="date_of_birth" name="date_of_birth" type="date" autocomplete="bday" max="{{ today }}" required>
+        <span class="field-hint">Use a real date before today.</span>
+      </div>
+      <div class="field form-field">
         <label for="mobile">Mobile number</label>
         <input id="mobile" name="mobile" type="tel" inputmode="numeric" autocomplete="tel" pattern="[0-9]{10}" required>
         <span class="field-hint">Enter a 10-digit mobile number.</span>

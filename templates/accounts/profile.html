@@ -10,6 +10,9 @@
       {{ ui.field("Name", name="name", required=True, id="name") }}
       {{ ui.field("Email", name="email", type="email", readonly=True, id="email") }}
       {{ ui.field("Mobile", name="mobile", required=True, inputmode="numeric", id="mobile") }}
+      {{ ui.field("Address line", name="address_line", id="address_line") }}
+      {{ ui.field("City", name="city", id="city") }}
+      {{ ui.field("Pincode", name="pincode", inputmode="numeric", pattern="[0-9]{6}", id="pincode") }}
       <button type="submit" class="primary-button">Save profile</button>
       <p id="message" class="form-message" role="alert" aria-live="polite" hidden></p>
     </form>
@@ -20,19 +23,20 @@
     <form method="post" id="exam-details-form" class="profile-form">
       <div class="profile-field field">
         <label for="exam_type">Exam type</label>
-        <select id="exam_type" name="exam_type" required>
+        <select id="exam_type" name="exam_type" required{% if exam_locked %} disabled{% endif %}>
           {% for exam_type in exam_types %}<option value="{{ exam_type }}">{{ exam_type }}</option>{% endfor %}
         </select>
       </div>
-      {{ ui.field("Rank", name="rank", type="number", required=True, id="rank") }}
+      {{ ui.field("Rank", name="rank", type="number", required=True, id="rank", readonly=exam_locked) }}
       <div class="profile-field field">
         <label for="category">Category</label>
-        <select id="category" name="category" required>
+        <select id="category" name="category" required{% if exam_locked %} disabled{% endif %}>
           {% for category in categories %}<option value="{{ category }}">{{ category }}</option>{% endfor %}
         </select>
       </div>
-      {{ ui.field("Score", name="score", type="number", required=True, id="score") }}
-      <button type="submit" class="primary-button" id="save-exam-details">Save exam details</button>
+      {{ ui.field("Score", name="score", type="number", required=True, id="score", readonly=exam_locked) }}
+      <button type="submit" class="primary-button" id="save-exam-details"{% if exam_locked %} disabled{% endif %}>Save exam details</button>
+      {% if exam_locked %}<p class="field-hint">Exam details are locked after you submit your application.</p>{% endif %}
       <p id="exam-details-message" class="form-message" role="alert" aria-live="polite" hidden></p>
     </form>
   </section>
@@ -54,7 +58,7 @@ function showMessage(element, message, kind, role = "status") {
 fetch("{{ url_for('accounts.profile') }}")
   .then(response => response.json())
   .then(data => {
-    for (const field of ["name", "email", "mobile"]) profileForm.elements[field].value = data[field] ?? "";
+    for (const field of ["name", "email", "mobile", "address_line", "city", "pincode"]) profileForm.elements[field].value = data[field] ?? "";
     if (data.rank != null) examForm.elements.rank.value = data.rank;
     if (data.category) examForm.elements.category.value = data.category;
   })
