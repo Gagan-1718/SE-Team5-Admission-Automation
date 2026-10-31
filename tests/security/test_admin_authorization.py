@@ -33,6 +33,7 @@ def admin_resources(app, tmp_path):
         "college_id": db.session.execute(db.select(College.id)).scalars().first(),
         "branch_id": db.session.execute(db.select(Branch.id)).scalars().first(),
         "document_id": document.id,
+        "run_id": 1,
     }
     return admin, candidate, ids
 
