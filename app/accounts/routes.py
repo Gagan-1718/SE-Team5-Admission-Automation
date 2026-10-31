@@ -72,7 +72,7 @@ def _parse_date_of_birth(value):
 
 @bp.get("/register")
 def registration_page():
-    return render_template("accounts/register.html")
+    return render_template("accounts/register.html", today=date.today().isoformat())
 
 
 @bp.get("/login")
