@@ -1,0 +1,26 @@
+{# Include with run, publication and optional report from the console context. #}
+<section class="card" aria-labelledby="publication-heading">
+  <h2 id="publication-heading">Publish results</h2>
+  <p class="hint">Results remain hidden from candidates until an administrator publishes them. Publication is recorded in the audit log.</p>
+  {% if not run or not run.completed_at %}
+    <p role="status">Complete an allotment run before publishing results.</p>
+    <button class="btn" type="button" disabled>Publish results</button>
+  {% elif publication %}
+    <p class="pill ok" role="status">Results are published</p>
+    <p>Published by <strong>{{ publication.publisher_name }}</strong>
+      on <time datetime="{{ publication.published_at.isoformat() }}">{{ publication.published_at.strftime('%d %b %Y, %H:%M') }} UTC</time>.</p>
+    <p class="hint">Publication is complete. Results cannot be published again.</p>
+  {% elif report is defined and report %}
+    <p role="alert">Resolve the seat consistency mismatches before publishing results.</p>
+    <button class="btn" type="button" disabled>Publish results</button>
+  {% else %}
+    <p role="status">Run completed, not published</p>
+    <p class="hint">Review the allocation summary and seat consistency check before continuing.</p>
+    <form method="post" action="{{ url_for('results.publish_from_console', run_id=run.id) }}"
+          onsubmit="return confirm('Publish these allotment results? Candidates will be able to see them. This can be done only once.');">
+      {% if csrf_token is defined %}<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">{% endif %}
+      <button class="btn primary" type="submit">Publish results</button>
+    </form>
+  {% endif %}
+  {% if run %}<p class="hint">Run allotment (already completed)</p>{% endif %}
+</section>
