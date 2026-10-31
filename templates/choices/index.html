@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% import "_ui.html" as ui %}
+{% block title %}Choice filling{% endblock %}
+{% block breadcrumb %}Choice filling{% endblock %}
+{% block content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/choices.css') }}">
+<div class="choices-page" data-eligible="{{ 'true' if eligible else 'false' }}"
+     data-list-url="{{ url_for('choices.choices_list') }}"
+     data-add-url="{{ url_for('choices.choices_add') }}"
+     data-lock-url="{{ url_for('choices.choices_lock') }}">
+  {% call ui.page_header("Choice filling", "Search participating colleges and save your preferred branches in order.", "Candidate journey") %}
+  {% endcall %}
+
+  {% if not eligible %}
+    {% call ui.callout("wait", "Choice filling is not available yet") %}
+      <p>{{ eligibility.reason }}</p>
+      <a class="btn ghost" href="{{ url_for('eligibility.eligibility_page') }}">View eligibility</a>
+    {% endcall %}
+  {% endif %}
+
+  <div id="choices-feedback" class="choices-feedback" role="status" aria-live="polite"></div>
+  <div id="choices-error" class="choices-feedback error" role="alert" hidden></div>
+
+  <div class="choices-layout">
+    <section class="card choices-catalogue" aria-labelledby="catalogue-heading">
+      <div class="section-heading">
+        <div>
+          <h2 id="catalogue-heading">Search colleges</h2>
+          <p class="hint">Choose a branch even when no seats are currently available.</p>
+        </div>
+      </div>
+      <form method="get" action="{{ url_for('choices.choice_page') }}" class="choices-search">
+        <label for="choice-search">College or branch name</label>
+        <div class="search-row">
+          <input id="choice-search" name="q" type="search" value="{{ query }}"
+                 placeholder="e.g. Computer Science" autocomplete="off">
+          <button class="btn primary" type="submit">Search</button>
+        </div>
+      </form>
+
+      <div id="catalogue-results" class="catalogue-results">
+        {% for college, branches in results %}
+          <article class="catalogue-card">
+            <div class="catalogue-card-heading">
+              <h3>{{ college.name }}</h3>
+              {% if college.city %}<span class="catalogue-city">{{ college.city }}</span>{% endif %}
+            </div>
+            <ul class="branch-list">
+              {% for branch in branches %}
+                {% set seat = branch.seat_for(category) if category else none %}
+                {% set available = seat.available if seat else 0 %}
+                <li class="branch-row">
+                  <div>
+                    <strong>{{ branch.name }}</strong>
+                    <span class="branch-seats{% if available == 0 %} zero-seats{% endif %}">
+                      {{ available }} {{ category or 'category' }} seats left
+                    </span>
+                  </div>
+                  <button class="btn ghost sm" type="button" data-choice-add
+                          data-college-id="{{ college.id }}" data-branch-id="{{ branch.id }}"
+                          {% if not eligible %}disabled{% endif %}>
+                    Add
+                  </button>
+                </li>
+              {% endfor %}
+            </ul>
+          </article>
+        {% else %}
+          <p class="empty-state" id="catalogue-empty">No colleges or branches match this search.</p>
+        {% endfor %}
+      </div>
+    </section>
+
+    <section class="card saved-choices" aria-labelledby="saved-heading">
+      <div class="section-heading">
+        <div>
+          <h2 id="saved-heading">My choices</h2>
+          <p class="hint">Your saved order is used for allotment after you lock it.</p>
+        </div>
+        <span id="choice-lock-status" class="pill idle">Loading</span>
+      </div>
+      <div id="choice-list" aria-live="polite" aria-busy="true">
+        <p class="loading-state">Loading your saved choices…</p>
+      </div>
+      <button class="btn primary" id="lock-choices" type="button" disabled>Lock choices</button>
+    </section>
+  </div>
+
+  <dialog id="lock-dialog" class="confirm-dialog" aria-labelledby="lock-dialog-title">
+    <h2 id="lock-dialog-title">Lock your choices?</h2>
+    <p>Locking is final. Allotment uses this exact order. You cannot add, remove or reorder choices afterwards.</p>
+    <div class="dialog-actions">
+      <button class="btn ghost" type="button" data-close-lock>Cancel</button>
+      <button class="btn danger" type="button" id="confirm-lock">Lock choices</button>
+    </div>
+  </dialog>
+</div>
+<script src="{{ url_for('static', filename='js/choices.js') }}"></script>
+{% endblock %}

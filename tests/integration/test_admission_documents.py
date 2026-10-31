@@ -1,7 +1,7 @@
 """Whole flow through real HTTP endpoints, without fixed candidate IDs."""
 from io import BytesIO
 from pypdf import PdfWriter
-from app.accounts.models import User
+from app.accounts.models import ExamRecord, User
 from app.accounts.security import hash_password
 from app.documents.models import Document
 from app.extensions import db
@@ -39,6 +39,10 @@ def test_registered_candidate_submits_uploads_resubmits_and_gets_approval(app, t
     candidate_id = registered.json['user_id']
     assert candidate_id != 1
     login(candidate, 'candidate@example.test')
+    db.session.add(ExamRecord(exam_type='KCET', rank=1000, category='General', score=185.0))
+    db.session.commit()
+    assert candidate.put('/accounts/exam-details', json={
+        'exam_type': 'KCET', 'rank': 1000, 'category': 'General', 'score': 185.0}).status_code == 200
     assert candidate.get('/documents/upload').status_code == 409
     draft = candidate.post('/api/v1/applications', json={
         'guardian_name': 'Fictional Guardian', 'guardian_mobile': '9000000002',

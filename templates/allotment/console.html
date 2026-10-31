@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% import "_ui.html" as ui %}
+
+{% block title %}Allotment console{% endblock %}
+{% block breadcrumb %}Allotment console{% endblock %}
+
+{% block content %}
+{% call ui.page_header("Allotment console", "Check, run, review, publish. The run happens once for this admission cycle.", "Administrator") %}{% endcall %}
+
+<section class="card">
+  {{ ui.stepper(steps) }}
+</section>
+
+{% if run %}
+  <div class="grid g4">
+    {{ ui.tile("Processed", run.candidates_processed, "in rank order") }}
+    {{ ui.tile("Allocated", run.allocated_count, "of " ~ total_seats ~ " seats") }}
+    {{ ui.tile("Not Allocated", run.not_allocated_count, "no locked choice had a seat") }}
+    {{ ui.tile("Consistency", "Passed" if not report else "Failed",
+               seat_rows ~ " seat rows, " ~ (report|length) ~ " mismatches") }}
+  </div>
+
+  {% if report %}
+    {% call ui.callout("bad", "Seat counts do not match the allotment records") %}
+      <p>Do not publish. These seat rows disagree with the results:</p>
+      <ul>
+        {% for m in report %}
+          <li>Seat row {{ m.seat_id }} ({{ m.category }}): filled {{ m.filled }}, records {{ m.allocated_records }}, capacity {{ m.capacity }}</li>
+        {% endfor %}
+      </ul>
+    {% endcall %}
+  {% endif %}
+
+  <div class="grid g2">
+    <section class="card">
+      <h2>Seats filled by branch</h2>
+      <p class="hint">Filled seats equal allotment records for every college, branch and category.</p>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead><tr><th scope="col">Branch</th><th scope="col">Filled</th><th scope="col">Capacity</th></tr></thead>
+          <tbody>
+            {% for b in branches %}
+              <tr><td>{{ b.label }}</td><td>{{ b.filled }}</td><td>{{ b.capacity }}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Publish results</h2>
+      <p class="hint">Candidates see nothing until results are published. Publishing is recorded in the audit log.</p>
+      {% if published %}
+        {% call ui.callout("ok", "Results are published") %}<p>Candidates can now see their result.</p>{% endcall %}
+      {% else %}
+        {% call ui.callout("wait", "Run completed, not published") %}<p>Allotment cannot be run again in this cycle.</p>{% endcall %}
+      {% endif %}
+      {% include "results/_publish_card.html" ignore missing %}
+      <p style="margin-top:12px"><button class="btn" type="button" disabled>Run allotment (already completed)</button></p>
+    </section>
+  </div>
+{% else %}
+  <section class="card">
+    <h2>Pre-run checks</h2>
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead><tr><th scope="col">Check</th><th scope="col">Result</th><th scope="col">Detail</th></tr></thead>
+        <tbody>
+          {% for check in checks %}
+            <tr>
+              <td>{{ check.label }}</td>
+              <td>{% if check.ok %}<span class="pill ok">Passed</span>{% else %}<span class="pill bad">Not ready</span>{% endif %}</td>
+              <td>{{ check.detail }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Run allotment</h2>
+    <p class="hint">Candidates are processed in ascending rank. Each gets the first of their locked choices with a free seat in their own category. This can be done once and cannot be repeated.</p>
+    <form method="post" action="{{ url_for('allotment.run_from_console') }}"
+          onsubmit="return confirm('Run allotment now? This can be done once and cannot be repeated.');">
+      {% if csrf_token is defined %}<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">{% endif %}
+      {% if can_run %}
+        <button class="btn primary" type="submit">Run allotment</button>
+      {% else %}
+        <button class="btn" type="submit" disabled>Run allotment</button>
+        <p class="hint" style="margin-top:8px">Fix the checks marked "Not ready" first.</p>
+      {% endif %}
+    </form>
+  </section>
+{% endif %}
+{% endblock %}
