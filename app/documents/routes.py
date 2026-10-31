@@ -20,6 +20,7 @@ from pathlib import Path
 
 from app.audit.services import record_admin_action
 from app.extensions import db
+from app.security import csrf_protection_enabled, csrf_token as central_csrf_token
 from app.documents.models import Document
 from app.documents.access import admin_required
 from app.documents.services import (
@@ -57,15 +58,14 @@ def upload():
     # Allow multipart overhead beyond the individual file's 2 MiB limit.
     request.max_content_length = 3 * 1024 * 1024
 
-    if "document_upload_token" not in session:
-        session["document_upload_token"] = secrets.token_urlsafe(32)
+    document_form_token("document_upload_token")
 
     error = None
 
     if request.method == "POST":
         supplied_token = request.form.get("csrf_token", "")
 
-        if not secrets.compare_digest(
+        if not csrf_protection_enabled() and not secrets.compare_digest(
             supplied_token, session["document_upload_token"]
         ):
             abort(400, description="Invalid form token. Reload the page.")
@@ -99,10 +99,16 @@ def oversized_request(error):
     return "Upload request too large. Maximum file size is 2 MB.", 413
 
 
+def document_form_token(key):
+    if csrf_protection_enabled():
+        session[key] = central_csrf_token()
+    elif key not in session:
+        session[key] = secrets.token_urlsafe(32)
+    return session[key]
+
+
 def review_token():
-    if "document_review_token" not in session:
-        session["document_review_token"] = secrets.token_urlsafe(32)
-    return session["document_review_token"]
+    return document_form_token("document_review_token")
 
 
 def document_json(document):
@@ -136,7 +142,9 @@ def review(document_id):
         abort(400)
     supplied = request.headers.get("X-CSRF-Token") or data.get("csrf_token", "")
     expected = session.get("document_review_token")
-    if not isinstance(supplied, str) or not expected or not secrets.compare_digest(supplied, expected):
+    if not csrf_protection_enabled() and (
+        not isinstance(supplied, str) or not expected or not secrets.compare_digest(supplied, expected)
+    ):
         abort(400, description="Invalid form token. Reload the review queue.")
     decision = data.get("decision")
     try:
@@ -198,9 +206,7 @@ def status_page():
 
 
 def resubmission_token():
-    if "document_resubmission_token" not in session:
-        session["document_resubmission_token"] = secrets.token_urlsafe(32)
-    return session["document_resubmission_token"]
+    return document_form_token("document_resubmission_token")
 
 
 @bp.post("/documents/<int:document_id>/resubmit")
@@ -213,7 +219,9 @@ def resubmit(document_id):
     request.max_content_length = 3 * 1024 * 1024
     supplied = request.form.get("csrf_token", "")
     expected = session.get("document_resubmission_token")
-    if not expected or not secrets.compare_digest(supplied, expected):
+    if not csrf_protection_enabled() and (
+        not expected or not secrets.compare_digest(supplied, expected)
+    ):
         abort(400, description="Invalid form token. Reload My documents.")
     try:
         resubmit_document(document_id, candidate_id, request.files.get("file"))
