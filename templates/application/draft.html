@@ -31,6 +31,7 @@
 
 <section class="card">
   <form method="post" action="{{ url_for('application.save_draft_form') }}" novalidate>
+    <input type="hidden" name="csrf_token" value="{{ get_csrf_token() }}">
     <div class="grid g2">
       <div class="field">
         <label for="guardian_name">Guardian name</label>
