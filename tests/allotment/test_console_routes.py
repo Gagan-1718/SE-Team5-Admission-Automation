@@ -47,9 +47,9 @@ def test_the_run_appears_in_the_audit_log(app, oracle):
 
 
 # ------------------------------------------------------------------ console page
-def test_console_sends_anonymous_to_login_and_refuses_candidates(app, oracle):
-    anonymous = app.test_client().get("/admin/allotment")
-    assert anonymous.status_code == 302 and "/accounts/login" in anonymous.headers["Location"]
+def test_console_refuses_anonymous_and_candidates_like_every_admin_route(app, oracle):
+    assert app.test_client().get("/admin/allotment").status_code == 401
+    assert app.test_client().post("/admin/allotment/run").status_code == 401
     candidate = login_client(app, "candidate", 505)
     assert candidate.get("/admin/allotment").status_code == 403
     assert candidate.post("/admin/allotment/run").status_code == 403

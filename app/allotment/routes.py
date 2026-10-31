@@ -5,12 +5,11 @@ HTML:  GET /admin/allotment            check, run, review (publishing is the Res
 JSON:  POST /api/v1/admin/allotment/run   {runId, candidatesProcessed, allocatedCount,
                                            notAllocatedCount, durationMs}
 Errors use the team's body {status, error, message} (SAD A-20).
-Pages: anonymous -> login, candidate -> 403. API: anonymous 401, candidate 403.
+Like every /admin/ route (TC-022 test): anonymous 401, candidate 403.
 """
-from functools import wraps
 from http import HTTPStatus
 
-from flask import Blueprint, abort, flash, g, jsonify, redirect, render_template, request, url_for
+from flask import Blueprint, flash, g, jsonify, redirect, render_template, url_for
 
 from app.accounts.auth import role_required
 from app.catalogue.models import Seat
@@ -20,17 +19,6 @@ from . import services
 
 bp = Blueprint("allotment", __name__)
 
-
-def admin_page_required(view):
-    @wraps(view)
-    def wrapped(*args, **kwargs):
-        if not g.current_user:
-            return redirect(url_for("accounts.login_page", next=request.path))
-        if g.current_user.role != "administrator":
-            abort(403)
-        return view(*args, **kwargs)
-
-    return wrapped
 
 
 def _summary_json(summary):
@@ -104,13 +92,13 @@ def _console_context():
 
 
 @bp.get("/admin/allotment")
-@admin_page_required
+@role_required("administrator")
 def console():
     return render_template("allotment/console.html", **_console_context())
 
 
 @bp.post("/admin/allotment/run")
-@admin_page_required
+@role_required("administrator")
 def run_from_console():
     try:
         summary = services.run_allotment(g.current_user.id)
