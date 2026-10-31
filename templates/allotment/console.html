@@ -47,17 +47,8 @@
       </div>
     </section>
 
-    <section class="card">
-      <h2>Publish results</h2>
-      <p class="hint">Candidates see nothing until results are published. Publishing is recorded in the audit log.</p>
-      {% if published %}
-        {% call ui.callout("ok", "Results are published") %}<p>Candidates can now see their result.</p>{% endcall %}
-      {% else %}
-        {% call ui.callout("wait", "Run completed, not published") %}<p>Allotment cannot be run again in this cycle.</p>{% endcall %}
-      {% endif %}
-      {% include "results/_publish_card.html" ignore missing %}
-      <p style="margin-top:12px"><button class="btn" type="button" disabled>Run allotment (already completed)</button></p>
-    </section>
+    {% include "results/_publish_card.html" %}
+
   </div>
 {% else %}
   <section class="card">
@@ -92,5 +83,6 @@
       {% endif %}
     </form>
   </section>
+  {% include "results/_publish_card.html" %}
 {% endif %}
 {% endblock %}
