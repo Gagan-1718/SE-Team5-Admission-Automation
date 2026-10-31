@@ -97,3 +97,42 @@ Executed:
 Result: PASS - 35 passed in 21.87s. This targeted follow-up covers four new redirect/
 response regression tests and the existing document and all-admin-route access checks.
 The earlier broad-suite counts above describe the preceding run, before this follow-up.
+
+
+## Sprint Two: publication service branch check (30 October 2026)
+
+Branch: feature/12-publish-results-service. This is pre-merge service evidence,
+not final TC-017 acceptance on main; routes, browser publication and result
+visibility are still pending.
+
+Executed on Python 3.12 against temporary SQLite databases:
+
+~~~powershell
+.\.venv\Scripts\python.exe -m pytest -q tests/results --basetemp="C:\Users\Asus\Documents\Codex\2026-10-13\https-github-com-gagan-1718-se\work\sprint2-publication" --tb=short
+~~~
+
+PASS: 13 passed in 6.61s (five existing model cases plus eight service cases).
+Checks: publication metadata, single atomic results.publish audit entry,
+unknown runs, candidate/missing-actor denial, duplicate publication, rollback
+on audit/commit failure, and two independent sessions racing to publish with
+exactly one winner and one audit entry. Shared schema and personal data unchanged.
+
+
+### Publication API branch check (30 October 2026)
+
+Added POST /api/v1/admin/allotment/runs/<run_id>/publish, guarded by the shared
+administrator-role decorator. Actor identity comes from the authenticated session.
+Returns 201 on success, 404 for unknown runs and 409 for duplicate publication.
+Anonymous requests receive 401 and candidates 403 without publication or audit rows.
+GET cannot publish, and logout revokes access.
+
+Executed:
+
+~~~powershell
+.\.venv\Scripts\python.exe -m pytest -q tests/results tests/test_contracts.py tests/security/test_admin_authorization.py --basetemp="C:\Users\Asus\Documents\Codex\2026-10-13\https-github-com-gagan-1718-se\work\sprint2-publication-api" --tb=short
+~~~
+
+PASS: 63 passed in 23.63s. Includes seven new API cases.
+This remains pre-merge evidence, not completed TC-017 acceptance.
+Still pending: central CSRF integration, publish card, candidate result visibility,
+full regression before PR review and a rerun on main after merge.
