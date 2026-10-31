@@ -1,0 +1,135 @@
+
+{% extends "base.html" %}
+
+{% block title %}Eligibility Rules{% endblock %}
+{% block breadcrumb %}Eligibility Rules{% endblock %}
+
+{% block content %}
+<section class="page-heading">
+    <div>
+        <h1>Eligibility Rules</h1>
+        <p>Configure rank cut-offs and activate or deactivate category rules.</p>
+    </div>
+</section>
+
+<section class="card">
+    <div class="table-responsive">
+        <table class="cat-table">
+            <thead>
+                <tr>
+                    <th>Category</th>
+                    <th>Cut-off rank</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for category in categories %}
+                    {% set rule = rules_by_category.get(category) %}
+                    {% set error = errors.get(category) %}
+                    {% set value = values.get(category) %}
+
+                    <tr>
+                        <td>
+                            <strong>{{ category }}</strong>
+
+                            {% if rule %}
+                                <form
+                                    id="update-rule-{{ rule.id }}"
+                                    method="post"
+                                    action="{{ url_for('eligibility.admin_rule_update', rule_id=rule.id) }}">
+                                </form>
+                            {% endif %}
+                        </td>
+
+                        {% if rule %}
+                            <td>
+                                <label>
+                                    <span class="sr-only">
+                                        Cut-off rank for {{ category }}
+                                    </span>
+                                    <input
+                                        type="number"
+                                        name="max_rank"
+                                        form="update-rule-{{ rule.id }}"
+                                        min="1"
+                                        step="1"
+                                        required
+                                        value="{{ value if value is not none else rule.max_rank }}"
+                                        aria-invalid="{{ 'true' if error else 'false' }}"
+                                    >
+                                </label>
+
+                                {% if error %}
+                                    <p class="field-error" role="alert">
+                                        {{ error }}
+                                    </p>
+                                {% endif %}
+                            </td>
+
+                            <td>
+                                <label>
+                                    <input
+                                        type="checkbox"
+                                        name="active"
+                                        form="update-rule-{{ rule.id }}"
+                                        {% if rule.active %}checked{% endif %}
+                                    >
+                                    Active
+                                </label>
+                            </td>
+
+                            <td>
+                                <button type="submit" form="update-rule-{{ rule.id }}">
+                                    Save
+                                </button>
+                            </td>
+
+                        {% else %}
+                            <td>No rule</td>
+                            <td>Not configured</td>
+
+                            <td>
+                                <form
+                                    method="post"
+                                    action="{{ url_for('eligibility.admin_rule_create') }}">
+
+                                    <input
+                                        type="hidden"
+                                        name="category"
+                                        value="{{ category }}"
+                                    >
+
+                                    <label>
+                                        <span class="sr-only">
+                                            Cut-off rank for {{ category }}
+                                        </span>
+                                        <input
+                                            type="number"
+                                            name="max_rank"
+                                            min="1"
+                                            step="1"
+                                            required
+                                            value="{{ value if value is not none else '' }}"
+                                            aria-invalid="{{ 'true' if error else 'false' }}"
+                                        >
+                                    </label>
+
+                                    {% if error %}
+                                        <p class="field-error" role="alert">
+                                            {{ error }}
+                                        </p>
+                                    {% endif %}
+
+                                    <button type="submit">Create</button>
+                                </form>
+                            </td>
+                        {% endif %}
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}

@@ -268,3 +268,152 @@ def test_profile_page_has_an_exam_details_form(seeded):
     page = client.get("/accounts/profile-page")
     assert page.status_code == 200
     assert b"exam_type" in page.data
+
+def test_admin_configured_catalogue_flows_through_choices_and_allotment(seeded):
+    """TC-030: admin configuration is visible to candidates and used by allotment."""
+    from app.accounts.models import User
+    from app.catalogue.models import Branch, College, Seat
+    from app.eligibility.models import EligibilityRule
+    from app.allotment.models import AllotmentResult
+
+    app = seeded
+
+    # 1. Register a candidate with a real seeded exam record.
+    candidate = app.test_client()
+    assert candidate.post("/accounts/register", json=CANDIDATE).status_code == 201
+    login(candidate, CANDIDATE["email"], CANDIDATE_PASSWORD)
+
+    exam = {
+        "exam_type": "KCET",
+        "rank": 90000,
+        "category": "General",
+        "score": 60.0,
+    }
+    assert candidate.put("/accounts/exam-details", json=exam).status_code == 200
+
+    # 2. Submit the application and get all required documents approved.
+    submit_application(candidate)
+    upload_all_documents(candidate)
+
+    admin = login(app.test_client(), "admin@example.test", ADMIN_PASSWORD)
+    ids = pending_ids(admin)
+
+    assert set(ids) == REQUIRED_TYPES
+    for document_id in ids.values():
+        assert review(admin, document_id, "Approved").status_code == 200
+
+    # Resolve the candidate's real ID instead of assuming it is user 2.
+    with app.app_context():
+        candidate_id = db.session.execute(
+            db.select(User.id).where(User.email == CANDIDATE["email"])
+        ).scalar_one()
+
+    # 3. Admin creates a new college through the admin UI.
+    response = admin.post(
+        "/admin/colleges/new",
+        data={"name": "TC030 Test University", "city": "Bengaluru"},
+    )
+    assert response.status_code == 302
+
+    with app.app_context():
+        college = db.session.execute(
+            db.select(College).where(College.name == "TC030 Test University")
+        ).scalar_one()
+        college_id = college.id
+
+    # 4. Admin creates a branch through the admin UI.
+    response = admin.post(
+        f"/admin/colleges/{college_id}/branches/new",
+        data={"name": "Computer Science"},
+    )
+    assert response.status_code == 302
+
+    with app.app_context():
+        branch = db.session.execute(
+            db.select(Branch).where(
+                Branch.college_id == college_id,
+                Branch.name == "Computer Science",
+            )
+        ).scalar_one()
+        branch_id = branch.id
+
+    # 5. Admin configures the seat matrix through the admin UI.
+    response = admin.post(
+        f"/admin/branches/{branch_id}/seats",
+        data={
+            "General": "1",
+            "OBC": "0",
+            "SC": "0",
+            "ST": "0",
+            "EWS": "0",
+        },
+    )
+    assert response.status_code == 302
+
+    # 6. Admin changes the General eligibility cutoff through the admin UI.
+    with app.app_context():
+        rule = db.session.execute(
+            db.select(EligibilityRule).where(
+                EligibilityRule.category == "General"
+            )
+        ).scalar_one()
+        rule_id = rule.id
+        assert rule.max_rank == 20000
+
+    response = admin.post(
+        f"/admin/eligibility-rules/{rule_id}",
+        data={"max_rank": "100000", "active": "on"},
+    )
+    assert response.status_code == 200
+
+    # The candidate's same rank is now eligible under the updated cutoff.
+    eligibility = candidate.get(
+        "/api/v1/candidates/me/eligibility"
+    )
+    assert eligibility.status_code == 200
+    assert eligibility.get_json()["status"] == "Eligible"
+
+    # 7. Candidate can see the new college and branch.
+    colleges = candidate.get("/colleges")
+    assert colleges.status_code == 200
+    assert b"TC030 Test University" in colleges.data
+    assert b"Computer Science" in colleges.data
+
+    # 8. Candidate adds the new branch and locks their choices.
+    response = candidate.post(
+        "/api/v1/choices",
+        json={"branchId": branch_id, "collegeId": college_id},
+    )
+    assert response.status_code == 201
+
+    response = candidate.post("/api/v1/choices/lock")
+    assert response.status_code == 200
+
+    # 9. Admin runs allotment through the JSON API.
+    response = admin.post("/api/v1/admin/allotment/run")
+    assert response.status_code == 200
+    summary = response.get_json()
+    assert summary["candidatesProcessed"] == 1
+    assert summary["allocatedCount"] == 1
+    assert summary["notAllocatedCount"] == 0
+
+    # 10. Verify the result and the actual seat count in the database.
+    with app.app_context():
+        seat = db.session.execute(
+            db.select(Seat).where(
+                Seat.branch_id == branch_id,
+                Seat.category == "General",
+            )
+        ).scalar_one()
+
+        result = db.session.execute(
+            db.select(AllotmentResult).where(
+                AllotmentResult.candidate_id == candidate_id
+            )
+        ).scalar_one()
+
+        assert seat.capacity == 1
+        assert seat.filled == 1
+        assert result.status == "Allocated"
+        assert result.branch_id == branch_id
+        assert result.seat_id == seat.id

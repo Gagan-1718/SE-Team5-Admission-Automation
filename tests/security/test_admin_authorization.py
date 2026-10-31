@@ -10,11 +10,13 @@ from app.catalogue.seed import seed
 from app.documents.models import Document
 from app.extensions import db
 from tests.catalogue.helpers import login_client
-
+from app.eligibility.models import EligibilityRule
+from app.eligibility.seed import seed as seed_eligibility
 
 @pytest.fixture
 def admin_resources(app, tmp_path):
     seed()
+    seed_eligibility()
     admin = login_client(app, "administrator", 1)
     candidate = login_client(app, "candidate", 2)
     application = Application(candidate_id=candidate.user_id, status="Submitted",
@@ -33,6 +35,9 @@ def admin_resources(app, tmp_path):
         "college_id": db.session.execute(db.select(College.id)).scalars().first(),
         "branch_id": db.session.execute(db.select(Branch.id)).scalars().first(),
         "document_id": document.id,
+        "rule_id": db.session.execute(
+            db.select(EligibilityRule.id)
+        ).scalars().first(),
     }
     return admin, candidate, ids
 
