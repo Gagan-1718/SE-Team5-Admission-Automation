@@ -24,7 +24,7 @@ EXAM_RECORDS = (
 
 def seed():
     """Insert the fictional exam records and administrator exactly once."""
-    _ensure_exam_record_column()
+    _ensure_profile_columns()
     for exam_type, rank, category, score in EXAM_RECORDS:
         if exam_type not in EXAM_TYPES or category not in ALLOWED_CATEGORIES:
             raise ValueError("Invalid Accounts seed record.")
@@ -77,4 +77,21 @@ def _ensure_exam_record_column():
                 "INTEGER REFERENCES exam_records(id)"
             )
         )
+        db.session.commit()
+
+
+def _ensure_profile_columns():
+    """Idempotently upgrade pre-Sprint-2 users without deleting existing data."""
+    columns = {column["name"] for column in inspect(db.engine).get_columns("users")}
+    additions = {
+        "exam_record_id": "INTEGER REFERENCES exam_records(id)",
+        "date_of_birth": "DATE",
+        "address_line": "VARCHAR(200)",
+        "city": "VARCHAR(100)",
+        "pincode": "VARCHAR(6)",
+    }
+    for name, definition in additions.items():
+        if name not in columns:
+            db.session.execute(text(f"ALTER TABLE users ADD COLUMN {name} {definition}"))
+    if set(additions) - columns:
         db.session.commit()
