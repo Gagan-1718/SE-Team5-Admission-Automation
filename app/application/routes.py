@@ -10,6 +10,7 @@ from http import HTTPStatus
 
 from flask import Blueprint, flash, jsonify, redirect, render_template, request, url_for
 
+from app.accounts.services import get_exam_details
 from app.extensions import db
 
 from . import services
@@ -54,6 +55,7 @@ def _render_form(application, values, errors, code=200):
         values=values,
         errors=errors,
         boards=services.BOARDS,
+        has_exam_details=get_exam_details(current_candidate_id()) is not None,
     )
     return page, code
 

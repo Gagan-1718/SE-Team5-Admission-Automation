@@ -9,6 +9,7 @@ from datetime import datetime, timezone
 
 from sqlalchemy.exc import IntegrityError
 
+from app.accounts.services import get_exam_details
 from app.extensions import db
 
 from .models import DRAFT, FORM_FIELDS, REQUIRED_FIELDS, SUBMITTED, Application
@@ -16,6 +17,8 @@ from .models import DRAFT, FORM_FIELDS, REQUIRED_FIELDS, SUBMITTED, Application
 BOARDS = ("Karnataka State PUC", "CBSE", "ICSE", "Other")
 MAX_LENGTHS = {"guardian_name": 100, "school_name": 150}
 MOBILE_PATTERN = re.compile(r"^\d{10}$")
+# Eligibility needs the rank and category, so a submission without them is refused (D2-02).
+EXAM_DETAILS_MISSING = "Enter your exam details on your profile before you submit."
 
 
 class ValidationError(Exception):
@@ -136,13 +139,16 @@ def make_reference_number(application_id, when=None):
 def submit(application):
     """Submit a complete Draft and give it its unique reference number (ADM-F-005).
 
-    Raises ValidationError (field-level) if mandatory fields are missing, and
+    Raises ValidationError (field-level) if mandatory fields are missing or the candidate
+    has not entered exam details (key ``exam_details``), and
     ApplicationLocked if it was already submitted. The status change is one
     conditional UPDATE, so two simultaneous submits cannot both succeed.
     """
     if not application.is_draft:
         raise ApplicationLocked()
     errors = missing_required_fields(application)
+    if get_exam_details(application.candidate_id) is None:
+        errors["exam_details"] = EXAM_DETAILS_MISSING
     if errors:
         raise ValidationError(errors)
 
