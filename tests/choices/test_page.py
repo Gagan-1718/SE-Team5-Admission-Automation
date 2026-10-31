@@ -48,3 +48,10 @@ def test_candidate_page_renders_catalogue_and_eligibility_explanation(app, choic
     assert 'value="Computer"' in page
     assert 'data-branch-id="' in page
     assert 'disabled' in page
+
+
+def test_choice_styles_cover_stacked_and_narrow_layouts():
+    css = open("static/css/choices.css", encoding="utf-8").read()
+    assert ".choices-layout" in css
+    assert "@media (max-width: 900px)" in css
+    assert "@media (max-width: 400px)" in css
