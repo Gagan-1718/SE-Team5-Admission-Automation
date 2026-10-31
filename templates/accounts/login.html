@@ -43,9 +43,10 @@ form.addEventListener("submit", async (event) => {
     });
     const data = await response.json();
     if (response.ok) {
-      window.location.href = data.role === 'administrator'
-        ? {{ url_for('documents.review_queue')|tojson }}
-        : {{ url_for('application.draft_form')|tojson }};
+      const requestedNext = {{ next_url|default('', true)|tojson }};
+      window.location.href = requestedNext || (data.role === 'administrator'
+        ? {{ url_for('admin.dashboard_page')|tojson }}
+        : {{ url_for('accounts.candidate_dashboard')|tojson }});
       return;
     }
     message.textContent = data.message || "Login failed.";

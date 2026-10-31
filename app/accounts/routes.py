@@ -1,7 +1,8 @@
 """Candidate registration and shared account session endpoints."""
 import re
+from urllib.parse import urlsplit
 
-from flask import Blueprint, jsonify, make_response, render_template, request
+from flask import Blueprint, abort, g, jsonify, make_response, render_template, request
 from sqlalchemy.exc import IntegrityError
 
 from app.extensions import db
@@ -21,6 +22,10 @@ from .constants import ALLOWED_CATEGORIES, EXAM_TYPES
 from .models import ExamRecord, User
 from .services import get_exam_details
 from .security import hash_password, verify_password
+from app.journey import all_steps
+from app.application.services import get_for_candidate
+from app.documents.services import all_documents_approved
+from app.eligibility.services import get_eligibility
 
 bp = Blueprint("accounts", __name__, url_prefix="/accounts")
 EMAIL_PATTERN = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
@@ -62,7 +67,20 @@ def registration_page():
 
 @bp.get("/login")
 def login_page():
-    return render_template("accounts/login.html")
+    next_url = request.args.get("next", "")
+    if not _safe_next(next_url):
+        next_url = ""
+    return render_template("accounts/login.html", next_url=next_url)
+
+
+def _safe_next(value):
+    """Accept only a local absolute path, never a scheme or network location."""
+    if not isinstance(value, str) or not value.startswith("/") or value.startswith("//"):
+        return None
+    parsed = urlsplit(value)
+    if parsed.scheme or parsed.netloc:
+        return None
+    return value
 
 
 @bp.post("/register")
@@ -140,6 +158,42 @@ def admin_check():
 @login_required
 def dashboard():
     return jsonify(message="Candidate dashboard", identity=current_identity())
+
+
+@page_login_required
+def candidate_dashboard():
+    """Render the candidate journey without reading another module's tables."""
+    if not g.current_user or g.current_user.role != "candidate":
+        abort(403)
+    candidate_id = current_candidate_id()
+    steps = all_steps(candidate_id)
+    action = next((step for step in steps if step["state"] == "problem"), None)
+    action = action or next((step for step in steps if step["state"] == "current"), None)
+    application = get_for_candidate(candidate_id)
+    exam = get_exam_details(candidate_id)
+    eligibility = get_eligibility(candidate_id)
+    documents = "3 of 3" if all_documents_approved(candidate_id) else "0 of 3"
+    return render_template(
+        "dashboard/index.html",
+        steps=steps,
+        action=action,
+        exam=exam,
+        application=application,
+        documents=documents,
+        eligibility=eligibility,
+    )
+
+
+# Accounts owns the candidate dashboard, but its public URL is intentionally not
+# under /accounts. Register the view through the existing module blueprint so
+# the application factory remains unchanged.
+@bp.record_once
+def _register_candidate_dashboard(state):
+    state.app.add_url_rule(
+        "/dashboard",
+        endpoint="accounts.candidate_dashboard",
+        view_func=candidate_dashboard,
+    )
 
 
 @bp.get("/profile")
