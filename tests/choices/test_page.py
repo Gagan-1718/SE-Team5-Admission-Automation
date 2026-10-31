@@ -82,3 +82,14 @@ def test_category_specific_zero_seat_warning_is_rendered(app, choice_data, monke
     page = _logged_in_client(app, choice_data["candidate_ids"][0]).get("/choices").get_data(as_text=True)
     assert "8 General seats left" in page
     assert "0 General seats left" in page
+
+
+def test_eligible_candidate_can_open_choice_filling(app, choice_data, monkeypatch):
+    monkeypatch.setattr(routes, "get_eligibility", lambda candidate_id: {
+        "status": "Eligible", "reason": "Rank is within the cut-off."
+    })
+    response = _logged_in_client(app, choice_data["candidate_ids"][0]).get("/choices")
+    page = response.get_data(as_text=True)
+    assert response.status_code == 200
+    assert "Choice filling is not available yet" not in page
+    assert 'data-eligible="true"' in page
