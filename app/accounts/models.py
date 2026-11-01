@@ -16,6 +16,10 @@ class User(db.Model):
     exam_record_id = db.Column(db.Integer, db.ForeignKey("exam_records.id"), nullable=True)
     rank = db.Column(db.Integer, nullable=True)
     category = db.Column(db.String(40), nullable=True)
+    date_of_birth = db.Column(db.Date, nullable=True)
+    address_line = db.Column(db.String(200), nullable=True)
+    city = db.Column(db.String(100), nullable=True)
+    pincode = db.Column(db.String(6), nullable=True)
     exam_record = db.relationship("ExamRecord", backref=db.backref("candidates"))
 
     def identity(self):

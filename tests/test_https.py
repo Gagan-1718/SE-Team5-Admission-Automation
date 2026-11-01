@@ -29,7 +29,7 @@ from app.tls import (  # noqa: E402
 
 PASSWORD = "wire-test-secret-4821"
 EMAIL = "wire-test@example.test"
-REGISTER = {"name": "Wire Test", "email": EMAIL, "mobile": "9123456789", "password": PASSWORD}
+REGISTER = {"name": "Wire Test", "email": EMAIL, "mobile": "9123456789", "date_of_birth": "2005-04-12", "password": PASSWORD}
 
 
 def free_port():
