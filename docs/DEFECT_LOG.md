@@ -20,6 +20,8 @@ The exit criterion is: no Critical or High defect open at the `v1.0` tag.
 | DEF-009 | 1 Nov | Review of `main` routes | Administrator candidate list is not built (`/admin/candidates`) (O-02) | ADM-F-020, TC-020 | Medium | Open | Tasya |
 | DEF-010 | 1 Nov | Test output | `TLSV1_ALERT_UNKNOWN_CA` message printed during `tests/test_https.py` | TC-024 | n/a | Not a defect: it is the server noting the test client that correctly refuses the self-signed certificate | Gagan |
 
+| DEF-011 | 1 Nov | Leftover `team5-timing-*` folders in the temp folder after running the script | `scripts/time_allotment.py` kept a database connection open, so on Windows its temporary databases could not be deleted (fictional data only, outside the repo) | TC-027 | Low | Fixed before merge (`da610c8`); a test now checks that no folder is left | Gagan |
+
 ## How to add a defect
 
 Add a row with the next ID, the date, how you found it (test name, manual step, review), what happened, the requirement or TC, a proposed severity and "Open" with your name. Gagan sets the final severity. When it is fixed, write the pull request number and how the fix was checked.
