@@ -1,0 +1,11 @@
+{% if run %}
+<section class="card" aria-labelledby="decision-summary-heading">
+  <h2 id="decision-summary-heading">Seat decisions</h2>
+  <p class="hint">Counts cover allocated seats in this run. Rejected seats are not released.</p>
+  <dl class="grid g3">
+    <div><dt>Accepted</dt><dd>{{ decisions.Accepted }}</dd></div>
+    <div><dt>Rejected</dt><dd>{{ decisions.Rejected }}</dd></div>
+    <div><dt>Undecided</dt><dd>{{ decisions.Undecided }}</dd></div>
+  </dl>
+</section>
+{% endif %}

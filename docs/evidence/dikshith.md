@@ -185,3 +185,75 @@ git diff --check: PASS. Personal database/uploads unchanged. No commits or remot
 changes performed by the coding agent. Full repository regression remains for CI.
 Future results/rules/candidate-correction forms must use the same helper/header;
 do not introduce a second CSRF mechanism when those screens are added.
+
+
+## ADM-F-018 and ADM-F-019: local feature evidence (1 November 2026)
+
+Branch: feature/13-14-result-decision, based on main 5a4f7b9. Python 3.12.10.
+Temporary SQLite databases and fictional accounts only. This section is branch
+evidence, not a claim that the changes are merged or that the High defect is
+already closed on main.
+
+Implemented:
+- Candidate-only GET /result and GET /api/v1/allotment/result. Four states:
+  NOT_PUBLISHED (API 404 with no allocation details), NOT_IN_RUN, NOT_ALLOCATED,
+  ALLOCATED. The authenticated candidate determines the lookup; supplied IDs
+  cannot select another result. Responses are private/no-store.
+- Allotment letter with college, branch, snapshot rank/category/reference,
+  exam, preference number/count, decision and a print stylesheet. Print CSS
+  hides the shell and controls; actual browser print pagination remains to be
+  checked manually.
+- POST /api/v1/allotment/decision accepts Accept/Reject and stores
+  Accepted/Rejected. The native form POST /result/decision returns to the page.
+  Before publication: 404; no allocated seat: 422; repeat: 409; invalid choice: 400.
+  Normal API authentication: anonymous 401, administrator 403. When CSRF is
+  enabled, a missing/invalid token is rejected first with 400.
+- Decisions are unique by result_id. A database race test uses two separately
+  authenticated browser sessions with real CSRF headers and requires one 201
+  and one 409, one decision row and one audit entry.
+- Decision plus results.decision audit entry commit atomically. Failure rolls
+  both back. Rejecting never changes catalogue_seat.filled or starts a new run.
+- Result/decision journey steps and allocated-seat decision counts in the admin
+  console. Accepted/Rejected forms disappear once a decision is recorded.
+- Shared models/schema unchanged. No edits to Varun's base template/sidebar.
+
+Executed targeted command A (TC-018/019 and supporting TC-022):
+
+~~~powershell
+.\.venv\Scripts\python.exe -m pytest -q tests/results tests/test_contracts.py tests/security/test_admin_authorization.py --basetemp="C:\Users\Asus\Documents\Codex\2026-10-13\https-github-com-gagan-1718-se\work\results-decisions-fixed" --tb=short
+~~~
+
+PASS: 118 passed in 71.18s. Covers four states, publication gating, privacy,
+snapshot fields, HTML/API authorization, escaping, print stylesheet, confirmations,
+one-time decisions, atomic failure recovery, two-session concurrency, journey
+states and decision-summary counts.
+
+Executed integration command B (TC-017/018/019 and supporting CSRF checks):
+
+~~~powershell
+.\.venv\Scripts\python.exe -m pytest -q tests/allotment/test_result_decision_flow.py tests/allotment/test_console_routes.py tests/security/test_csrf.py --basetemp="C:\Users\Asus\Documents\Codex\2026-10-13\https-github-com-gagan-1718-se\work\results-cycle-integration" --tb=short
+~~~
+
+PASS: 46 passed in 37.83s. The new oracle scenario uses actual allotment,
+publication, candidate-result and decision HTTP routes with CSRF enabled:
+C1/C2 receive A-CSE, C3 A-ISE, C4/C5 Not Allocated, an unlocked candidate
+Not In Run. It checks hidden results before publication, Accept and Reject,
+repeat rejection, the audit log and unchanged, consistent seat counts.
+This is the result/decision tail of the full cycle; it does not replace the
+separate registration-to-decision system test still assigned in D7.
+
+Executed full-regression command C:
+
+~~~powershell
+.\.venv\Scripts\python.exe -m pytest -q --basetemp="C:\Users\Asus\Documents\Codex\2026-10-13\https-github-com-gagan-1718-se\work\result-decision-full" --junitxml="C:\Users\Asus\Documents\Codex\2026-10-13\https-github-com-gagan-1718-se\work\result-decision-full.xml" --tb=short
+~~~
+
+PASS: 771 passed, 1 skipped, 6 xpassed in 541.24s.
+The skipped module is tests/test_https.py because this local venv lacks cheroot
+and cryptography (requirements-https.txt). CI installs those optional dependencies;
+its full run is still required. The six XPASS cases are pre-existing markers.
+All new result/decision and oracle tests passed without skips or xfail.
+git diff --check: PASS.
+Manual browser result/decision and print-preview checks: pending.
+No personal database reset/migration, commit, push or GitHub mutation performed.
+After review and merge, re-run on main and update the acceptance evidence.

@@ -1,0 +1,22 @@
+/* Result-specific presentation; shared shell remains owned by the design module. */
+.result-status, .result-ticket { margin-bottom: 1rem; }
+.result-details { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+.result-details dt { font-size: .875rem; color: #4a5d73; }
+.result-details dd { margin: .25rem 0 0; font-weight: 600; overflow-wrap: anywhere; }
+.decision-actions { display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 1rem; }
+@media (max-width: 600px) { .result-details { grid-template-columns: 1fr; } }
+@page { size: A4; margin: 15mm; }
+@media print {
+  .app-sidebar, .app-topbar, .anonymous-topbar, .flash-stack,
+  .no-print, .result-status { display: none !important; }
+  html, body { background: white !important; color: black !important; }
+  .app-shell, .app-main, .app-content {
+    display: block !important; margin: 0 !important; padding: 0 !important;
+    width: 100% !important; min-height: 0 !important;
+  }
+  .result-ticket {
+    break-inside: avoid; box-shadow: none !important; border: 1px solid #555;
+    margin: 0; padding: 8mm; font-size: 11pt;
+  }
+  .result-details { grid-template-columns: 1fr 1fr; gap: 5mm; }
+}
