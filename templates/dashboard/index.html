@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% import "_ui.html" as ui %}
+{% block title %}Dashboard{% endblock %}
+{% block breadcrumb %}Dashboard{% endblock %}
+{% block content %}
+<div class="dashboard-page">
+  {{ ui.page_header("Your admission journey", "See what is complete and what to do next.", "Candidate dashboard") }}
+
+  {% if action %}
+    {% call ui.callout("bad" if action.state == "problem" else "info", "Next step") %}
+      <p><strong>{{ action.label }}</strong> — {{ action.detail }}</p>
+      <a class="btn primary sm" href="{{ action.href }}">Open {{ action.label }}</a>
+    {% endcall %}
+  {% else %}
+    {% call ui.callout("ok", "Journey status") %}
+      <p>Your current steps are complete or waiting for the next system action.</p>
+    {% endcall %}
+  {% endif %}
+
+  {% call ui.card("Your progress") %}
+    {{ ui.stepper(steps) }}
+  {% endcall %}
+
+  <section class="dashboard-tiles" aria-label="Admission summary">
+    {{ ui.tile("Exam and rank", exam.exam_type ~ " · " ~ exam.rank if exam else "Not entered", exam.category if exam else "Add your exam details") }}
+    {{ ui.tile("Application", application.status if application else "Not started", application.reference_number if application and application.reference_number else "Save and submit your application") }}
+    {{ ui.tile("Documents approved", documents, "Required documents") }}
+    {{ ui.tile("Eligibility", eligibility.status, eligibility.reason) }}
+  </section>
+</div>
+{% endblock %}

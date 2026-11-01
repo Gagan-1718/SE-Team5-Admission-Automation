@@ -149,7 +149,7 @@ def test_html_and_json_review_endpoints_build_distinct_urls(app):
 def test_admin_login_page_targets_html_review_queue(client):
     page = client.get("/accounts/login")
     assert page.status_code == 200
-    assert b'? "/admin/documents"' in page.data
+    assert b'? "/admin/dashboard"' in page.data
     assert b"/admin/documents.json" not in page.data
 
 
