@@ -66,3 +66,70 @@ Automated: `tests/application/test_submit.py` and `test_identity.py` pass.
 **Not working yet (expected failures, owners in brackets):** the administrator cannot open `/admin/colleges` because the guard is not connected to the login (Tasya); eligibility always says Eligible, ignores the real exam details and is not login-protected (Tasya); `/admin/dashboard` and `/admin/audit-logs` do not exist (Tasya); `all_documents_approved()` and `REQUIRED_DOCUMENT_TYPES` are missing and any document type text is accepted (Dikshith); documents have no foreign keys to users and applications (Dikshith); the profile page has no exam-details form (Varun).
 
 **Therefore not marked passed:** TC-009 (eligibility with real inputs), TC-011 (administrator seat management through the login), TC-020 (dashboard), TC-025 (audit log).
+
+---
+
+# Sprint 2 evidence: Gagan (1 November 2026)
+
+Run on `main` at `932fd7e` (after #72 and #73) plus branch `feature/7-allotment-timing`. Same laptop: Windows 11, Intel64 Family 6 Model 197, Python 3.12.10. Fictional data only; every database was temporary and deleted afterwards.
+
+## Test files behind my test cases
+
+| Test case | Command (`python -m pytest -q ...`) | Observed |
+|---|---|---|
+| TC-004, TC-005 (draft, submit, exam details required, D2-02) | `tests/application` | 82 passed |
+| TC-015, TC-016 (Appendix B oracle, rank order, own category only) | `tests/allotment/test_engine.py` | 44 passed |
+| TC-015, TC-016, TC-028 (run on the database, refusals, rollback, two runs at once, write lock) | `tests/allotment/test_run_service.py` | 17 passed |
+| TC-015, TC-022, TC-025 (API and console, 401/403, audit entry) | `tests/allotment/test_console_routes.py` | 9 passed |
+| TC-028 (consistency script) | `tests/allotment/test_consistency_script.py` | 2 passed |
+| TC-024 (HTTPS) | `tests/test_https.py` | 10 passed |
+| TC-027 (timing script) | `tests/scripts/test_time_allotment.py` | 2 passed |
+| Shared contracts | `tests/test_contracts.py` | 40 passed |
+
+**The oracle tests can fail:** with the sort in `app/allotment/engine.py` changed to descending rank, `test_engine.py` and `test_run_service.py` gave 20 failed, 41 passed. The file was restored (`git diff` empty) and the tests passed again.
+
+## TC-015 / TC-016: Appendix B oracle (issues #5, #6)
+
+`test_appendix_b_oracle_results`, `test_appendix_b_oracle_seats_after_the_run` and `test_oracle_through_the_database` give exactly the expected values from the Test Plan:
+C1 A-CSE (choice 1), C2 A-CSE (choice 1), C3 A-ISE (choice 2), C4 and C5 Not Allocated; seats left A-CSE 0, A-ISE 0, B-ECE 1. The run summary is 5 processed, 3 allocated, 2 not allocated. The expected values were not edited.
+
+## TC-027 / ADM-NFR-002: allotment time (issue #7)
+
+**Command:** `python scripts/time_allotment.py --candidates 300`, then `--candidates 600`. The script seeds a temporary database exactly like `flask seed-db`, adds Tasya's generator data (`scripts/make_demo_dataset.py`, seed 1), and times `run_allotment` three times, each on a fresh copy of that database.
+
+| Dataset | Taking part (eligible + locked) | Allocated / Not Allocated | Run 1 | Run 2 | Run 3 | min / median / max | Seats after each run |
+|---|---|---|---|---|---|---|---|
+| 300 candidates | 210 | 143 / 67 | 0.921 s | 1.024 s | 0.967 s | 0.921 / 0.967 / 1.024 s | consistent |
+| 600 candidates | 420 | 210 / 210 | 1.589 s | 1.711 s | 1.581 s | 1.581 / 1.589 / 1.711 s | consistent |
+
+Both are far under the 1 minute limit. 600 candidates needed no code or architecture change. The three runs on each dataset gave the same outcome, as expected for a deterministic algorithm. The time includes loading candidates, re-checking eligibility, writing results, updating seats and the audit entry, all in one transaction.
+
+## TC-028 / ADM-NFR-003 and TC-011 step 4: seat consistency (issue #8), 300 candidate dataset
+
+One temporary database built as above, then driven through the real routes with the seeded administrator login and CSRF tokens (as a browser sends them):
+
+| Step | Observed |
+|---|---|
+| `scripts/check_seat_consistency.py <file>` before the run | exit 0, "No allotment run yet ...", "consistent" |
+| `POST /api/v1/admin/allotment/run` with no CSRF token | 400 `csrf_failed`, nothing run |
+| Administrator login, `GET /admin/allotment` | 200, pre-run checks shown |
+| First `POST /api/v1/admin/allotment/run` | 200: 210 processed, 143 allocated, 67 not allocated, run id 1, 810 ms |
+| Second run | 409 "Allotment has already been run. There is one cycle only." |
+| Console after the run | consistency tile "Passed", "0 mismatches", run button shows "already completed" |
+| Audit log (`/admin/audit-logs.json`) | contains `allotment.run` |
+| Catalogue `/colleges` | all 6 branches show "available / total" equal to the database; 143 of 240 seats filled; every seat row has available = capacity - filled |
+| Check script after the run | exit 0, "consistent" |
+| Seat row 1 changed by hand from filled 2 to 3 | check script exit 1: "MISMATCH seat row 1 (branch 1, General): filled 3, allotment records 2, capacity 30" |
+| Direct `UPDATE ... SET filled = capacity + 1` | refused by the database: `CHECK constraint failed: ck_catalogue_seat_filled_within_capacity` |
+
+Rollback (A-07) is covered by `test_a_failure_halfway_leaves_nothing_behind_and_is_audited_as_failed`: no run, no results, every `filled` back to 0, one audit entry with outcome "Failed", and a later run succeeds.
+
+## TC-004 / TC-005 with the Sprint 2 rule (G3, D2-02)
+
+`tests/application/test_exam_details_required.py`: submitting without exam details returns 422 on the page and the API with "Enter your exam details first", and the application stays a Draft; saving a draft without exam details still works. The Sprint 1 flow (draft saved and resumed, unique `ADM-YYYY-NNNNNN`, second submit 409) still passes in the same 82 tests.
+
+## TC-024: HTTPS
+
+`tests/test_https.py`: 10 passed on Sprint 2 `main` (no change since the Sprint 1 evidence above).
+
+**Not done / limits:** times are from one laptop, not a server; the generator uses KCET ranks only, so mixed KCET/COMEDK ordering is covered by `test_comedk_and_kcet_ranks_are_compared_as_stored`, not by the timing data; no browser screenshots are included in this file.
