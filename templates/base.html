@@ -19,7 +19,7 @@
       {% if is_admin %}
         <a class="app-nav-link{% if request.path == '/admin/dashboard' %} active{% endif %}" href="/admin/dashboard"><span class="nav-icon" aria-hidden="true">⌂</span>Dashboard</a>
         <div class="nav-group">People</div>
-        <a class="app-nav-link locked" href="/admin/candidates" aria-disabled="true" aria-describedby="lock-admin-candidates" data-locked title="Candidate records will be available when the candidate-management module is merged."><span class="nav-icon" aria-hidden="true">♙</span>Candidates <span class="nav-lock" aria-label="Locked">🔒</span><span class="sr-only" id="lock-admin-candidates">Candidate records will be available when the candidate-management module is merged.</span></a>
+        <a class="app-nav-link{% if request.path == '/admin/candidates' %} active{% endif %}" href="{{ url_for('admin.candidate_list') }}"><span class="nav-icon" aria-hidden="true">♙</span>Candidates </a>
         <a class="app-nav-link{% if request.path == '/admin/documents' %} active{% endif %}" href="/admin/documents"><span class="nav-icon" aria-hidden="true">▤</span>Documents</a>
         <div class="nav-group">Setup</div>
         <a class="app-nav-link{% if request.path == '/admin/colleges' %} active{% endif %}" href="/admin/colleges"><span class="nav-icon" aria-hidden="true">⌂</span>Colleges and seats</a>
