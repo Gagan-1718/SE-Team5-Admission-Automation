@@ -34,7 +34,7 @@ def test_registered_candidate_submits_uploads_resubmits_and_gets_approval(app, t
     candidate = app.test_client()
     registered = candidate.post('/accounts/register', json={
         'name': 'Fictional Candidate', 'email': 'candidate@example.test',
-        'mobile': '9000000001', 'password': PASSWORD})
+        'mobile': '9000000001', 'date_of_birth': '2005-04-12', 'password': PASSWORD})
     assert registered.status_code == 201
     candidate_id = registered.json['user_id']
     assert candidate_id != 1

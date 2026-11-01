@@ -136,3 +136,52 @@ PASS: 63 passed in 23.63s. Includes seven new API cases.
 This remains pre-merge evidence, not completed TC-017 acceptance.
 Still pending: central CSRF integration, publish card, candidate result visibility,
 full regression before PR review and a rerun on main after merge.
+
+
+## Central CSRF protection: branch evidence (31 October 2026)
+
+Branch: feature/central-csrf-protection. Python 3.12. Local temporary databases only.
+This is pre-merge evidence; repeat the required cases on main after review/merge.
+D-03 is not marked closed here; Gagan owns the deviation update.
+
+Implemented: central session token and validation for POST, PUT, PATCH and DELETE;
+hidden form fields or X-CSRF-Token header; JSON body alone is not a token source;
+clear HTTP 400 on rejection; production enabled by default, TESTING disabled by
+default with CSRF_ENABLED=True available for dedicated tests.
+
+Varun's shared shell is already available, so the small base.html meta/script hook
+and missing existing form fields are included to avoid breaking the working app.
+Request Varun's review for the shared-template hook. static/js/csrf.js supplies
+tokens for same-origin writes only and preserves Request objects and headers.
+Document forms use the central token when enabled; existing legacy document-token
+tests remain valid with the testing-default configuration. No duplicate token fields
+were added to document forms. No dependency or schema changes were required.
+
+Executed command A:
+
+~~~powershell
+.\.venv\Scripts\python.exe -m pytest -q tests/security/test_csrf.py tests/documents tests/accounts tests/application tests/catalogue tests/results --basetemp="C:\Users\Asus\Documents\Codex\2026-10-13\https-github-com-gagan-1718-se\work\central-csrf-check" --tb=short
+~~~
+
+PASS: 413 passed in 305.19s. This is a targeted multi-module regression, not the
+entire repository suite. It ran before three additional real-workflow cases and
+the JavaScript test were included in the final dedicated run below.
+
+Executed command B (final dedicated coverage):
+
+~~~powershell
+.\.venv\Scripts\python.exe -m pytest -q tests/security/test_csrf.py tests/security/test_csrf_fetch.py --basetemp="C:\Users\Asus\Documents\Codex\2026-10-13\https-github-com-gagan-1718-se\work\central-csrf-final" --tb=short
+~~~
+
+PASS: 37 passed in 27.41s. Covers missing/wrong/non-ASCII tokens, each unsafe method,
+form and JSON/header handling, forged cross-site-style submissions, another
+session's token, safe GET/HEAD, stable tokens, production/testing defaults,
+real registration/login/logout, every currently rendered POST form in the tested
+candidate/admin pages (exactly one token matching the meta tag), document
+upload/reject/resubmit, candidate profile updates, native catalogue forms, and
+the same-origin fetch wrapper executed with Node.
+
+git diff --check: PASS. Personal database/uploads unchanged. No commits or remote
+changes performed by the coding agent. Full repository regression remains for CI.
+Future results/rules/candidate-correction forms must use the same helper/header;
+do not introduce a second CSRF mechanism when those screens are added.

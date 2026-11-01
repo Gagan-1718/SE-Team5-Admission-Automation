@@ -6,6 +6,7 @@
   <h1>{{ 'Edit college' if college else 'Add college' }}</h1>
   {% include "catalogue/_messages.html" %}
   <form method="post" class="cat-form">
+    <input type="hidden" name="csrf_token" value="{{ get_csrf_token() }}">
     <label for="name">College name</label>
     <input type="text" id="name" name="name" value="{{ form.name }}" maxlength="120" required>
     <label for="city">City</label>

@@ -17,6 +17,7 @@ def candidate_payload(label):
         "name": f"Fictional Candidate {label}",
         "email": f"candidate-{label.lower()}@example.test",
         "mobile": "9000000001" if label == "A" else "9000000002",
+        "date_of_birth": "2005-04-12",
         "password": PASSWORD,
     }
 
