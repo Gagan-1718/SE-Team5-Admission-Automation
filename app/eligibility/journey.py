@@ -1,9 +1,34 @@
-"""Journey step for the candidate dashboard (SPRINT_TWO_START_HERE.md section 4.4).
+"""Eligibility journey step for the candidate dashboard."""
 
-STUB: returns the step as locked until the module owner writes the real status logic.
-"""
-from app.journey import locked_step
+from app.journey import DONE, PROBLEM, WAITING, make_step
+from app.eligibility.evaluation import PENDING, ELIGIBLE, NOT_ELIGIBLE
+from app.eligibility.services import get_eligibility
+
+KEY = "eligibility"
+LABEL = "Eligibility"
+HREF = "/eligibility"
 
 
 def step_statuses(candidate_id):
-    return [locked_step("eligibility", "Eligibility", "/eligibility")]
+    """Return the candidate's current eligibility journey step."""
+    result = get_eligibility(candidate_id)
+    status = result["status"]
+
+    if status == PENDING:
+        state = WAITING
+    elif status == NOT_ELIGIBLE:
+        state = PROBLEM
+    elif status == ELIGIBLE:
+        state = DONE
+    else:
+        raise ValueError(f"Unknown eligibility status: {status!r}")
+
+    return [
+        make_step(
+            KEY,
+            LABEL,
+            state,
+            result["reason"],
+            HREF,
+        )
+    ]

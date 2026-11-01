@@ -148,7 +148,9 @@ def test_registration_requires_token_and_works_before_login(protected):
     payload = {"name": "First Time", "email": "csrf-register@example.test",
                "mobile": "9300000090", "date_of_birth": "2005-04-12",
                "password": "fictional-password-1"}
-    assert client.post("/accounts/register", json=payload).status_code == 400
+    rejected = client.post("/accounts/register", json=payload)
+    assert rejected.status_code == 400
+    assert rejected.json["error"] == "csrf_failed"
     assert db.session.execute(db.select(User)).scalars().all() == []
     value = token(client, "/accounts/register")
     assert client.post("/accounts/register", json=payload,
