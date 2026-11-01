@@ -59,8 +59,10 @@ def test_dashboard_uses_monkeypatched_journey_and_selects_problem_first(client, 
 
 def test_login_rejects_external_next_but_keeps_local_next(client):
     external = client.get("/accounts/login?next=https://example.test/steal").get_data(as_text=True)
+    protocol_relative = client.get("/accounts/login?next=//example.test/steal").get_data(as_text=True)
     local = client.get("/accounts/login?next=/application").get_data(as_text=True)
     assert 'https://example.test/steal' not in external
+    assert '//example.test/steal' not in protocol_relative
     assert 'const requestedNext = "/application"' in local
 
 
