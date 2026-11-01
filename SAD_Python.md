@@ -1,16 +1,16 @@
 # Software Architecture and Design Specification
 
-Python revision 1.2 — 19 October 2026. This text revision supersedes the previous Java/MySQL technology choices. Functional requirements and API contracts are retained. Original UML figures remain in the source SAD; they describe the same logical modules and flows.
+Python revision 1.3 — 1 November 2026 (revision 1.2 of 19 October 2026 replaced the Java/MySQL technology choices). Section 6 describes the system as built at the end of Sprint Two; `docs/DEVIATIONS.md` lists every difference with its reason. Functional requirements and API contracts are retained. Original UML figures remain in the source SAD; they describe the same logical modules and flows.
 
 Software Architecture and Design Specification
 
 Project: Admission Management Platform (Automated Engineering Admission & Counselling Management Platform for KCET and COMEDK)
 
-Version: 1.2
+Version: 1.3
 
 Authors: Team 5 - Varun M L, Gagandeep N, Dikshith Varma M N, Tasya Shetty
 
-Date: 19-10-2026
+Date: 01-11-2026
 
 Status: Draft
 
@@ -20,6 +20,7 @@ Status: Draft
 | --- | --- | --- | --- |
 | 1.0 | 03-10-2026 | Team 5 | Initial draft of the SAD, derived from the SRS (Team 5). |
 | 1.2 | 19-10-2026 | Team 5 | Adopt Python/Flask/SQLite and pytest; preserve requirement IDs and API contract; specify SQLite transaction and audit safeguards. |
+| 1.3 | 01-11-2026 | Team 5 | Add section 6 (as built): real endpoint paths, the Sprint Two tables, measured performance and consistency, and a pointer to the deviations; correct the implementation notes (scrypt, custom sessions and CSRF). |
 
 ## 1. Introduction
 
