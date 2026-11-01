@@ -7,6 +7,7 @@
   {% call ui.card(class_name="card auth-card") %}
     {% call ui.page_header("Create your candidate account", "Set up your account to continue with your admission application.", "Candidate portal", "registration-heading") %}{% endcall %}
     <form method="post" id="registration-form" class="auth-form">
+    <input type="hidden" name="csrf_token" value="{{ get_csrf_token() }}">
       {{ ui.field("Full name", name="name", type="text", required=True, autocomplete="name", id="name") }}
       {{ ui.field("Email address", name="email", type="email", required=True, autocomplete="email", id="email") }}
       <div class="field form-field">
