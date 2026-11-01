@@ -49,6 +49,7 @@ def build_dataset(database, uploads, candidates, seed):
             if module_seed is not None:
                 module_seed.seed()
         generate_dataset(candidates, seed)
+        db.session.remove()
         db.engine.dispose()
 
 
@@ -65,6 +66,7 @@ def timed_run(database, uploads):
         summary = run_allotment(admin.id)
         seconds = time.perf_counter() - start
         report = seat_consistency_report()
+        db.session.remove()  # release the connection so Windows can delete the file
         db.engine.dispose()
     return seconds, summary, report
 
