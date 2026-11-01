@@ -185,3 +185,29 @@ def all_documents_approved(candidate_id):
         and all(status == "Approved" for status in statuses_by_type[document_type])
         for document_type in REQUIRED_DOCUMENT_TYPES
     )
+
+
+def get_document_summary(candidate_id):
+    """Return the approved count for this candidate's required documents.
+
+    A required document type counts once when it has at least one Approved row.
+    Pending, Rejected and missing rows do not count, and rows belonging to other
+    candidates are excluded by the query.
+    """
+    if not candidate_id:
+        return {"approved_count": 0, "required_count": len(REQUIRED_DOCUMENT_TYPES)}
+
+    approved_types = db.session.execute(
+        db.select(Document.document_type)
+        .where(
+            Document.candidate_id == candidate_id,
+            Document.document_type.in_(REQUIRED_DOCUMENT_TYPES),
+            Document.status == "Approved",
+        )
+        .distinct()
+    ).scalars()
+
+    return {
+        "approved_count": len(set(approved_types)),
+        "required_count": len(REQUIRED_DOCUMENT_TYPES),
+    }

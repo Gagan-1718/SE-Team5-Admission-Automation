@@ -25,7 +25,7 @@ from .services import get_exam_details
 from .security import hash_password, verify_password
 from app.journey import all_steps
 from app.application.services import get_for_candidate
-from app.documents.services import all_documents_approved
+from app.documents.services import get_document_summary
 from app.eligibility.services import get_eligibility
 
 bp = Blueprint("accounts", __name__, url_prefix="/accounts")
@@ -188,7 +188,8 @@ def candidate_dashboard():
     application = get_for_candidate(candidate_id)
     exam = get_exam_details(candidate_id)
     eligibility = get_eligibility(candidate_id)
-    documents = "3 of 3" if all_documents_approved(candidate_id) else "0 of 3"
+    document_summary = get_document_summary(candidate_id)
+    documents = f"{document_summary['approved_count']} of {document_summary['required_count']}"
     return render_template(
         "dashboard/index.html",
         steps=steps,
