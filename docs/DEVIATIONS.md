@@ -1,6 +1,6 @@
 # Deviations from the submitted SRS, SAD and Test Plan
 
-Status date: **21 October 2026** (Sprint One, day 3). This file records every place where the product differs from the documents we submitted, why, and what we will say in the final demo. The SRS stays authoritative: **no functional or security requirement was dropped or changed**; the differences below are design and implementation choices. Items in section 3 are not finished yet; `python -m pytest -q tests/integration/test_demo_flow.py -rx` lists them as expected failures with the reason.
+Status date: **1 November 2026** (Sprint Two, day 3; first written 21 October 2026). This file records every place where the product differs from the documents we submitted, why, and what we will say in the final demo. The SRS stays authoritative: **no functional or security requirement was dropped or changed**; the differences below are design and implementation choices. The Sprint One gaps in section 3 are closed; what is still open is in section 7.
 
 ## 1. Technology (documented earlier)
 
@@ -53,12 +53,27 @@ Choice filling, ordering and locking; seat allotment and Not Allocated; result p
 - Fictional data only; no database file, upload, certificate, key or password is committed.
 - Pull requests are raised by each module owner and reviewed and merged by the repo owner on GitHub. Some early merges (foundation, accounts, application) were done from the command line to unblock the team; their pull requests were closed as "already merged into main".
 
-## 6. Sprint Two contract choices (30 October 2026)
+## 6. Sprint Two choices (30 October to 1 November 2026)
 
-These are recorded for completeness when the choice, allotment and result tables were agreed (`SPRINT_TWO_START_HERE.md` section 4). No requirement changed.
+D-16 to D-18 were recorded when the choice, allotment and result tables were agreed (`SPRINT_TWO_START_HERE.md` section 4); D-19 to D-22 come from the built Sprint Two code. No requirement changed.
 
 | # | Area | Submitted (SAD) | Built | Reason | Impact |
 |---|---|---|---|---|---|
 | D-16 | Where "published" is stored | SAD 4.1: the allotment run moves from Completed to Published | A separate `result_publications` table owned by the Result module, with a unique `run_id` | One owner per module; "publish once" becomes a database rule instead of a status the Allotment module would also have to change | ADM-F-017 behaves the same: results are hidden until the administrator publishes |
 | D-17 | Paths and pages | `/api/v1/choices`, `/api/v1/admin/allotment/run`, `/api/v1/allotment/result` and so on | Exactly those API paths, plus HTML pages `/choices`, `/result`, `/admin/allotment` | The SAD defines the API only; the pages are the Flask screens in SAD 4.5 | No deviation, recorded for completeness |
 | D-18 | Rules enforced by the database | A-07, A-13, ADM-NFR-003 describe the rules | `allotment_runs.cycle` is always 1 and unique (one cycle); run counts must add up; an `Allocated` result must have a branch, seat and choice number and a `Not Allocated` one must have none; `choices` refuses a branch twice per candidate; `seat_decisions` allows one row per result | Even a bug in application code cannot break these rules | Stricter than the SAD text, same intent |
+| D-19 | Who takes part in the allotment run | SAD 4.1: every eligible candidate with a locked list gets Allocated or Not Allocated | Same, and eligibility and documents are checked again inside the run. A candidate who is not Eligible at run time, or never locked, gets **no result row** (decision D2-06), so "not in the run" is never shown as "Not Allocated" | A Not Allocated result would wrongly say the candidate competed for a seat | ADM-F-015 and ADM-F-016 are met; the candidate result page must show a separate message when there is no result row |
+| D-20 | Submit needs exam details | ADM-F-005: submit when mandatory fields are complete | Also refused (422, "Enter your exam details first") while no exam details are saved (decision D2-02). Saving a draft still works | Eligibility and allotment need the rank and category; a submitted application without them could never be processed | Stricter than the SAD, same intent |
+| D-21 | Admin rule, dashboard and audit endpoints | `POST/PUT /admin/eligibility-rules`, `GET /admin/dashboard`, `GET /admin/audit-logs` (JSON) | HTML pages `GET/POST /admin/eligibility-rules`, `POST /admin/eligibility-rules/<id>` (update as a form POST), `GET /admin/dashboard` and `/admin/dashboard.json`, `GET /admin/audit-logs` and `/admin/audit-logs.json` | HTML forms use POST; the `.json` variants keep the API shape | Same data and rules as SAD 4.3.4 and 4.3.7 |
+| D-22 | Measured performance (ADM-NFR-002, ADM-NFR-003) | A run-time target and a consistency check after each run | `scripts/time_allotment.py`: 300 candidates median 0.967 s, 600 candidates median 1.589 s (limit 60 s). `scripts/check_seat_consistency.py` and the console tile show filled = allotment records for every seat row; the database refuses `filled > capacity` | (no deviation) | Evidence in `docs/evidence/gagan.md` |
+
+## 7. Still open on 1 November 2026 (Sprint Two, Day 3)
+
+These are not on `main` yet. This table must be emptied or kept as known gaps before the `v1.0` tag.
+
+| # | Area | What is missing | Owner |
+|---|---|---|---|
+| O-01 | Candidate result page and seat decision (ADM-F-018, ADM-F-019; issues #13, #14) | No `/result` page, `GET /api/v1/allotment/result` or decision endpoint yet. Publishing works (`POST /api/v1/admin/allotment/runs/<id>/publish`); the publish card in the console is in PR #75 | Dikshith |
+| O-02 | Administrator candidate list (ADM-F-020) | No `/admin/candidates` page yet; the dashboard counts exist | Tasya |
+| O-03 | Response-time measurement (ADM-NFR-001, issue #29) | Not recorded yet | Tasya |
+| O-04 | Candidate dashboard with journey steps | Branch `feature/candidate-dashboard` has no pull request yet | Varun |
