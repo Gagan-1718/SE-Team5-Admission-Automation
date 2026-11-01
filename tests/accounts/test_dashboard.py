@@ -68,6 +68,63 @@ def test_dashboard_uses_monkeypatched_journey_and_selects_problem_first(client, 
     assert "Open Application" in body
 
 
+def test_dashboard_uses_first_problem_when_multiple_steps_need_attention(client, monkeypatch):
+    steps = _scenario_steps(
+        {
+            "profile": "done",
+            "application": "problem",
+            "documents": "problem",
+            "eligibility": "locked",
+            "choices": "locked",
+            "result": "locked",
+            "decision": "locked",
+        },
+        {
+            "application": "Application needs correction.",
+            "documents": "Documents need correction.",
+        },
+        {"application": "/application", "documents": "/documents"},
+    )
+    body = _render_scenario(client, monkeypatch, steps)
+    assert "Application needs correction." in body
+    assert "Documents need correction." in body
+    assert "Open Application" in body
+    assert "Open Documents" not in body
+
+
+def test_dashboard_uses_first_current_when_no_problem_exists(client, monkeypatch):
+    steps = _scenario_steps(
+        {
+            "profile": "done",
+            "application": "current",
+            "documents": "current",
+            "eligibility": "locked",
+            "choices": "locked",
+            "result": "locked",
+            "decision": "locked",
+        },
+        {
+            "application": "Complete your application.",
+            "documents": "Upload your documents.",
+        },
+        {"application": "/application", "documents": "/documents"},
+    )
+    body = _render_scenario(client, monkeypatch, steps)
+    assert "Open Application" in body
+    assert "Open Documents" not in body
+
+
+def test_dashboard_shows_status_without_action_when_no_step_is_actionable(client, monkeypatch):
+    steps = _scenario_steps(
+        {key: "done" for key in ("profile", "application", "documents", "eligibility", "choices", "result", "decision")},
+        {key: "Complete" for key in ("profile", "application", "documents", "eligibility", "choices", "result", "decision")},
+    )
+    body = _render_scenario(client, monkeypatch, steps)
+    assert "Journey status" in body
+    assert "Next step" not in body
+    assert "Open Profile and exam details" not in body
+
+
 def test_login_rejects_external_next_but_keeps_local_next(client):
     external = client.get("/accounts/login?next=https://example.test/steal").get_data(as_text=True)
     protocol_relative = client.get("/accounts/login?next=//example.test/steal").get_data(as_text=True)
@@ -181,15 +238,15 @@ def test_dashboard_scenario_locked_choices_are_not_an_action(client, monkeypatch
 
 def test_dashboard_scenario_published_unallocated_result_has_no_accept_action(client, monkeypatch):
     steps = _scenario_steps(
-        {"profile": "done", "application": "done", "documents": "done", "eligibility": "done", "choices": "done", "result": "done", "decision": "done"},
-        {"result": "Result is available.", "decision": "No seat was allocated; no acceptance is required."},
+        {"profile": "done", "application": "done", "documents": "done", "eligibility": "done", "choices": "done", "result": "problem", "decision": "done"},
+        {"result": "No seat was allocated; no acceptance is required.", "decision": "No seat decision is available."},
         {"result": "/result", "decision": "/result"},
     )
     body = _render_scenario(client, monkeypatch, steps)
     _assert_ordered_seven_steps(body)
-    assert "Result is available." in body
     assert "No seat was allocated; no acceptance is required." in body
-    assert "Journey status" in body
+    assert "Problem" in body
+    assert "Open Allotment result" in body
     assert "Open Seat decision" not in body
 
 
