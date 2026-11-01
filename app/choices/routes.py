@@ -1,9 +1,12 @@
 """Candidate choice-management JSON API (Issues #21, #22 and #23)."""
 
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, abort, jsonify, render_template, request
 
-from app.accounts.auth import current_candidate_id, role_required
+from app.accounts.auth import current_candidate_id, page_login_required, role_required
+from app.accounts.services import get_exam_details
 from app.catalogue.models import Branch
+from app.catalogue.services import list_catalogue
+from app.eligibility.services import get_eligibility
 from app.extensions import db
 from .models import ChoiceLock
 
@@ -20,6 +23,26 @@ from .services import (
 )
 
 bp = Blueprint("choices", __name__)
+
+
+@bp.get("/choices")
+@page_login_required
+def choice_page():
+    """Render the candidate choice-filling page from shared catalogue services."""
+    candidate_id = current_candidate_id()
+    if candidate_id is None:
+        abort(403)
+    query = request.args.get("q", "").strip()
+    eligibility = get_eligibility(candidate_id)
+    details = get_exam_details(candidate_id) or {}
+    return render_template(
+        "choices/index.html",
+        results=list_catalogue(query=query),
+        query=query,
+        category=details.get("category"),
+        eligibility=eligibility,
+        eligible=eligibility.get("status") == "Eligible",
+    )
 
 
 def _error(exc):

@@ -1,7 +1,7 @@
 """Accounts integration checks using fictional candidates and administrator data."""
 
 from app.accounts.seed import seed
-from app.accounts.models import User
+from app.accounts.models import ExamRecord, User
 from app.application.models import Application
 from app.documents.models import Document
 from app.extensions import db
@@ -17,6 +17,7 @@ def candidate_payload(label):
         "name": f"Fictional Candidate {label}",
         "email": f"candidate-{label.lower()}@example.test",
         "mobile": "9000000001" if label == "A" else "9000000002",
+        "date_of_birth": "2005-04-12",
         "password": PASSWORD,
     }
 
@@ -42,7 +43,20 @@ def seed_admin(app, monkeypatch):
         seed()
 
 
+def enter_exam_details(client):
+    """Use a seeded exam record, as a real candidate must before submitting (D2-02)."""
+    if db.session.execute(db.select(ExamRecord).filter_by(exam_type="KCET", rank=1000)).scalar_one_or_none() is None:
+        db.session.add(ExamRecord(exam_type="KCET", rank=1000, category="General", score=185.0))
+        db.session.commit()
+    response = client.put(
+        "/accounts/exam-details",
+        json={"exam_type": "KCET", "rank": 1000, "category": "General", "score": 185.0},
+    )
+    assert response.status_code == 200, response.get_data(as_text=True)
+
+
 def complete_application(client):
+    enter_exam_details(client)
     response = client.post(
         APPLICATION_API,
         json={

@@ -7,6 +7,7 @@
   {% call ui.card(class_name="card auth-card") %}
     {% call ui.page_header("Welcome back", "Sign in securely to view your admission profile and application details.", "Candidate portal", "login-heading") %}{% endcall %}
     <form method="post" id="login-form" class="auth-form">
+    <input type="hidden" name="csrf_token" value="{{ get_csrf_token() }}">
       {{ ui.field("Email or mobile number", name="identifier", type="text", required=True, autocomplete="username", id="identifier") }}
       <div class="field form-field">
         <label for="password">Password</label>

@@ -1,7 +1,7 @@
 """Fixtures for the application module: two fictional candidates and real logins."""
 import pytest
 
-from app.accounts.models import User
+from app.accounts.models import ExamRecord, User
 from app.accounts.security import hash_password
 from app.extensions import db
 
@@ -22,7 +22,14 @@ def login(client, number):
 
 @pytest.fixture(autouse=True)
 def candidate_users(app):
-    """Users 1 and 2 exist in every test, so foreign keys to users.id are satisfied."""
+    """Users 1 and 2 exist in every test, so foreign keys to users.id are satisfied.
+
+    Both have entered seeded exam details, because an application cannot be submitted
+    without them (D2-02). Tests about that rule create their own candidate without them.
+    """
+    record = ExamRecord(exam_type="KCET", rank=1000, category="General", score=185.0)
+    db.session.add(record)
+    db.session.flush()
     for number in (1, 2):
         db.session.add(
             User(
@@ -31,6 +38,9 @@ def candidate_users(app):
                 mobile=f"900000000{number}",
                 password_hash=hash_password(PASSWORD),
                 role="candidate",
+                exam_record_id=record.id,
+                rank=record.rank,
+                category=record.category,
             )
         )
     db.session.commit()
