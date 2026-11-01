@@ -78,3 +78,43 @@ The real Documents, Eligibility, and Results providers remain external dependenc
 their current journey implementations are still stubs, so provider integration and
 approved-document counts cannot be claimed complete here. Manual 400px, keyboard-only,
 and contrast verification were not performed.
+
+## Post-main Sprint 2 verification — 1 November 2026
+
+The feature branch was synchronized to `origin/main` at
+`4983bfcdeece5ddfc6ab8c7ed831f3b799e826dc` before this run. The tests below ran on
+`feature/candidate-dashboard` at `82a46ac` with Python 3.11.9. Python 3.12 was
+unavailable: `py -3.12 --version` returned `No suitable Python runtime found`.
+
+| Test case | Exact command | Actual result |
+|---|---|---|
+| TC-001 | `py -m pytest -q tests/accounts/test_registration.py tests/accounts/test_profile_integrity.py` | PASS — 9 passed |
+| TC-002 | `py -m pytest -q tests/accounts/test_login_logout.py` | PASS — 4 passed |
+| TC-003 | `py -m pytest -q tests/accounts/test_protected_routes.py tests/accounts/test_integration.py` | PASS — 11 passed |
+| TC-012 | `py -m pytest -q tests/choices/test_add.py tests/choices/test_remove.py tests/choices/test_listing.py tests/choices/test_routes.py` | PASS — 17 passed |
+| TC-013 | `py -m pytest -q tests/choices/test_reorder.py` | PASS — 7 passed |
+| TC-014 | `py -m pytest -q tests/choices/test_lock.py` | PASS — 4 passed |
+| TC-021 | `py -m pytest -q tests/accounts/test_integration.py -k 'candidate_a or ownership'` | PASS — 2 passed, 5 deselected |
+| TC-022 | `py -m pytest -q tests/accounts/test_integration.py -k 'authorization or admin'` | PASS — 1 passed, 6 deselected |
+| TC-023 | `py -m pytest -q tests/accounts/test_password_hashing.py tests/accounts/test_registration.py` | PASS — 8 passed |
+
+Additional provider and cross-module run:
+
+`py -m pytest -q tests/accounts tests/choices tests/documents tests/eligibility tests/results tests/integration tests/security`
+— PASS, 447 passed, 6 xpassed.
+
+Final full regression:
+
+`py -m pytest -q` — PASS, 792 passed, 1 skipped, 6 xpassed.
+
+`git diff --check` — PASS.
+
+Eligibility and Results journey providers are now real and are exercised by their
+provider tests and the Dashboard's shared `all_steps(candidate_id)` path. The
+Documents journey is still a locked-step stub, and no approved-document count
+service exists; the binary Dashboard count defect is recorded as VARUN-001 in
+`docs/DEFECT_LOG.md` and remains blocked on Dikshith's public service contract.
+
+Browser automation was attempted but unavailable: the Computer Use browser host
+returned `The browser access host is unavailable`. Therefore 400px responsive,
+keyboard-only, and contrast checks remain pending manual verification.
