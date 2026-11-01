@@ -1,11 +1,18 @@
 """The allotment timing script (issue #7, TC-027) on a small dataset."""
+import tempfile
+from pathlib import Path
+
 from scripts import time_allotment
 
 
 def test_the_script_times_clean_runs_and_passes(monkeypatch, capsys):
     monkeypatch.setenv("DEMO_CANDIDATE_PASSWORD", "test-demo-password")
     monkeypatch.setenv("ADMIN_SEED_PASSWORD", "test-admin-password")
+    made = []
+    real_mkdtemp = tempfile.mkdtemp
+    monkeypatch.setattr(tempfile, "mkdtemp", lambda **kw: made.append(real_mkdtemp(**kw)) or made[-1])
     assert time_allotment.main(["--candidates", "20", "--runs", "2"]) == 0
+    assert len(made) == 1 and not Path(made[0]).exists()  # every database file was deleted
     out = capsys.readouterr().out
     # both runs start from the same clean copy, so they give the same outcome
     runs = [line.split(", ", 1)[1] for line in out.splitlines() if line.startswith("Run ")]
