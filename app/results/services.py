@@ -97,3 +97,18 @@ def candidate_view(candidate_id):
 def decide(candidate_id, decision):
     """Record 'Accepted' or 'Rejected' once. NotPublished | NotAllocated | AlreadyDecided."""
     _todo("#14")
+
+
+def publication_details(run_id):
+    """Display metadata owned by Results, for the administrator console."""
+    publication = db.session.execute(
+        db.select(ResultPublication).where(ResultPublication.run_id == run_id)
+    ).scalar_one_or_none()
+    if publication is None:
+        return None
+    publisher = db.session.get(User, publication.published_by)
+    return {
+        "published_at": publication.published_at,
+        "published_by": publication.published_by,
+        "publisher_name": publisher.name if publisher else "Administrator",
+    }

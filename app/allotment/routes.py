@@ -14,6 +14,7 @@ from flask import Blueprint, flash, g, jsonify, redirect, render_template, url_f
 from app.accounts.auth import role_required
 from app.catalogue.models import Seat
 from app.extensions import db
+from app.results.services import publication_details
 
 from . import services
 
@@ -86,6 +87,7 @@ def _console_context():
         "branches": sorted(branches.values(), key=lambda b: b["label"]),
         "report": services.seat_consistency_report() if run else None,
         "published": published,
+        "publication": publication_details(run.id) if run else None,
         "seat_rows": len(seats),
         "total_seats": total_seats,
     }
