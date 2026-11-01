@@ -54,3 +54,27 @@ Regression run on this synchronized feature branch: `py -m pytest -q` — PASS, 
 - `app/application/journey.py` and `app/choices/journey.py` provide real journey states on this branch.
 
 Manual 400px responsive, keyboard-only, and contrast verification were not performed in this run.
+
+## Final feature-branch verification — 1 November 2026
+
+The final verification was run on `feature/candidate-dashboard` at commit
+`263fec12a1cf02a8ed6f66e2ea5dfed5b3c15a2d` after the dashboard scenario and
+next-action tests were corrected. `origin/main` remained
+`5a4f7b94a592f7ddb9fd8015c2bf6aca72b6f64d`; these results are feature-branch
+evidence, not evidence from merged `main`.
+
+Python: 3.11.9. Python 3.12 was unavailable in the local launcher.
+
+| Scope | Exact command | Actual result |
+|---|---|---|
+| Dashboard | `py -m pytest -q tests/accounts/test_dashboard.py` | PASS — 16 passed |
+| Accounts and Choices | `py -m pytest -q tests/accounts tests/choices` | PASS — 114 passed |
+| Full regression | `py -m pytest -q` | PASS — 741 passed, 1 skipped, 6 xpassed |
+| Diff validation | `git diff --check` | PASS |
+
+The dashboard now explicitly covers the documented `NOT_ALLOCATED` problem state,
+first-problem selection, first-current selection, and the no-actionable-step case.
+The real Documents, Eligibility, and Results providers remain external dependencies;
+their current journey implementations are still stubs, so provider integration and
+approved-document counts cannot be claimed complete here. Manual 400px, keyboard-only,
+and contrast verification were not performed.
