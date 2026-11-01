@@ -29,17 +29,19 @@ Status date: **21 October 2026** (Sprint One, day 3). This file records every pl
 | D-14 | Catalogue endpoints | `GET /colleges?search=`, `POST/PUT /admin/colleges`, `/admin/colleges/{id}/branches`, `/admin/seat-matrix` (JSON) | `GET /colleges` with filters `q` and `college_id`; admin pages `/admin/colleges`, `/admin/colleges/new`, `/admin/colleges/<id>/edit`, `/admin/colleges/<id>/branches/new`, `/admin/branches/<id>/edit`, `/admin/branches/<id>/seats` (HTML forms). Duplicates return 409 and invalid capacity 422. Seat categories: General, OBC, SC, ST, EWS. | Server-rendered admin screens fit the Flask design. | Same rules as ADM-F-010 and ADM-F-011. The admin pages use the shared `role_required("administrator")` check: 401 anonymous, 403 candidate. |
 | D-15 | Eligibility | Rules as editable data, status with reason (ADM-F-009) | Pure decision function with `eligibility_rules` rows (category, cut-off rank, active). Order: Pending while documents are not all approved, Not Eligible if the rank is above the cut-off or no rule exists, otherwise Eligible. Cut-offs are fictional sample data. | SAD A-08 and A-06. | Rules are data, not code. Not yet connected to the real exam details and documents (section 3). |
 
-## 3. Not finished yet (status 21 October 2026)
+## 3. Sprint One gaps: status on 1 November 2026
 
-| # | Area | What is missing | Owner |
+All six gaps open at the end of Sprint One were closed in the code on `main` (checked on 1 Nov, not just reported).
+
+| # | Area | Gap on 21 October | Now |
 |---|---|---|---|
-| P-01 | Candidate exam details in the browser | The API `PUT /accounts/exam-details` works, but the profile page has no exam-details form yet. | Varun |
-| P-02 | `all_documents_approved(candidate_id)` and the required document types | Not in `app/documents/services.py` yet; the upload accepts any document type text instead of only Marksheet, ID Proof and Category Certificate (proposed). Documents are not yet linked to users and applications by foreign keys, and review actions do not write audit entries. | Dikshith |
-| P-03 | Eligibility connection | Eligibility still uses sample inputs (rank 1000, General) and its pages are not login-protected. It must read the real exam details and the document approval status. | Tasya |
-| P-04 | Catalogue admin access | The admin pages deny everyone because the guard is not connected to the administrator login yet. | Tasya |
-| P-05 | Audit log and admin dashboard (SEC-F-005, ADM-F-020) | Not built yet. The audit log will be append-only through database triggers, as in SAD A-17. | Tasya |
-| P-06 | CSRF protection | Not on the accounts, application, catalogue and eligibility forms (only the document forms have a token). Planned for Sprint Two. | Team |
-| P-07 | Test evidence | Results are recorded in `docs/evidence/` by each owner. A test case is only marked passed after it was run. | Everyone |
+| P-01 | Candidate exam details in the browser | Profile page had no exam-details form | Closed: `templates/accounts/profile.html` has the form; `PUT /accounts/exam-details` still accepts only a seeded combination |
+| P-02 | Required documents | No `all_documents_approved`, any type text accepted, no foreign keys, no audit | Closed: `REQUIRED_DOCUMENT_TYPES` (Marksheet, ID Proof, Category Certificate), `all_documents_approved(candidate_id)`, foreign keys to `users` and `applications`, review writes an audit entry |
+| P-03 | Eligibility connection | Sample inputs, no login | Closed: reads the real exam details and `all_documents_approved`; login required |
+| P-04 | Catalogue admin access | Guard denied everyone | Closed: shared `role_required("administrator")` |
+| P-05 | Audit log and admin dashboard | Not built | Closed: `audit_log` is append-only through database triggers (A-17); `/admin/audit-logs` and `/admin/dashboard` exist |
+| P-06 | CSRF protection | Only document forms | Closed: every state-changing request (D-03) |
+| P-07 | Test evidence | Ongoing | Each owner records results in `docs/evidence/`; a test case is marked passed only after it was run |
 
 ## 4. Out of Sprint One scope (by design, Sprint Two)
 
