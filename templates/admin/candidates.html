@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block title %}Candidate Management | Team 5{% endblock %}
+
+{% block content %}
+
+{% include "catalogue/_styles.html" %}
+
+<section class="card">
+    <header class="page-header">
+        <div>
+            <div class="eyebrow">Administrator portal</div>
+            <h1>Candidate Management</h1>
+            <p class="note">
+                View and search registered candidate accounts.
+            </p>
+        </div>
+    </header>
+
+    <form method="get"
+          action="{{ url_for('admin.candidate_list') }}"
+          class="cat-filter cat-form">
+
+        <div>
+            <label for="q">Search candidates</label>
+            <input
+                type="text"
+                id="q"
+                name="q"
+                value="{{ query }}"
+                placeholder="Search by name, email or mobile"
+            >
+        </div>
+
+        <div>
+            <button type="submit" class="button">
+                Search
+            </button>
+
+            <a href="{{ url_for('admin.candidate_list') }}">
+                Clear
+            </a>
+        </div>
+    </form>
+
+    <h2>
+        Registered candidates
+        ({{ candidates|length }})
+    </h2>
+
+    {% if candidates %}
+
+    <div style="overflow-x: auto;">
+        <table class="cat-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Mobile</th>
+                    <th>Rank</th>
+                    <th>Category</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for candidate in candidates %}
+                <tr>
+                    <td>{{ candidate.id }}</td>
+                    <td>{{ candidate.name }}</td>
+                    <td>{{ candidate.email }}</td>
+                    <td>{{ candidate.mobile or "—" }}</td>
+                    <td>{{ candidate.rank if candidate.rank is not none else "—" }}</td>
+                    <td>{{ candidate.category or "—" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% else %}
+
+    <p class="note">
+        {% if query %}
+            No candidates found matching "{{ query }}".
+        {% else %}
+            No registered candidates are available.
+        {% endif %}
+    </p>
+
+    {% endif %}
+</section>
+
+{% endblock %}
