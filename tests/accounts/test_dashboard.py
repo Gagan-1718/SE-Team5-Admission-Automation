@@ -62,3 +62,10 @@ def test_login_rejects_external_next_but_keeps_local_next(client):
     local = client.get("/accounts/login?next=/application").get_data(as_text=True)
     assert 'https://example.test/steal' not in external
     assert 'const requestedNext = "/application"' in local
+
+
+def test_login_template_has_role_specific_dashboard_destinations(client):
+    body = client.get("/accounts/login").get_data(as_text=True)
+    assert '"/admin/dashboard"' in body
+    assert '"/dashboard"' in body
+    assert "/admin/documents" not in body
