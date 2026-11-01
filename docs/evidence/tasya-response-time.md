@@ -1,9 +1,9 @@
 # TC-026 — Candidate Page Response-Time Verification
 
-**Owner:** Tasya  
-**Requirement:** ADM-NFR-001  
-**Target:** Average response time <= 2 seconds  
-**Environment:** Local Flask development server, Python 3.12.15, Flask 3.1.3, Werkzeug 3.1.9  
+**Owner:** Tasya
+**Requirement:** ADM-NFR-001
+**Target:** Average response time <= 2 seconds
+**Environment:** Local Flask development server, Python 3.12.15, Flask 3.1.3, Werkzeug 3.1.9
 **Test date:** 1 November 2026
 
 ## Test method
