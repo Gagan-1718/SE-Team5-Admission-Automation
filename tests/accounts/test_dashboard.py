@@ -4,6 +4,17 @@ from app.extensions import db
 from .test_registration import registration_payload
 
 
+JOURNEY_LABELS = (
+    "Profile and exam details",
+    "Application",
+    "Documents",
+    "Eligibility",
+    "Choices",
+    "Allotment result",
+    "Seat decision",
+)
+
+
 def register_and_login(client, email="candidate@example.test"):
     payload = registration_payload(email=email)
     assert client.post("/accounts/register", json=payload).status_code == 201
@@ -71,3 +82,126 @@ def test_login_template_has_role_specific_dashboard_destinations(client):
     assert '"/admin/dashboard"' in body
     assert '"/dashboard"' in body
     assert "/admin/documents" not in body
+
+
+def _scenario_steps(states, details=None, hrefs=None):
+    details = details or {}
+    hrefs = hrefs or {}
+    return [
+        {
+            "key": key,
+            "label": label,
+            "state": states[key],
+            "detail": details.get(key, f"{label} detail"),
+            "href": hrefs.get(key, f"/{key}"),
+        }
+        for key, label in zip(
+            ("profile", "application", "documents", "eligibility", "choices", "result", "decision"),
+            JOURNEY_LABELS,
+        )
+    ]
+
+
+def _assert_ordered_seven_steps(body):
+    assert body.count("step-dot") == 7
+    stepper = body[body.index('<ol class="stepper">'):body.index("</ol>")]
+    positions = [stepper.index(label) for label in JOURNEY_LABELS]
+    assert positions == sorted(positions)
+
+
+def _render_scenario(client, monkeypatch, steps):
+    register_and_login(client, email="scenario@example.test")
+    monkeypatch.setattr("app.accounts.routes.all_steps", lambda candidate_id: steps)
+    return client.get("/dashboard").get_data(as_text=True)
+
+
+def test_dashboard_scenario_brand_new_candidate(client, monkeypatch):
+    steps = _scenario_steps(
+        {key: "locked" for key in ("application", "documents", "eligibility", "choices", "result", "decision")}
+        | {"profile": "current"},
+        {"profile": "Enter your exam details to continue."},
+        {"profile": "/accounts/profile-page"},
+    )
+    body = _render_scenario(client, monkeypatch, steps)
+    _assert_ordered_seven_steps(body)
+    assert "Enter your exam details to continue." in body
+    assert "Open Profile and exam details" in body
+    assert 'href="/accounts/profile-page"' in body
+    assert "Not entered" in body and "Not started" in body
+
+
+def test_dashboard_scenario_rejected_document_is_next_action(client, monkeypatch):
+    steps = _scenario_steps(
+        {"profile": "done", "application": "done", "documents": "problem", "eligibility": "locked", "choices": "locked", "result": "locked", "decision": "locked"},
+        {"documents": "Rejected: blurred marksheet; upload a replacement."},
+        {"documents": "/documents"},
+    )
+    body = _render_scenario(client, monkeypatch, steps)
+    _assert_ordered_seven_steps(body)
+    assert "Rejected: blurred marksheet; upload a replacement." in body
+    assert "Open Documents" in body
+    assert 'href="/documents"' in body
+
+
+def test_dashboard_scenario_waiting_for_eligibility_has_no_wrong_action(client, monkeypatch):
+    steps = _scenario_steps(
+        {"profile": "done", "application": "done", "documents": "done", "eligibility": "waiting", "choices": "locked", "result": "locked", "decision": "locked"},
+        {"eligibility": "Waiting for the eligibility decision."},
+    )
+    body = _render_scenario(client, monkeypatch, steps)
+    _assert_ordered_seven_steps(body)
+    assert "Waiting for the eligibility decision." in body
+    assert "Journey status" in body
+    assert "Next step" not in body
+
+
+def test_dashboard_scenario_eligible_candidate_is_sent_to_choices(client, monkeypatch):
+    steps = _scenario_steps(
+        {"profile": "done", "application": "done", "documents": "done", "eligibility": "done", "choices": "current", "result": "locked", "decision": "locked"},
+        {"choices": "Your eligibility is confirmed; fill your choices."},
+        {"choices": "/choices"},
+    )
+    body = _render_scenario(client, monkeypatch, steps)
+    _assert_ordered_seven_steps(body)
+    assert "Open Choices" in body
+    assert 'href="/choices"' in body
+
+
+def test_dashboard_scenario_locked_choices_are_not_an_action(client, monkeypatch):
+    steps = _scenario_steps(
+        {"profile": "done", "application": "done", "documents": "done", "eligibility": "done", "choices": "done", "result": "locked", "decision": "locked"},
+        {"choices": "Choices locked permanently in saved order."},
+    )
+    body = _render_scenario(client, monkeypatch, steps)
+    _assert_ordered_seven_steps(body)
+    assert "Choices locked permanently in saved order." in body
+    assert "Journey status" in body
+    assert "Open Choices" not in body
+
+
+def test_dashboard_scenario_published_unallocated_result_has_no_accept_action(client, monkeypatch):
+    steps = _scenario_steps(
+        {"profile": "done", "application": "done", "documents": "done", "eligibility": "done", "choices": "done", "result": "done", "decision": "done"},
+        {"result": "Result is available.", "decision": "No seat was allocated; no acceptance is required."},
+        {"result": "/result", "decision": "/result"},
+    )
+    body = _render_scenario(client, monkeypatch, steps)
+    _assert_ordered_seven_steps(body)
+    assert "Result is available." in body
+    assert "No seat was allocated; no acceptance is required." in body
+    assert "Journey status" in body
+    assert "Open Seat decision" not in body
+
+
+def test_dashboard_scenario_allotted_result_prompts_for_seat_decision(client, monkeypatch):
+    steps = _scenario_steps(
+        {"profile": "done", "application": "done", "documents": "done", "eligibility": "done", "choices": "done", "result": "done", "decision": "current"},
+        {"result": "You were allotted a seat.", "decision": "Record your accept or reject decision."},
+        {"decision": "/result"},
+    )
+    body = _render_scenario(client, monkeypatch, steps)
+    _assert_ordered_seven_steps(body)
+    assert "You were allotted a seat." in body
+    assert "Record your accept or reject decision." in body
+    assert "Open Seat decision" in body
+    assert 'href="/result"' in body
