@@ -58,7 +58,7 @@ Manual 400px responsive, keyboard-only, and contrast verification were not perfo
 ## Final feature-branch verification — 1 November 2026
 
 The final verification was run on `feature/candidate-dashboard` at commit
-`263fec12a1cf02a8ed6f66e2ea5dfed5b3c15a2d` after the dashboard scenario and
+`263fec15d56bbf3e42fabffb642f74880a2e2041` after the dashboard scenario and
 next-action tests were corrected. `origin/main` remained
 `5a4f7b94a592f7ddb9fd8015c2bf6aca72b6f64d`; these results are feature-branch
 evidence, not evidence from merged `main`.
