@@ -19,18 +19,25 @@ Goal: finish the admission cycle (choices, allotment, publication, result, seat 
 | #74 | Eligibility rules admin page | Tasya |
 | #72 | Profile integrity and date of birth at registration (D-05) | Varun |
 | #73 | CSRF protection on every state-changing request (D-03) | Dikshith |
+| #75 | Publication card in the allotment console | Dikshith |
+| #76 | Candidate journey dashboard (seven steps) | Varun |
+| #77 | Candidate result page, allotment letter and one-time seat decision (ADM-F-018, ADM-F-019) | Dikshith |
+| #78 | Administrator candidate list and response-time evidence (TC-026) | Tasya |
+| #79 | Dashboard shows the real approved-document count (DEF-012); Varun's evidence and retrospective | Varun |
+| #80 | Allotment timing script, seat-consistency evidence, SAD 1.3, deviations, defect log, this review | Gagan |
 | #58, #64, #65 | Sprint One evidence | Tasya |
 
 ## Numbers
 
-- Full suite on `main` after #72 and #73: see `docs/evidence/gagan.md` and the CI run on the final merge.
+- Full suite on the final combined code (all pull requests above): **820 passed, 0 failed** (2 November 2026, Python 3.12.10).
 - Allotment: Test Plan Appendix B oracle passes unchanged; 300 candidates median 0.967 s, 600 candidates median 1.589 s (limit 60 s); seat counts consistent after every run.
-- Defects: see `docs/DEFECT_LOG.md` (severity and disposition for each).
-- Deviations: `docs/DEVIATIONS.md`; all six Sprint One gaps closed; D-03 and D-05 done.
+- Response time: tested candidate pages averaged 3 to 16 ms (target 2 s).
+- Defects: 13 logged in `docs/DEFECT_LOG.md`; no Critical or High open; one Medium deferred (DEF-013, admin record correction).
+- Deviations: `docs/DEVIATIONS.md`; all six Sprint One gaps and all four Day 3 open items closed; D-03 and D-05 done; D-23 is the one known gap.
 
-## Not finished at the time of writing (1 November)
+## The whole cycle works end to end
 
-See `docs/DEVIATIONS.md` section 7: candidate result page and seat decision (Dikshith), administrator candidate list and response-time measurement (Tasya), candidate journey dashboard pull request (Varun). Update this section before the `v1.0` tag.
+Every step of the cycle runs on `main` through real routes, logins and CSRF tokens, covered in three automated tests: `tests/integration/test_demo_flow.py` (register, exam details, draft, submit, documents, review, resubmit, eligibility, catalogue), its TC-030 test (admin configuration through choices and allotment), and Dikshith's `tests/allotment/test_result_decision_flow.py` (the Appendix B candidates through run, publication, result, accept and reject, with seat counts unchanged). One continuous run from registration to decision is to be shown in the demo video (Dikshith).
 
 ## Retrospective: three lines from each person
 
