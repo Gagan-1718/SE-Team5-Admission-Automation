@@ -70,7 +70,7 @@ D-16 to D-18 were recorded when the choice, allotment and result tables were agr
 
 ## 7. Items open on Day 3 morning, closed the same day
 
-All four were merged into `main` on 1 November 2026 and the full suite passed on the combined code (810 passed). Nothing from this list is left open at the `v1.0` tag.
+All four were merged into `main` on 1 November 2026; the full suite passed on the final combined code (820 passed on 2 November). Nothing from this list is left open at the `v1.0` tag.
 
 | # | Area | Closed by | Notes |
 |---|---|---|---|
