@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}Your allotment result{% endblock %}
+{% block breadcrumb %}Allotment result{% endblock %}
+{% block content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/results.css') }}">
+<section class="card result-status">
+  <h1>Your allotment result</h1>
+  <p role="status">{{ message }}</p>
+  {% if view.state == 'NOT_IN_RUN' %}
+    <p class="hint">Only eligible candidates with locked choices were included. This is different from participating without receiving a seat.</p>
+  {% elif view.state == 'NOT_ALLOCATED' %}
+    <p>Application reference: <strong>{{ view.result.reference_number }}</strong></p>
+    <span class="pill wait">Not Allocated</span>
+  {% endif %}
+</section>
+{% if view.state == 'ALLOCATED' %}
+<article class="card ticket result-ticket" aria-labelledby="letter-heading">
+  <p class="eyebrow">Admission Automation · Allotment letter</p>
+  <h2 id="letter-heading">Your allotted seat</h2>
+  <span class="pill ok">Allocated</span>
+  <dl class="result-details">
+    <div><dt>Candidate</dt><dd>{{ view.result.candidate_name }}</dd></div>
+    <div><dt>Application reference</dt><dd>{{ view.result.reference_number }}</dd></div>
+    <div><dt>College</dt><dd>{{ view.result.college }}</dd></div>
+    <div><dt>Branch</dt><dd>{{ view.result.branch }}</dd></div>
+    <div><dt>Seat category</dt><dd>{{ view.result.category }}</dd></div>
+    <div><dt>Preference</dt><dd>Choice {{ view.result.choice_priority }} of {{ view.result.total_choices }}</dd></div>
+    <div><dt>Exam</dt><dd>{{ view.result.exam_type or 'Not recorded' }}</dd></div>
+    <div><dt>Rank at allotment</dt><dd>{{ view.result.rank }}</dd></div>
+    <div><dt>Seat decision</dt><dd>{{ view.decision.decision if view.decision else 'Undecided' }}</dd></div>
+  </dl>
+  {% if view.decision %}
+    <p role="status">Your decision has already been recorded: <strong>{{ view.decision.decision }}</strong>.</p>
+    <p>Recorded on {{ view.decision.decided_at }} UTC. This decision cannot be changed.</p>
+  {% endif %}
+  <p>Rejecting the seat does not release it. There is no re-allotment in this cycle.</p>
+  <button class="btn no-print" type="button" onclick="window.print()">Print allotment letter</button>
+</article>
+{% if not view.decision %}
+<section class="card no-print" aria-labelledby="decision-heading">
+  <h2 id="decision-heading">Record your seat decision</h2>
+  <p>You can decide only once. Please check your allotted college and branch before confirming.</p>
+  <div class="decision-actions">
+    <form method="post" action="{{ url_for('results.decision_form') }}"
+          onsubmit="return confirm('Accept this allotted seat? You can decide only once.');">
+      <input type="hidden" name="csrf_token" value="{{ get_csrf_token() }}">
+      <input type="hidden" name="decision" value="Accept">
+      <button class="btn primary" type="submit">Accept seat</button>
+    </form>
+    <form method="post" action="{{ url_for('results.decision_form') }}"
+          onsubmit="return confirm('Reject this allotted seat? You can decide only once. The seat will not be released or re-allotted.');">
+      <input type="hidden" name="csrf_token" value="{{ get_csrf_token() }}">
+      <input type="hidden" name="decision" value="Reject">
+      <button class="btn" type="submit">Reject seat</button>
+    </form>
+  </div>
+</section>
+{% endif %}
+{% endif %}
+{% endblock %}
