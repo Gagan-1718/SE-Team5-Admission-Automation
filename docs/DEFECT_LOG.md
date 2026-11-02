@@ -21,7 +21,18 @@ The exit criterion is: no Critical or High defect open at the `v1.0` tag.
 | DEF-010 | 1 Nov | Test output | `TLSV1_ALERT_UNKNOWN_CA` message printed during `tests/test_https.py` | TC-024 | n/a | Not a defect: it is the server noting the test client that correctly refuses the self-signed certificate | Gagan |
 
 | DEF-011 | 1 Nov | Leftover `team5-timing-*` folders in the temp folder after running the script | `scripts/time_allotment.py` kept a database connection open, so on Windows its temporary databases could not be deleted (fictional data only, outside the repo) | TC-027 | Low | Fixed before merge (`da610c8`); a test now checks that no folder is left | Gagan |
+| DEF-012 | 1 Nov | Inspection of the dashboard (Varun, VARUN-001) | Dashboard document tile showed only `0 of 3` or `3 of 3`, so one or two approved documents were shown wrongly | ADM-NFR-004, TC-020 | Medium | Fixed in #79: new read-only `get_document_summary(candidate_id)` in the Documents module; dashboard shows the real count; regression tests added | Varun (Documents owner: Dikshith) |
 
 ## How to add a defect
 
 Add a row with the next ID, the date, how you found it (test name, manual step, review), what happened, the requirement or TC, a proposed severity and "Open" with your name. Gagan sets the final severity. When it is fixed, write the pull request number and how the fix was checked.
+
+## DEF-012 (VARUN-001): approved-document count, details by Varun
+
+- Original observed behavior: `app/accounts/routes.py` used the binary expression `"3 of 3" if all_documents_approved(candidate_id) else "0 of 3"`.
+- Reproduction: render `/dashboard` for a candidate with exactly one or two approved required document types; the tile cannot represent the actual count and returns `0 of 3`.
+- Expected behavior: 0, 1, 2 and 3 approved required documents display as `0 of 3`, `1 of 3`, `2 of 3` and `3 of 3` respectively. Pending, rejected, resubmitted and missing documents must not count as approved.
+- Evidence before fix: inspection of `app/accounts/routes.py` and `app/documents/services.py`; the Documents module exposed `all_documents_approved(candidate_id)` but no approved-count summary service.
+- Resolution: added the read-only `get_document_summary(candidate_id)` service using `REQUIRED_DOCUMENT_TYPES`, distinct approved required types, candidate scoping and the existing `Approved` status. The Dashboard now renders `approved_count of required_count` and does not query Documents tables directly.
+- Verification: `py -m pytest -q tests/documents` — 176 passed; `py -m pytest -q tests/accounts/test_dashboard.py` — 20 passed; `py -m pytest -q tests/accounts tests/documents` — 241 passed; `py -m pytest -q` — 802 passed, 1 skipped, 6 xpassed.
+- Disposition: fixed and regression-tested. No upload, review, rejection or resubmission workflow was changed.
