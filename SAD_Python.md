@@ -571,7 +571,8 @@ HTML pages and JSON endpoints share the same services. Administrator routes answ
 | Accounts | GET/POST /accounts/login, POST /accounts/logout | Log in with email or mobile; log out ends the server-side session (ADM-F-002, SEC-F-001) |
 | Accounts | GET /accounts/me, GET/PUT /accounts/profile, GET /accounts/profile-page | Profile and contact details (ADM-F-003) |
 | Accounts | PUT /accounts/exam-details | Exam details, accepted only for a seeded combination (ADM-F-003, A-09) |
-| Accounts | GET /accounts/dashboard | Candidate landing page |
+| Accounts | GET /dashboard | Candidate journey dashboard: the seven steps with their state and the next action (SAD 4.5) |
+| Accounts | GET /accounts/dashboard | Older JSON identity endpoint kept for compatibility |
 | Application | GET/POST /application, POST /application/submit | Draft form and submit (ADM-F-004, ADM-F-005) |
 | Application | POST /api/v1/applications, PUT /api/v1/applications/{id}, POST /api/v1/applications/{id}/submit, GET /api/v1/applications/me | Same as SAD 4.3.2; submit also needs exam details (D-20) |
 | Documents | GET/POST /documents/upload, GET /documents, POST /documents/{id}/resubmit | Upload, status, resubmission (ADM-F-006, ADM-F-008) |
@@ -582,8 +583,11 @@ HTML pages and JSON endpoints share the same services. Administrator routes answ
 | Catalogue | GET /admin/colleges, GET/POST /admin/colleges/new, /admin/colleges/{id}/edit, /admin/colleges/{id}/branches/new, /admin/branches/{id}/edit, /admin/branches/{id}/seats | Colleges, branches and category-wise seats (ADM-F-011) |
 | Choices | GET /choices; GET/POST /api/v1/choices, DELETE /api/v1/choices/{id}, PUT /api/v1/choices/order, POST /api/v1/choices/lock | Add, remove, reorder, lock (ADM-F-012 to ADM-F-014) |
 | Allotment | GET /admin/allotment, POST /admin/allotment/run, POST /api/v1/admin/allotment/run | Console with pre-run checks and the one-time run (ADM-F-015, ADM-F-016) |
-| Results | POST /api/v1/admin/allotment/runs/{runId}/publish | Publish results once (ADM-F-017) |
+| Results | POST /api/v1/admin/allotment/runs/{runId}/publish, POST /admin/allotment/runs/{runId}/publish | Publish results once, from the API or the console card (ADM-F-017) |
+| Results | GET /result, GET /api/v1/allotment/result | Candidate result after publication; the API answers 404 before (ADM-F-018) |
+| Results | POST /result/decision, POST /api/v1/allotment/decision | Accept or reject the allotted seat once (ADM-F-019) |
 | Admin | GET /admin/dashboard, GET /admin/dashboard.json | Counts and pending queues (ADM-F-020) |
+| Admin | GET /admin/candidates | Candidate and application records (ADM-F-020) |
 | Audit | GET /admin/audit-logs, GET /admin/audit-logs.json | Read-only audit log (SEC-F-005) |
 | Main | GET /, GET /health | Home page and health check (4.4 monitoring) |
 
@@ -611,10 +615,11 @@ The algorithm of section 4.1 is a pure function `allot()` in `app/allotment/engi
 
 | Requirement | Result | Evidence |
 | --- | --- | --- |
+| ADM-NFR-001 response time | Tested candidate pages averaged 3 to 16 ms (target 2 s); single client, not a load test | `docs/evidence/tasya-response-time.md` (TC-026) |
 | ADM-NFR-002 run time | 300 candidates: median 0.967 s; 600 candidates: median 1.589 s; limit 60 s | `scripts/time_allotment.py`, `docs/evidence/gagan.md` |
 | ADM-NFR-003 consistency | Filled seats equal allotment records for every seat row after each run; the database refuses filled > capacity; a corrupted row is reported | `scripts/check_seat_consistency.py`, console tile, `docs/evidence/gagan.md` |
 | SEC-F-004 HTTPS | TLS with a local certificate, HTTP redirect, HSTS, Secure cookie | `scripts/serve_https.py`, `tests/test_https.py` |
 
-### 6.6 Not built on 1 November 2026
+### 6.6 Completeness at the end of Sprint Two
 
-The candidate result page and seat decision (ADM-F-018, ADM-F-019), the administrator candidate list (part of ADM-F-020), the response-time measurement (ADM-NFR-001) and the candidate journey dashboard are not on `main` yet. Their status is kept in `docs/DEVIATIONS.md` section 7 and must be updated there before the `v1.0` tag.
+Every functional requirement ADM-F-001 to ADM-F-020 and SEC-F-001 to SEC-F-005 has a working endpoint on `main` (section 6.2). The items that were still open on the morning of 1 November 2026 (result page and decision, candidate list, response-time measurement, journey dashboard) were merged the same day; `docs/DEVIATIONS.md` section 7 records how each was closed and `docs/DEFECT_LOG.md` lists every defect with its disposition.
