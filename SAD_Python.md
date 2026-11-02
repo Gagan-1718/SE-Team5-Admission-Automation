@@ -1,16 +1,16 @@
 # Software Architecture and Design Specification
 
-Python revision 1.2 — 19 October 2026. This text revision supersedes the previous Java/MySQL technology choices. Functional requirements and API contracts are retained. Original UML figures remain in the source SAD; they describe the same logical modules and flows.
+Python revision 1.3 — 1 November 2026 (revision 1.2 of 19 October 2026 replaced the Java/MySQL technology choices). Section 6 describes the system as built at the end of Sprint Two; `docs/DEVIATIONS.md` lists every difference with its reason. Functional requirements and API contracts are retained. Original UML figures remain in the source SAD; they describe the same logical modules and flows.
 
 Software Architecture and Design Specification
 
 Project: Admission Management Platform (Automated Engineering Admission & Counselling Management Platform for KCET and COMEDK)
 
-Version: 1.2
+Version: 1.3
 
 Authors: Team 5 - Varun M L, Gagandeep N, Dikshith Varma M N, Tasya Shetty
 
-Date: 19-10-2026
+Date: 01-11-2026
 
 Status: Draft
 
@@ -20,6 +20,7 @@ Status: Draft
 | --- | --- | --- | --- |
 | 1.0 | 03-10-2026 | Team 5 | Initial draft of the SAD, derived from the SRS (Team 5). |
 | 1.2 | 19-10-2026 | Team 5 | Adopt Python/Flask/SQLite and pytest; preserve requirement IDs and API contract; specify SQLite transaction and audit safeguards. |
+| 1.3 | 01-11-2026 | Team 5 | Add section 6 (as built): real endpoint paths, the Sprint Two tables, measured performance and consistency, and a pointer to the deviations; correct the implementation notes (scrypt, custom sessions and CSRF). |
 
 ## 1. Introduction
 
@@ -548,6 +549,77 @@ Python/Matplotlib was used to draw the diagrams in this document; draw.io or Pla
 
 ## Python implementation notes
 
-One Flask application serves Jinja HTML pages and the existing /api/v1 endpoints. Keep existing API payloads and requirement traceability. Use Flask-Login for identity, Flask-Session with a SQLAlchemy-backed server-side session store for logout invalidation, Flask-WTF for CSRF protection on state-changing requests, and BCrypt for salted password hashes. Role and record-ownership checks remain explicit server-side checks.
+One Flask application serves Jinja HTML pages and the existing /api/v1 endpoints. Keep existing API payloads and requirement traceability. As built (revision 1.3): identity uses a small server-side `user_sessions` table (only the SHA-256 hash of the random cookie token is stored; logout deletes the row), CSRF protection is a session-bound token checked on every POST, PUT, PATCH and DELETE (`app/security.py`), and passwords are salted Werkzeug scrypt hashes. These replace the Flask-Login, Flask-Session, Flask-WTF and BCrypt choices of revision 1.2 with the same security properties (DEVIATIONS D-01 to D-03). Role and record-ownership checks remain explicit server-side checks.
 
 Use SQLAlchemy with SQLite on local persistent storage. Enable foreign keys on each connection, define uniqueness and capacity constraints, and use separate databases for tests and demonstrations. Do not commit database files, uploads, credentials or session secrets. SQLite serializes writers: measure the specified load and concurrency tests rather than assuming they pass. Run one application instance for the small demonstration; use a WSGI server and HTTPS for the acceptance environment. The development server alone does not satisfy HTTPS.
+
+## 6. As built (revision 1.3, 1 November 2026)
+
+This section describes the code on `main` at the end of Sprint Two. It was produced from the running application (Flask URL map and SQLAlchemy metadata), not from the plan. Sections 3 to 5 remain the design; every difference is listed with its reason in `docs/DEVIATIONS.md` (D-01 to D-22).
+
+### 6.1 Modules
+
+One Flask application (modular monolith, section 3.5). Each module is a package `app/<module>/` with optional `models.py`, `routes.py` (a blueprint named `bp`) and `seed.py`, discovered automatically by the application factory. Modules: accounts, application, documents, catalogue, eligibility, choices, allotment, results, audit, admin. Shared pieces: `app/security.py` (CSRF and security headers), `app/journey.py` (candidate step tracker, SAD 4.5), `templates/_ui.html` (shared page components).
+
+### 6.2 Endpoints
+
+HTML pages and JSON endpoints share the same services. Administrator routes answer 401 to anonymous visitors and 403 to candidates. Every POST, PUT and DELETE needs the CSRF token (form field `csrf_token` or header `X-CSRF-Token`).
+
+| Module | Method and path | Purpose (requirement) |
+| --- | --- | --- |
+| Accounts | GET/POST /accounts/register | Register with name, email, mobile, date of birth, password (ADM-F-001) |
+| Accounts | GET/POST /accounts/login, POST /accounts/logout | Log in with email or mobile; log out ends the server-side session (ADM-F-002, SEC-F-001) |
+| Accounts | GET /accounts/me, GET/PUT /accounts/profile, GET /accounts/profile-page | Profile and contact details (ADM-F-003) |
+| Accounts | PUT /accounts/exam-details | Exam details, accepted only for a seeded combination (ADM-F-003, A-09) |
+| Accounts | GET /dashboard | Candidate journey dashboard: the seven steps with their state and the next action (SAD 4.5) |
+| Accounts | GET /accounts/dashboard | Older JSON identity endpoint kept for compatibility |
+| Application | GET/POST /application, POST /application/submit | Draft form and submit (ADM-F-004, ADM-F-005) |
+| Application | POST /api/v1/applications, PUT /api/v1/applications/{id}, POST /api/v1/applications/{id}/submit, GET /api/v1/applications/me | Same as SAD 4.3.2; submit also needs exam details (D-20) |
+| Documents | GET/POST /documents/upload, GET /documents, POST /documents/{id}/resubmit | Upload, status, resubmission (ADM-F-006, ADM-F-008) |
+| Documents | GET /admin/documents, GET /admin/documents.json, POST /admin/documents/{id}/review, GET /admin/documents/{id}/file | Verification queue, approve or reject with reason (ADM-F-007) |
+| Eligibility | GET /eligibility, GET /api/v1/candidates/me/eligibility | Status with reason (ADM-F-009) |
+| Eligibility | GET/POST /admin/eligibility-rules, POST /admin/eligibility-rules/{id} | Rule management (ADM-NFR-005) |
+| Catalogue | GET /colleges | Catalogue with filters and seats available (ADM-F-010) |
+| Catalogue | GET /admin/colleges, GET/POST /admin/colleges/new, /admin/colleges/{id}/edit, /admin/colleges/{id}/branches/new, /admin/branches/{id}/edit, /admin/branches/{id}/seats | Colleges, branches and category-wise seats (ADM-F-011) |
+| Choices | GET /choices; GET/POST /api/v1/choices, DELETE /api/v1/choices/{id}, PUT /api/v1/choices/order, POST /api/v1/choices/lock | Add, remove, reorder, lock (ADM-F-012 to ADM-F-014) |
+| Allotment | GET /admin/allotment, POST /admin/allotment/run, POST /api/v1/admin/allotment/run | Console with pre-run checks and the one-time run (ADM-F-015, ADM-F-016) |
+| Results | POST /api/v1/admin/allotment/runs/{runId}/publish, POST /admin/allotment/runs/{runId}/publish | Publish results once, from the API or the console card (ADM-F-017) |
+| Results | GET /result, GET /api/v1/allotment/result | Candidate result after publication; the API answers 404 before (ADM-F-018) |
+| Results | POST /result/decision, POST /api/v1/allotment/decision | Accept or reject the allotted seat once (ADM-F-019) |
+| Admin | GET /admin/dashboard, GET /admin/dashboard.json | Counts and pending queues (ADM-F-020) |
+| Admin | GET /admin/candidates | Candidate and application records (ADM-F-020) |
+| Audit | GET /admin/audit-logs, GET /admin/audit-logs.json | Read-only audit log (SEC-F-005) |
+| Main | GET /, GET /health | Home page and health check (4.4 monitoring) |
+
+### 6.3 Data
+
+SQLite with foreign keys switched on. Tables by owning module:
+
+| Module | Tables (main columns) |
+| --- | --- |
+| Accounts | `users` (name, email, mobile, password_hash, role, exam_record_id, rank, category, date_of_birth, address), `exam_records` (exam_type, rank, category, score; seeded), `user_sessions` (token_hash, user_id, expires_at) |
+| Application | `applications` (candidate_id, status, reference_number, guardian, school, board, percentage) |
+| Documents | `documents` (candidate_id, application_id, document_type, stored_name, status, rejection_reason) |
+| Catalogue | `catalogue_college`, `catalogue_branch`, `catalogue_seat` (branch_id, category, capacity, filled; CHECK 0 <= filled <= capacity) |
+| Eligibility | `eligibility_rules` (category, max_rank, active) |
+| Choices | `choices` (candidate_id, branch_id, priority; one row per branch per candidate), `choice_locks` (candidate_id, locked_at) |
+| Allotment | `allotment_runs` (cycle always 1 and unique, counts, duration_ms), `allotment_results` (run_id, candidate_id, rank, category, reference_number, status, branch_id, seat_id, choice_priority; Allocated needs branch, seat and choice, Not Allocated has none) |
+| Results | `result_publications` (one per run), `seat_decisions` (one per result) |
+| Audit | `audit_log` (actor_id, actor_role, created_at, action_type, target_type, target_id, outcome; append-only through triggers) |
+
+### 6.4 Allotment as built
+
+The algorithm of section 4.1 is a pure function `allot()` in `app/allotment/engine.py`. `run_allotment()` in `app/allotment/services.py` wraps it in one `BEGIN IMMEDIATE` transaction: after the write lock it refuses a completed cycle (409), re-checks eligibility and document approval, loads locked choice lists in saved order, allots, writes results, updates each seat with `UPDATE ... WHERE filled < capacity`, and writes the `allotment.run` audit entry in the same commit. On any error everything is rolled back, a separate "Failed" audit entry is written and the run may be repeated (A-07, A-13). The Test Plan Appendix B oracle passes unchanged.
+
+### 6.5 Measured non-functional results
+
+| Requirement | Result | Evidence |
+| --- | --- | --- |
+| ADM-NFR-001 response time | Tested candidate pages averaged 3 to 16 ms (target 2 s); single client, not a load test | `docs/evidence/tasya-response-time.md` (TC-026) |
+| ADM-NFR-002 run time | 300 candidates: median 0.967 s; 600 candidates: median 1.589 s; limit 60 s | `scripts/time_allotment.py`, `docs/evidence/gagan.md` |
+| ADM-NFR-003 consistency | Filled seats equal allotment records for every seat row after each run; the database refuses filled > capacity; a corrupted row is reported | `scripts/check_seat_consistency.py`, console tile, `docs/evidence/gagan.md` |
+| SEC-F-004 HTTPS | TLS with a local certificate, HTTP redirect, HSTS, Secure cookie | `scripts/serve_https.py`, `tests/test_https.py` |
+
+### 6.6 Completeness at the end of Sprint Two
+
+Every functional requirement ADM-F-001 to ADM-F-020 and SEC-F-001 to SEC-F-005 has a working endpoint on `main` (section 6.2). The items that were still open on the morning of 1 November 2026 (result page and decision, candidate list, response-time measurement, journey dashboard) were merged the same day; `docs/DEVIATIONS.md` section 7 records how each was closed and `docs/DEFECT_LOG.md` lists every defect with its disposition. Not built: correcting a candidate record from the administrator screens (`PUT /admin/candidates/{id}`, section 4.3.7 and assumption A-18); administrators can view candidate records, and documents are corrected through review and resubmission (DEVIATIONS D-23).
