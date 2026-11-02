@@ -21,6 +21,7 @@ The exit criterion is: no Critical or High defect open at the `v1.0` tag.
 | DEF-010 | 1 Nov | Test output | `TLSV1_ALERT_UNKNOWN_CA` message printed during `tests/test_https.py` | TC-024 | n/a | Not a defect: it is the server noting the test client that correctly refuses the self-signed certificate | Gagan |
 | DEF-011 | 1 Nov | Leftover `team5-timing-*` folders in the temp folder after running the script | `scripts/time_allotment.py` kept a database connection open, so on Windows its temporary databases could not be deleted (fictional data only, outside the repo) | TC-027 | Low | Fixed before merge (`da610c8`); a test now checks that no folder is left | Gagan |
 | DEF-012 | 1 Nov | Inspection of the dashboard (Varun, VARUN-001) | Dashboard document tile showed only `0 of 3` or `3 of 3`, so one or two approved documents were shown wrongly | ADM-NFR-004, TC-020 | Medium | Fixed in #79: new read-only `get_document_summary(candidate_id)` in the Documents module; dashboard shows the real count; regression tests added | Varun (Documents owner: Dikshith) |
+| DEF-013 | 2 Nov | Review of `main` routes against SAD 4.3.7 | No screen or endpoint to correct a candidate record (`PUT /admin/candidates/{id}`); records can only be viewed | ADM-F-020 ("view and manage"); TC-020 itself passes | Medium | Deferred: known gap, DEVIATIONS D-23 | Tasya |
 
 ## How to add a defect
 
