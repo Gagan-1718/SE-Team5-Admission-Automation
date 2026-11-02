@@ -67,13 +67,13 @@ D-16 to D-18 were recorded when the choice, allotment and result tables were agr
 | D-21 | Admin rule, dashboard and audit endpoints | `POST/PUT /admin/eligibility-rules`, `GET /admin/dashboard`, `GET /admin/audit-logs` (JSON) | HTML pages `GET/POST /admin/eligibility-rules`, `POST /admin/eligibility-rules/<id>` (update as a form POST), `GET /admin/dashboard` and `/admin/dashboard.json`, `GET /admin/audit-logs` and `/admin/audit-logs.json` | HTML forms use POST; the `.json` variants keep the API shape | Same data and rules as SAD 4.3.4 and 4.3.7 |
 | D-22 | Measured performance (ADM-NFR-002, ADM-NFR-003) | A run-time target and a consistency check after each run | `scripts/time_allotment.py`: 300 candidates median 0.967 s, 600 candidates median 1.589 s (limit 60 s). `scripts/check_seat_consistency.py` and the console tile show filled = allotment records for every seat row; the database refuses `filled > capacity` | (no deviation) | Evidence in `docs/evidence/gagan.md` |
 
-## 7. Still open on 1 November 2026 (Sprint Two, Day 3)
+## 7. Items open on Day 3 morning, closed the same day
 
-These are not on `main` yet. This table must be emptied or kept as known gaps before the `v1.0` tag.
+All four were merged into `main` on 1 November 2026 and the full suite passed on the combined code (810 passed). Nothing from this list is left open at the `v1.0` tag.
 
-| # | Area | What is missing | Owner |
+| # | Area | Closed by | Notes |
 |---|---|---|---|
-| O-01 | Candidate result page and seat decision (ADM-F-018, ADM-F-019; issues #13, #14) | No `/result` page, `GET /api/v1/allotment/result` or decision endpoint yet. Publishing works (`POST /api/v1/admin/allotment/runs/<id>/publish`); the publish card in the console is in PR #75 | Dikshith |
-| O-02 | Administrator candidate list (ADM-F-020) | No `/admin/candidates` page yet; the dashboard counts exist | Tasya |
-| O-03 | Response-time measurement (ADM-NFR-001, issue #29) | Not recorded yet | Tasya |
-| O-04 | Candidate dashboard with journey steps | Branch `feature/candidate-dashboard` has no pull request yet | Varun |
+| O-01 | Candidate result page and seat decision (ADM-F-018, ADM-F-019; issues #13, #14) | #77 (Dikshith) | `GET /result`, `GET /api/v1/allotment/result` (404 until published), `POST /api/v1/allotment/decision` with `{decision: Accept or Reject}`, `POST /result/decision`. A candidate who was not in the run sees a separate message (D-19). One decision per result is a database rule; a rejected seat is not released (SAD open issue 5). The API answers 201 on a recorded decision where SAD 4.3.6 says 200; the body is as designed |
+| O-02 | Administrator candidate list (ADM-F-020) | #78 (Tasya) | `GET /admin/candidates` |
+| O-03 | Response-time measurement (ADM-NFR-001, TC-026) | #78 (Tasya) | `docs/evidence/tasya-response-time.md`: averages 3 to 16 ms on the tested candidate pages, target 2 s; single client, not a load test |
+| O-04 | Candidate dashboard with journey steps | #76 and #79 (Varun) | `GET /accounts/dashboard` with the seven journey steps; #79 shows the real approved-document count (DEF-012) |
