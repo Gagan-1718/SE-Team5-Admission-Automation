@@ -2,7 +2,11 @@
 import pytest
 
 from app.documents.models import Document
-from app.documents.services import REQUIRED_DOCUMENT_TYPES, all_documents_approved
+from app.documents.services import (
+    REQUIRED_DOCUMENT_TYPES,
+    all_documents_approved,
+    get_document_summary,
+)
 from app.extensions import db
 
 _counter = {"n": 0}
@@ -93,3 +97,27 @@ def test_status_change_is_seen_immediately():
     db.session.execute(db.update(Document).where(Document.candidate_id == 1).values(status="Approved"))
     db.session.commit()
     assert all_documents_approved(1) is True
+
+
+@pytest.mark.parametrize(
+    ("approved", "expected"),
+    [(0, 0), (1, 1), (2, 2), (3, 3)],
+)
+def test_document_summary_counts_distinct_approved_required_types(approved, expected):
+    for document_type in REQUIRED_DOCUMENT_TYPES[:approved]:
+        add(1, document_type, "Approved")
+    assert get_document_summary(1) == {"approved_count": expected, "required_count": 3}
+
+
+def test_document_summary_excludes_unapproved_missing_duplicate_and_other_candidate_rows():
+    add(1, "Marksheet", "Approved")
+    add(1, "Marksheet", "Pending")
+    add(1, "ID Proof", "Rejected")
+    add(1, "Category Certificate", "Pending")
+    add(2, "ID Proof", "Approved")
+    assert get_document_summary(1) == {"approved_count": 1, "required_count": 3}
+    assert get_document_summary(2) == {"approved_count": 1, "required_count": 3}
+
+
+def test_document_summary_handles_empty_candidate():
+    assert get_document_summary(None) == {"approved_count": 0, "required_count": 3}

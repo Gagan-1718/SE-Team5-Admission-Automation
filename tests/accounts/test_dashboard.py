@@ -1,4 +1,9 @@
+import pytest
+
 from app.accounts.models import ExamRecord, User
+from app.application.models import Application
+from app.documents.models import Document
+from app.documents.services import REQUIRED_DOCUMENT_TYPES
 from app.extensions import db
 
 from .test_registration import registration_payload
@@ -39,6 +44,30 @@ def test_candidate_dashboard_has_seven_steps_and_summary(client):
     assert "Profile and exam details" in body
     assert "Documents approved" in body
     assert "Enter your exam details to continue." in body
+
+
+@pytest.mark.parametrize("approved_count", [0, 1, 2, 3])
+def test_candidate_dashboard_displays_approved_document_count(client, approved_count):
+    register_and_login(client, email=f"documents-{approved_count}@example.test")
+    candidate = db.session.scalar(
+        db.select(User).where(User.email == f"documents-{approved_count}@example.test")
+    )
+    application = Application(candidate_id=candidate.id)
+    db.session.add(application)
+    db.session.flush()
+    for document_type in REQUIRED_DOCUMENT_TYPES[:approved_count]:
+        db.session.add(
+            Document(
+                candidate_id=candidate.id,
+                application_id=application.id,
+                document_type=document_type,
+                stored_name=f"dashboard-{approved_count}-{document_type}.pdf",
+                status="Approved",
+            )
+        )
+    db.session.commit()
+    body = client.get("/dashboard").get_data(as_text=True)
+    assert f"{approved_count} of 3" in body
 
 
 def test_administrator_is_denied_dashboard(client, app, monkeypatch):
