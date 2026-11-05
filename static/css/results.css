@@ -20,7 +20,7 @@
 @media (max-width: 700px) { .result-details, .letter-seat { grid-template-columns: 1fr; } .letter-seat div + div { border-left: 0; border-top: 1px solid var(--line); } }
 @page { size: A4; margin: 15mm; }
 @media print {
-  .portal-header, .portal-footer, .page-crumb, .page-header, .flash-stack, .no-print, .result-status { display: none !important; }
+  .app-sidebar, .app-topbar, .portal-header, .portal-footer, .page-header, .flash-stack, .no-print, .result-status { display: none !important; }
   html, body { background: white !important; color: black !important; }
   .app-content { display: block !important; margin: 0 !important; padding: 0 !important; width: 100% !important; }
   .result-ticket { break-inside: avoid; border: 1px solid #555; margin: 0; padding: 8mm; font-size: 11pt; }
