@@ -14,7 +14,6 @@ import os
 import random
 import sys
 
-from io import BytesIO
 from pathlib import Path
 
 # Make the project root importable when this file is run directly.
@@ -23,9 +22,8 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from pypdf import PdfWriter
-
 from app import create_app
+from scripts.demo_documents import render_pdf
 from app.extensions import db
 
 from app.accounts.models import User, ExamRecord
@@ -76,27 +74,27 @@ LAST_NAMES = (
     "Srinivas", "Prasad", "Shastry", "Mallya", "Ballal", "Poojary", "Salian", "Kotian", "Urs", "Jain",
 )
 
+CITIES = (
+    "Bengaluru", "Mysuru", "Mangaluru", "Hubballi", "Belagavi",
+    "Tumakuru", "Shivamogga", "Davanagere", "Udupi", "Kalaburagi",
+)
+
+GUARDIAN_FIRST_NAMES = (
+    "Ramesh", "Suresh", "Mahesh", "Prakash", "Ravi", "Venkatesh",
+    "Manjunath", "Shankar", "Nagaraj", "Srinivas", "Lakshmi", "Geetha",
+)
+
+# Invented pre-university colleges; any likeness to a real one is accidental.
+SCHOOLS = (
+    "Vidyodaya PU College", "Sri Sharada PU College", "Jnana Jyothi PU College",
+    "Navodaya PU College", "Saraswathi Vidya PU College", "Sahyadri PU College",
+)
+
 ELIGIBLE_RANK_START = 100
 NOT_ELIGIBLE_RANK_START = 50000
 
 DEMO_EMAIL_PREFIX = "cand"
 DEMO_EMAIL_DOMAIN = "@example.test"
-
-
-def make_placeholder_pdf(title):
-    """Create a small valid, one-page PDF for demo document downloads."""
-    writer = PdfWriter()
-    writer.add_blank_page(width=595, height=842)
-
-    writer.add_metadata({
-        "/Title": f"Demo placeholder - {title}",
-        "/Subject": "Fictional admission demo document",
-    })
-
-    output = BytesIO()
-    writer.write(output)
-
-    return output.getvalue()
 
 
 def candidate_email(number):
@@ -197,23 +195,26 @@ def document_statuses(group, rng):
     return statuses, reasons
 
 
-def ensure_document_files(candidate_number, directory, pdf_contents):
-    """Create three valid document files if they do not already exist."""
+def ensure_document_files(candidate_number, directory, info, statuses):
+    """Create the three specimen documents for a candidate if they do not already exist.
+
+    Rejected documents are drawn blurred, matching the demo rejection reason.
+    """
 
     directory.mkdir(parents=True, exist_ok=True)
 
     stored_names = []
 
-    for document_type, slug in DOCUMENT_TYPES:
+    for (document_type, slug), status in zip(DOCUMENT_TYPES, statuses):
         stored_name = (
-            f"demo-candidate-{candidate_number:04d}-{slug}.pdf"
+            f"demo-candidate-{candidate_number:04d}-{slug}-specimen.pdf"
         )
 
         path = directory / stored_name
 
         if not path.exists():
             with path.open("xb") as output:
-                output.write(pdf_contents[slug])
+                output.write(render_pdf(slug, info, blurred=status == "Rejected"))
 
         stored_names.append(stored_name)
 
@@ -368,11 +369,6 @@ def generate_dataset(candidate_count, seed):
 
     directory = upload_directory()
 
-    pdf_contents = {
-        slug: make_placeholder_pdf(document_type)
-        for document_type, slug in DOCUMENT_TYPES
-    }
-
     created_users = 0
     created_exam_records = 0
     created_applications = 0
@@ -469,8 +465,10 @@ def generate_dataset(candidate_count, seed):
                 or make_reference_number(application.id)
             )
 
+            city = CITIES[index % len(CITIES)]
+            surname = generated_name.split()[-1]
             application.guardian_name = (
-                f"Demo Guardian {number:04d}"
+                f"{GUARDIAN_FIRST_NAMES[index % len(GUARDIAN_FIRST_NAMES)]} {surname}"
             )
 
             application.guardian_mobile = str(
@@ -478,7 +476,7 @@ def generate_dataset(candidate_count, seed):
             )
 
             application.school_name = (
-                f"Demo School {number:04d}"
+                f"{SCHOOLS[index % len(SCHOOLS)]}, {city}"
             )
 
             application.board = BOARDS[index % len(BOARDS)]
@@ -488,15 +486,23 @@ def generate_dataset(candidate_count, seed):
                 2,
             )
 
-            stored_names = ensure_document_files(
-                number,
-                directory,
-                pdf_contents,
-            )
-
             statuses, reasons = document_statuses(
                 group,
                 candidate_rng,
+            )
+
+            stored_names = ensure_document_files(
+                number,
+                directory,
+                {
+                    "name": generated_name,
+                    "number": number,
+                    "board": application.board,
+                    "percentage": application.percentage,
+                    "category": exam.category,
+                    "city": city,
+                },
+                statuses,
             )
 
             for doc_index, (document_type, slug) in enumerate(
