@@ -31,9 +31,10 @@
   </dl>
   {% if view.decision %}
     <p role="status">Your decision has already been recorded: <strong>{{ view.decision.decision }}</strong>.</p>
-    <p>Recorded on {{ view.decision.decided_at }} UTC. This decision cannot be changed.</p>
-  {% endif %}
+    <p>Recorded on {{ view.decision.decided_label }} UTC. This decision cannot be changed.</p>
+  {% else %}
   <p>Rejecting the seat does not release it. There is no re-allotment in this cycle.</p>
+  {% endif %}
   <button class="btn no-print" type="button" onclick="window.print()">Print allotment letter</button>
 </article>
 {% if not view.decision %}
