@@ -30,6 +30,8 @@ from app.documents.services import (
 )
 
 from app.accounts.auth import current_candidate_id
+from app.accounts.models import User
+from app.application.models import Application
 from app.application.identity import candidate_page_required
 from app.application.services import get_submitted_application
 
@@ -130,8 +132,17 @@ def review_queue():
     ).scalars().all()
     if request.path.endswith(".json"):
         return jsonify(documents=[document_json(d) for d in documents])
-    return render_template("documents/review.html", documents=documents,
-                           status=status, csrf_token=review_token())
+    people = {}
+    if documents:
+        people = {cid: (name, reference) for cid, name, reference in db.session.execute(
+            db.select(User.id, User.name, Application.reference_number)
+            .outerjoin(Application, Application.candidate_id == User.id)
+            .where(User.id.in_({d.candidate_id for d in documents}))
+        )}
+    counts = dict(db.session.execute(
+        db.select(Document.status, db.func.count()).group_by(Document.status)).all())
+    return render_template("documents/review.html", documents=documents, people=people,
+                           counts=counts, status=status, csrf_token=review_token())
 
 
 @bp.post("/admin/documents/<int:document_id>/review")
@@ -201,6 +212,7 @@ def status_page():
     ).scalars().all()
     response = current_app.make_response(
         render_template("documents/status.html", documents=documents,
+                        required_types=REQUIRED_DOCUMENT_TYPES,
                         csrf_token=resubmission_token(),
                         success=session.pop("document_resubmission_success", False))
     )
