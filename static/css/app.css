@@ -281,3 +281,28 @@ table.data-table td.num, table.data-table th.num { text-align: right; font-varia
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 @media print { .app-sidebar, .app-topbar, .no-print { display: none !important; } .app-shell { display: block; } .card { box-shadow: none; } }
+
+/* ------------------------------------------------------- dashboard */
+.dashboard-page { display: grid; gap: 18px; }
+.hero-card {
+  display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 18px 32px;
+  background: radial-gradient(circle at 85% 0%, rgb(111 155 255 / 35%), transparent 45%), linear-gradient(135deg, #10295a 0%, #1b45b8 100%);
+  color: #fff; border-radius: 18px; padding: 28px 30px; box-shadow: var(--shadow-lg);
+}
+.hero-card .eyebrow { color: #a9c3ff; }
+.hero-card h1 { font-size: clamp(1.6rem, 3vw, 2.2rem); font-weight: 750; }
+.hero-card p { color: #d3e0ff; margin-top: 6px; max-width: 52ch; }
+.hero-progress { min-width: min(320px, 100%); flex: 0 1 340px; }
+.hero-progress-top { display: flex; align-items: baseline; gap: 8px; margin-bottom: 8px; color: #d3e0ff; font-size: .88rem; }
+.hero-progress-top strong { color: #fff; font-size: 1.35rem; }
+.hero-card .progress { background: rgb(255 255 255 / 18%); height: 10px; }
+.hero-card .progress > span { background: linear-gradient(90deg, #4ade9b, #a7f3d0); }
+.next-step { display: flex; align-items: center; gap: 16px; background: var(--card); border: 1px solid var(--line); border-left: 4px solid var(--brand); border-radius: var(--radius); padding: 18px 20px; box-shadow: var(--shadow); flex-wrap: wrap; }
+.next-step.problem { border-left-color: var(--bad); }
+.next-step .grow { flex: 1 1 260px; }
+.next-step h2 { font-size: 1.1rem; }
+.next-step p { color: var(--ink-2); font-size: .9rem; margin-top: 2px; }
+.next-step-label { font-size: .7rem; font-weight: 750; letter-spacing: .14em; text-transform: uppercase; color: var(--brand); }
+.next-step.problem .next-step-label { color: var(--bad); }
+.next-step-icon { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; background: var(--brand-wash); color: var(--brand); flex: none; }
+.next-step.problem .next-step-icon { background: var(--bad-wash); color: var(--bad); }
