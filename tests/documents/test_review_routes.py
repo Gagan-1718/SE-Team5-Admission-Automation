@@ -171,3 +171,21 @@ def test_successful_html_review_redirects_to_html_queue(admin, document):
     })
     assert response.status_code == 302
     assert response.headers["Location"] == "/admin/documents"
+
+
+def test_html_reject_without_reason_explains_on_the_page(admin, document):
+    client, token = admin
+    response = client.post(f"/admin/documents/{document.id}/review",
+                           data={"decision": "Rejected", "reason": "", "csrf_token": token},
+                           follow_redirects=True)
+    assert response.status_code == 200
+    assert b"reason" in response.data.lower() and b"flash error" in response.data
+    db.session.refresh(document)
+    assert document.status == "Pending"
+
+
+def test_html_review_confirms_what_was_decided(admin, document):
+    client, token = admin
+    response = client.post(f"/admin/documents/{document.id}/review",
+                           data={"decision": "Approved", "csrf_token": token}, follow_redirects=True)
+    assert b"flash success" in response.data and b"approved" in response.data.lower()
