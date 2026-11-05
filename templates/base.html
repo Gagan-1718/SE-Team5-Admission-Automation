@@ -1,6 +1,6 @@
 {% import "_ui.html" as ui %}
-{% macro nav(href, label, icon, active=False) -%}
-<a class="app-nav-link{% if active %} active{% endif %}" href="{{ href }}"{% if active %} aria-current="page"{% endif %}><span class="nav-icon">{{ ui.icon(icon) }}</span>{{ label }}</a>
+{% macro nav(href, label, active=False) -%}
+<a class="app-nav-link{% if active %} active{% endif %}" href="{{ href }}"{% if active %} aria-current="page"{% endif %}>{{ label }}</a>
 {%- endmacro %}
 <!doctype html>
 <html lang="en">
@@ -10,91 +10,90 @@
   <script src="{{ url_for('static', filename='js/csrf.js') }}"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}Admission Automation{% endblock %} | Team 5</title>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%232456d3'/%3E%3Ctext x='16' y='22' font-family='Segoe UI,Arial' font-size='17' font-weight='800' fill='white' text-anchor='middle'%3EA%3C/text%3E%3C/svg%3E">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230d2a52'/%3E%3Crect y='27' width='32' height='5' fill='%23e07b00'/%3E%3Ctext x='16' y='21' font-family='Georgia,serif' font-size='18' font-weight='700' fill='white' text-anchor='middle'%3EA%3C/text%3E%3C/svg%3E">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
 </head>
 <body class="app-body">
 <a class="skip-link" href="#main">Skip to content</a>
-{% if g.current_user %}
-  {% set is_admin = g.current_user.role == 'administrator' %}
-  {% set path = request.path %}
-  <div class="app-shell" id="app-shell">
-    <aside class="app-sidebar" id="app-sidebar" aria-label="{{ 'Administrator' if is_admin else 'Candidate' }} navigation">
-      <a class="brandmark" href="{{ url_for('main.home') }}"><span class="brandmark-mark" aria-hidden="true">A</span><span>Admission Automation<small>KCET · COMEDK counselling</small></span></a>
-      {% if is_admin %}
-        {{ nav("/admin/dashboard", "Dashboard", "home", path == "/admin/dashboard") }}
-        <div class="nav-group">People</div>
-        {{ nav(url_for('admin.candidate_list'), "Candidates", "users", path == "/admin/candidates") }}
-        {{ nav("/admin/documents", "Documents", "files", path.startswith("/admin/documents")) }}
-        <div class="nav-group">Setup</div>
-        {{ nav("/admin/colleges", "Colleges and seats", "building", path.startswith("/admin/colleges") or path.startswith("/admin/branches")) }}
-        {{ nav("/admin/eligibility-rules", "Eligibility rules", "sliders", path == "/admin/eligibility-rules") }}
-        <div class="nav-group">Allotment</div>
-        {{ nav("/admin/allotment", "Run and publish", "play", path == "/admin/allotment") }}
-        {{ nav("/admin/audit-logs", "Audit log", "scroll", path == "/admin/audit-logs") }}
+{% set path = request.path %}
+<header class="portal-header">
+  <div class="portal-top">
+    <a class="brandmark" href="{{ url_for('main.home') }}">
+      <span class="brandmark-mark" aria-hidden="true">A</span>
+      <span class="brand-text"><strong>Admission Automation</strong><small>Engineering admission and counselling · Karnataka · KCET / COMEDK</small></span>
+    </a>
+    <div class="portal-account">
+      {% if g.current_user %}
+        {% set is_admin = g.current_user.role == 'administrator' %}
+        <span class="account-who"><strong>{{ g.current_user.name }}</strong><span>{{ 'Administrator' if is_admin else 'Candidate' }}</span></span>
+        <button type="button" class="account-logout" id="logout-button">Log out</button>
       {% else %}
-        {{ nav("/dashboard", "Dashboard", "home", path == "/dashboard") }}
-        <div class="nav-group">My admission</div>
-        {{ nav(url_for('accounts.profile_page'), "Profile and exam", "user", path == "/accounts/profile-page") }}
-        {{ nav("/application", "Application", "file", path == "/application") }}
-        {{ nav("/documents", "Documents", "files", path.startswith("/documents")) }}
-        {{ nav("/eligibility", "Eligibility", "check", path == "/eligibility") }}
-        {{ nav("/choices", "Choices", "list", path == "/choices") }}
-        {% if results_published() %}
-        {{ nav("/result", "Result", "award", path == "/result") }}
-        {% else %}
-        <a class="app-nav-link locked" href="/result" aria-disabled="true" aria-describedby="lock-result" data-locked title="Results appear after the administrator publishes allotment."><span class="nav-icon">{{ ui.icon("award") }}</span>Result <span class="nav-lock" aria-label="Locked">{{ ui.icon("lock", 15) }}</span><span class="sr-only" id="lock-result">Results appear after the administrator publishes allotment.</span></a>
-        {% endif %}
-        <div class="nav-group">Explore</div>
-        {{ nav("/colleges", "Colleges", "building", path == "/colleges") }}
+        <a href="{{ url_for('accounts.login_page') }}">Log in</a>
+        <a class="btn primary sm" href="{{ url_for('accounts.registration_page') }}">Register</a>
       {% endif %}
-      <div class="app-user">
-        <span class="app-avatar" aria-hidden="true">{{ g.current_user.name[:1]|upper }}</span>
-        <span class="who"><strong>{{ g.current_user.name }}</strong>{{ 'Administrator' if is_admin else 'Candidate' }}</span>
-        <button type="button" id="logout-button" aria-label="Log out" title="Log out">{{ ui.icon("logout", 17) }}</button>
-      </div>
-    </aside>
-    <div class="nav-scrim" data-nav-close></div>
-    <div class="app-main">
-      <header class="app-topbar">
-        <button type="button" class="menu-toggle" aria-controls="app-sidebar" aria-expanded="false" aria-label="Open menu">{{ ui.icon("menu", 20) }}</button>
-        <span class="breadcrumb"><strong>{% block breadcrumb %}{{ self.title() }}{% endblock %}</strong></span>
-        <div class="spacer"><span class="role-chip">{{ 'Administrator' if is_admin else 'Candidate' }}</span><span class="app-avatar" aria-hidden="true">{{ g.current_user.name[:1]|upper }}</span></div>
-      </header>
-{% else %}
-  <div class="app-anonymous">
-    <header class="anonymous-topbar"><a class="brandmark" href="{{ url_for('main.home') }}"><span class="brandmark-mark" aria-hidden="true">A</span>Admission Automation</a><nav class="spacer" aria-label="Public navigation"><a href="{{ url_for('accounts.login_page') }}">Log in</a><a class="btn primary sm" href="{{ url_for('accounts.registration_page') }}">Register</a></nav></header>
-{% endif %}
-    <main class="app-content" id="main">
-      <div class="flash-stack" aria-live="polite">{% for category, message in get_flashed_messages(with_categories=true) %}<p class="flash {{ category }}" role="status">{{ message }}</p>{% endfor %}</div>
-      {% block content %}{% endblock %}
-    </main>
-{% if g.current_user %}
     </div>
   </div>
-  <script>
-  document.querySelectorAll('[data-locked]').forEach((link) => {
-    link.addEventListener('click', (event) => event.preventDefault());
-  });
-  document.getElementById('logout-button').addEventListener('click', async () => {
-    const response = await fetch({{ url_for('accounts.logout')|tojson }}, {method: 'POST'});
-    if (response.ok) window.location.href = {{ url_for('accounts.login_page')|tojson }};
-  });
-  (function () {
-    const shell = document.getElementById('app-shell');
-    const toggle = document.querySelector('.menu-toggle');
-    function setOpen(open) {
-      shell.classList.toggle('nav-open', open);
-      toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
-      toggle.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
-    }
-    toggle.addEventListener('click', () => setOpen(!shell.classList.contains('nav-open')));
-    document.querySelector('[data-nav-close]').addEventListener('click', () => setOpen(false));
-    document.addEventListener('keydown', (event) => { if (event.key === 'Escape') setOpen(false); });
-  })();
-  </script>
-{% else %}
+  {% if g.current_user %}
+  <div class="portal-navbar">
+    <button type="button" class="menu-toggle" aria-controls="app-nav" aria-expanded="false">{{ ui.icon("menu", 18) }}<span>Menu</span></button>
+    <nav class="app-nav" id="app-nav" aria-label="{{ 'Administrator' if is_admin else 'Candidate' }} navigation">
+      {% if is_admin %}
+        {{ nav("/admin/dashboard", "Dashboard", path == "/admin/dashboard") }}
+        {{ nav(url_for('admin.candidate_list'), "Candidates", path == "/admin/candidates") }}
+        {{ nav("/admin/documents", "Documents", path.startswith("/admin/documents")) }}
+        {{ nav("/admin/colleges", "Colleges and seats", path.startswith("/admin/colleges") or path.startswith("/admin/branches")) }}
+        {{ nav("/admin/eligibility-rules", "Eligibility rules", path == "/admin/eligibility-rules") }}
+        {{ nav("/admin/allotment", "Run and publish", path == "/admin/allotment") }}
+        {{ nav("/admin/audit-logs", "Audit log", path == "/admin/audit-logs") }}
+      {% else %}
+        {{ nav("/dashboard", "Dashboard", path == "/dashboard") }}
+        {{ nav(url_for('accounts.profile_page'), "Profile and exam", path == "/accounts/profile-page") }}
+        {{ nav("/application", "Application", path == "/application") }}
+        {{ nav("/documents", "Documents", path.startswith("/documents")) }}
+        {{ nav("/eligibility", "Eligibility", path == "/eligibility") }}
+        {{ nav("/choices", "Choices", path == "/choices") }}
+        {% if results_published() %}
+        {{ nav("/result", "Result", path == "/result") }}
+        {% else %}
+        <a class="app-nav-link locked" href="/result" aria-disabled="true" aria-describedby="lock-result" data-locked title="Results appear after the administrator publishes allotment.">Result <span class="nav-lock" aria-label="Locked">{{ ui.icon("lock", 13) }}</span><span class="sr-only" id="lock-result">Results appear after the administrator publishes allotment.</span></a>
+        {% endif %}
+        {{ nav("/colleges", "Colleges", path == "/colleges") }}
+      {% endif %}
+    </nav>
   </div>
+  {% endif %}
+</header>
+
+<main class="app-content" id="main">
+  {% if g.current_user %}<div class="page-crumb">{{ 'Administrator' if is_admin else 'Candidate' }} <span aria-hidden="true">›</span> <strong>{% block breadcrumb %}{{ self.title() }}{% endblock %}</strong></div>{% endif %}
+  <div class="flash-stack" aria-live="polite">{% for category, message in get_flashed_messages(with_categories=true) %}<p class="flash {{ category }}" role="status">{{ message }}</p>{% endfor %}</div>
+  {% block content %}{% endblock %}
+</main>
+
+<footer class="portal-footer">
+  <span>Admission Automation · Team 5 software-engineering project</span>
+  <span>Educational demo with fictional data. Not an official KEA or COMEDK system.</span>
+</footer>
+
+{% if g.current_user %}
+<script>
+document.querySelectorAll('[data-locked]').forEach((link) => {
+  link.addEventListener('click', (event) => event.preventDefault());
+});
+document.getElementById('logout-button').addEventListener('click', async () => {
+  const response = await fetch({{ url_for('accounts.logout')|tojson }}, {method: 'POST'});
+  if (response.ok) window.location.href = {{ url_for('accounts.login_page')|tojson }};
+});
+(function () {
+  const toggle = document.querySelector('.menu-toggle');
+  const menu = document.getElementById('app-nav');
+  toggle.addEventListener('click', () => {
+    const open = !menu.classList.contains('open');
+    menu.classList.toggle('open', open);
+    toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+  });
+})();
+</script>
 {% endif %}
 </body>
 </html>
