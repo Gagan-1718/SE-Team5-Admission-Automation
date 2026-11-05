@@ -70,7 +70,7 @@ def test_candidate_choices_navigation_is_enabled(app):
 def test_choices_navigation_is_active_on_choices_page(app):
     client = login(app, "nav.choices-active@example.test", "candidate", "9000000017")
     html = client.get("/choices").data.decode()
-    assert re.search(r'<a class="app-nav-link active" href="/choices">', html)
+    assert re.search(r'<a class="app-nav-link active" href="/choices"[^>]*>', html)
 
 
 def test_navigation_uses_real_anchor_links(app):
