@@ -422,3 +422,11 @@ def test_generator_does_not_change_seat_matrix(app, demo_environment):
         seeded_total = sum(sum(caps.values()) for _, branches in SEED_COLLEGES.values()
                            for caps in branches.values())
         assert sum(row[2] for row in after) == seeded_total
+
+
+def test_every_generated_candidate_has_a_different_realistic_name():
+    names = [generator.candidate_name(index, seed=1) for index in range(600)]
+    assert len(set(names)) == 600
+    assert not any("Candidate" in name or any(ch.isdigit() for ch in name) for name in names)
+    assert all(len(name.split()) == 2 for name in names)
+    assert names == [generator.candidate_name(index, seed=1) for index in range(600)]  # same seed, same names
