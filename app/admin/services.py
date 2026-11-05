@@ -31,8 +31,11 @@ def dashboard_summary():
         )
     )
     pending = db.session.execute(
-        db.select(Document).where(Document.status == "Pending").order_by(Document.id)
-    ).scalars().all()
+        db.select(Document, User.name, Application.reference_number)
+        .join(User, User.id == Document.candidate_id)
+        .outerjoin(Application, Application.id == Document.application_id)
+        .where(Document.status == "Pending").order_by(Document.id)
+    ).all()
     return {
         "candidateCounts": {
             "total": int(candidates),
@@ -43,7 +46,8 @@ def dashboard_summary():
             "documents": _count_by(Document.status, DOCUMENT_STATUSES),
         },
         "pendingDocuments": [
-            {"id": d.id, "candidateId": d.candidate_id, "documentType": d.document_type}
-            for d in pending
+            {"id": d.id, "candidateId": d.candidate_id, "documentType": d.document_type,
+             "candidateName": name, "referenceNumber": reference}
+            for d, name, reference in pending
         ],
     }
