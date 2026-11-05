@@ -20,7 +20,7 @@ from app.accounts.models import User
 from app.application.models import Application
 from app.extensions import db
 
-from .services import dashboard_summary
+from .services import cycle_overview, dashboard_summary
 
 
 bp = Blueprint("admin", __name__)
@@ -34,6 +34,7 @@ def dashboard_page():
     return render_template(
         "admin/dashboard.html",
         summary=dashboard_summary(),
+        overview=cycle_overview(),
     )
 
 
