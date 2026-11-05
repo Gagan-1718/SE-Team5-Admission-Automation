@@ -15,7 +15,7 @@ def test_home_page_loads(client):
 
 
 def test_static_stylesheet_is_served(client):
-    assert client.get("/static/css/site.css").status_code == 200
+    assert client.get("/static/css/app.css").status_code == 200
 
 
 def test_health_reports_ok(client):
