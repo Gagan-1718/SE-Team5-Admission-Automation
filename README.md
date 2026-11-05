@@ -65,7 +65,7 @@ flask --app app seed-db
 python scripts/serve_https.py      # HTTPS on https://localhost:8443 (see the HTTPS section), or: flask --app app run
 ```
 
-`seed-db` creates the administrator `admin@example.test` (password = what you put in `ADMIN_SEED_PASSWORD`), the fictional exam records, two colleges with branches and seats, and the eligibility cut-offs. Candidates register themselves.
+`seed-db` creates the administrator `admin@example.test` (password = what you put in `ADMIN_SEED_PASSWORD`), the fictional exam records, six Karnataka engineering colleges with branches and seats, and the eligibility cut-offs. The college names are real so the demo reads naturally, but every seat number is fictional and says nothing about the real colleges. Candidates register themselves.
 
 Exam details a candidate can enter (only these exact combinations exist; anything else is refused):
 
