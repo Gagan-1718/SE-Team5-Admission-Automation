@@ -1,94 +1,54 @@
 {% extends "base.html" %}
+{% import "_ui.html" as ui %}
 
-{% block title %}Candidate Management | Team 5{% endblock %}
+{% block title %}Candidates{% endblock %}
+{% block breadcrumb %}Candidates{% endblock %}
 
 {% block content %}
-
-{% include "catalogue/_styles.html" %}
+{% call ui.page_header("Candidates", "Search registered candidates and see where each application stands.", "Administrator") %}{% endcall %}
 
 <section class="card">
-    <header class="page-header">
-        <div>
-            <div class="eyebrow">Administrator portal</div>
-            <h1>Candidate Management</h1>
-            <p class="note">
-                View and search registered candidate accounts.
-            </p>
-        </div>
-    </header>
-
-    <form method="get"
-          action="{{ url_for('admin.candidate_list') }}"
-          class="cat-filter cat-form">
-
-        <div>
-            <label for="q">Search candidates</label>
-            <input
-                type="text"
-                id="q"
-                name="q"
-                value="{{ query }}"
-                placeholder="Search by name, email or mobile"
-            >
-        </div>
-
-        <div>
-            <button type="submit" class="button">
-                Search
-            </button>
-
-            <a href="{{ url_for('admin.candidate_list') }}">
-                Clear
-            </a>
-        </div>
-    </form>
-
-    <h2>
-        Registered candidates
-        ({{ candidates|length }})
-    </h2>
-
-    {% if candidates %}
-
-    <div style="overflow-x: auto;">
-        <table class="cat-table">
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Name</th>
-                    <th>Email</th>
-                    <th>Mobile</th>
-                    <th>Rank</th>
-                    <th>Category</th>
-                </tr>
-            </thead>
-
-            <tbody>
-                {% for candidate in candidates %}
-                <tr>
-                    <td>{{ candidate.id }}</td>
-                    <td>{{ candidate.name }}</td>
-                    <td>{{ candidate.email }}</td>
-                    <td>{{ candidate.mobile or "—" }}</td>
-                    <td>{{ candidate.rank if candidate.rank is not none else "—" }}</td>
-                    <td>{{ candidate.category or "—" }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+  <form method="get" action="{{ url_for('admin.candidate_list') }}" class="toolbar" role="search">
+    <div class="field grow">
+      <label for="q">Search by name, email or mobile</label>
+      <input type="search" id="q" name="q" value="{{ query }}" placeholder="e.g. Rao, cand0042 or 97000">
     </div>
+    <button type="submit" class="btn primary">Search</button>
+    {% if query %}<a class="btn ghost" href="{{ url_for('admin.candidate_list') }}">Clear</a>{% endif %}
+  </form>
 
-    {% else %}
+  <p class="hint">{{ total }} candidate{{ "" if total == 1 else "s" }}{% if query %} matching "{{ query }}"{% endif %}</p>
 
-    <p class="note">
-        {% if query %}
-            No candidates found matching "{{ query }}".
-        {% else %}
-            No registered candidates are available.
-        {% endif %}
-    </p>
+  {% if rows %}
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead><tr>
+        <th scope="col">Name</th><th scope="col">Contact</th><th scope="col">Rank</th>
+        <th scope="col">Category</th><th scope="col">Application</th>
+      </tr></thead>
+      <tbody>
+        {% for user, status, reference in rows %}
+        <tr>
+          <td><strong>{{ user.name }}</strong></td>
+          <td><span class="cell-main">{{ user.email }}</span><span class="cell-sub">{{ user.mobile or "—" }}</span></td>
+          <td class="num">{{ user.rank if user.rank is not none else "—" }}</td>
+          <td>{{ user.category or "—" }}</td>
+          <td>{{ ui.pill(status) }}{% if reference %}<span class="cell-sub">{{ reference }}</span>{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 
-    {% endif %}
+  {% if pages > 1 %}
+  <nav class="pager" aria-label="Candidate pages">
+    {% if page > 1 %}<a class="btn ghost sm" href="{{ url_for('admin.candidate_list', q=query or None, page=page - 1) }}">Previous</a>{% endif %}
+    <span>Page {{ page }} of {{ pages }}</span>
+    {% if page < pages %}<a class="btn ghost sm" href="{{ url_for('admin.candidate_list', q=query or None, page=page + 1) }}">Next</a>{% endif %}
+  </nav>
+  {% endif %}
+  {% else %}
+    {{ ui.empty_state("No candidates found", 'Nobody matches "' ~ query ~ '". Try part of a name, email or mobile number.' if query else "No candidate has registered yet.") }}
+  {% endif %}
 </section>
-
 {% endblock %}
