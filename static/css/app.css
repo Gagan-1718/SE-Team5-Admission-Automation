@@ -270,6 +270,17 @@ table.data-table td.num, table.data-table th.num { text-align: right; font-varia
 .check-list li { display: flex; align-items: center; gap: 10px; font-weight: 600; }
 .check-list .icon { color: var(--ok); }
 .review-list { padding: 0 20px; }
+.review-summary { margin: 14px 0 10px; }
+.review-person { padding: 0; margin-bottom: 16px; border-top: 3px solid var(--navy); }
+.review-person-head { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 14px 20px; background: var(--band); border-bottom: 1px solid var(--line); }
+.review-person-head .app-avatar { width: 38px; height: 38px; font-size: 1rem; }
+.review-person-head h2 { font-size: 1.08rem; color: var(--navy); }
+.review-person-head .grow { flex: 1 1 auto; }
+.review-tally { font-size: .84rem; font-weight: 700; color: var(--ink-2); white-space: nowrap; }
+.review-person .review-item { padding: 12px 20px; }
+.review-person .review-item.is-match { box-shadow: inset 3px 0 0 var(--saffron); }
+.review-person .review-item.is-missing { color: var(--ink-2); }
+.review-who h3 { font-size: .98rem; }
 .review-item { display: grid; grid-template-columns: minmax(200px, 1fr) auto; gap: 10px 16px; align-items: center; padding: 14px 0; border-bottom: 1px solid var(--line); }
 .review-item:last-child { border-bottom: 0; }
 .review-who { display: flex; align-items: center; gap: 12px; }
