@@ -164,18 +164,6 @@ def me():
     return jsonify(user)
 
 
-@bp.get("/admin-check")
-@role_required("administrator")
-def admin_check():
-    return jsonify(message="Administrator access granted.")
-
-
-@bp.get("/dashboard")
-@login_required
-def dashboard():
-    return jsonify(message="Candidate dashboard", identity=current_identity())
-
-
 @page_login_required
 def candidate_dashboard():
     """Render the candidate journey without reading another module's tables."""
