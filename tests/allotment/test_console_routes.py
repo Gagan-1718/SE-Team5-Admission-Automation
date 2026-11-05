@@ -92,3 +92,17 @@ def test_a_second_run_from_the_console_explains_why(app, oracle):
     page = admin.get("/admin/allotment").get_data(as_text=True)
     assert "There is one cycle only." in page
     assert runs() == 1
+
+
+def step_state(page, label):
+    """The pill text that follows a stepper label, e.g. 'Current'."""
+    after = page.split(label, 1)[1]
+    return after.split('<span class="pill', 1)[1].split(">", 1)[1].split("<", 1)[0]
+
+
+def test_after_a_clean_run_publish_is_the_current_step(app, oracle):
+    admin = login_client(app, "administrator", 510)
+    admin.post("/admin/allotment/run")
+    page = admin.get("/admin/allotment").get_data(as_text=True)
+    assert step_state(page, "3. Review result") == "Done"
+    assert step_state(page, "4. Publish") == "Current"
