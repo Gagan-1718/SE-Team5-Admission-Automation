@@ -135,9 +135,8 @@ def test_logout_invalidates_old_cookie_on_application_and_documents(app):
 def test_anonymous_requests_are_denied_on_discovered_protected_routes(client):
     protected_requests = [
         ("get", "/accounts/me", 401),
-        ("get", "/accounts/dashboard", 401),
         ("get", "/accounts/profile", 401),
-        ("get", "/accounts/admin-check", 401),
+        ("get", "/admin/dashboard.json", 401),
         ("get", "/accounts/profile-page", 302),
         ("post", "/accounts/logout", 401),
         ("get", "/application", 302),
