@@ -9,6 +9,7 @@ This script does not create, reset, or seed database tables.
 """
 
 import argparse
+import functools
 import os
 import random
 import sys
@@ -61,13 +62,18 @@ BOARDS = (
 )
 
 FIRST_NAMES = (
-    "Aarav", "Ananya", "Ishaan", "Diya", "Kabir",
-    "Meera", "Rohan", "Saanvi", "Aditya", "Nisha",
+    "Aarav", "Ananya", "Ishaan", "Diya", "Kabir", "Meera", "Rohan", "Saanvi", "Aditya", "Nisha",
+    "Varun", "Tanvi", "Karthik", "Pooja", "Siddharth", "Kavya", "Nikhil", "Shreya", "Pranav", "Bhavana",
+    "Rahul", "Sneha", "Abhishek", "Divya", "Manoj", "Keerthana", "Suhas", "Harini", "Vivek", "Amrutha",
+    "Gautam", "Lavanya", "Chetan", "Spoorthi", "Darshan", "Nandini", "Akash", "Pallavi", "Yash", "Deepika",
+    "Tejas", "Ramya", "Sanjay", "Aishwarya", "Arjun", "Megha", "Kiran", "Sahana", "Mohit", "Prerana",
 )
 
 LAST_NAMES = (
-    "Sharma", "Rao", "Patel", "Nair", "Reddy",
-    "Kumar", "Das", "Iyer", "Menon", "Joshi",
+    "Sharma", "Rao", "Patel", "Nair", "Reddy", "Kumar", "Das", "Iyer", "Menon", "Joshi",
+    "Gowda", "Hegde", "Shetty", "Kulkarni", "Bhat", "Naik", "Kamath", "Pai", "Shenoy", "Acharya",
+    "Prabhu", "Murthy", "Desai", "Patil", "Kini", "Rai", "Hiremath", "Deshpande", "Bhandari", "Karanth",
+    "Srinivas", "Prasad", "Shastry", "Mallya", "Ballal", "Poojary", "Salian", "Kotian", "Urs", "Jain",
 )
 
 ELIGIBLE_RANK_START = 100
@@ -101,11 +107,17 @@ def candidate_mobile(number):
     return str(9700000000 + number)
 
 
-def candidate_name(number, rng):
-    first = rng.choice(FIRST_NAMES)
-    last = rng.choice(LAST_NAMES)
+@functools.lru_cache(maxsize=8)
+def _shuffled_names(seed):
+    pairs = [(first, last) for first in FIRST_NAMES for last in LAST_NAMES]
+    random.Random(f"names:{seed}").shuffle(pairs)
+    return pairs
 
-    return f"{first} {last} Candidate {number:04d}"
+
+def candidate_name(index, seed):
+    """A different realistic name for every candidate; the same seed gives the same names."""
+    first, last = _shuffled_names(seed)[index % (len(FIRST_NAMES) * len(LAST_NAMES))]
+    return f"{first} {last}"
 
 
 def candidate_group(index):
@@ -377,8 +389,7 @@ def generate_dataset(candidate_count, seed):
             # Each candidate has an independent RNG.
             candidate_rng = random.Random(f"{seed}:{index}")
 
-            # Generate the name on every run to preserve the RNG sequence.
-            generated_name = candidate_name(number, candidate_rng)
+            generated_name = candidate_name(index, seed)
 
             exam_values = make_exam_values(
                 index,
