@@ -1,11 +1,24 @@
 {% extends "base.html" %}
-
+{% import "_ui.html" as ui %}
 {% block title %}Eligibility{% endblock %}
-
 {% block content %}
+{% call ui.page_header("Your eligibility", "Decided automatically from your exam rank, your category's cut-off and your document verification.", "Candidate journey") %}{% endcall %}
+{% set kind = "ok" if result.status == "Eligible" else "bad" if result.status == "Not Eligible" else "wait" %}
+<section class="status-panel {{ kind }}">
+  <div class="status-label">Status</div>
+  <div class="status-value">{{ result.status }}</div>
+  <p class="status-reason">{{ result.reason }}</p>
+</section>
 <section class="card">
-  <h1>Your eligibility</h1>
-  <p>Status: <span class="badge">{{ result.status }}</span></p>
-  <p>{{ result.reason }}</p>
+  <h2>What this means</h2>
+  {% if result.status == "Eligible" %}
+    <p class="hint">You can now fill and lock your college choices. Only eligible candidates with locked choices take part in the allotment.</p>
+    <div class="row" style="margin-top:12px"><a class="btn primary" href="/choices">Go to choice filling</a></div>
+  {% elif result.status == "Not Eligible" %}
+    <p class="hint">Your rank is above the cut-off for your category, or no rule exists for it, so you cannot take part in this allotment cycle.</p>
+  {% else %}
+    <p class="hint">The decision is waiting for your exam details or for all three documents to be approved. It updates by itself; nothing to submit here.</p>
+    <div class="row" style="margin-top:12px"><a class="btn ghost" href="/documents">Check my documents</a><a class="btn ghost" href="{{ url_for('accounts.profile_page') }}">Check my exam details</a></div>
+  {% endif %}
 </section>
 {% endblock %}
