@@ -34,7 +34,7 @@ def dashboard_summary():
         db.select(Document, User.name, Application.reference_number)
         .join(User, User.id == Document.candidate_id)
         .outerjoin(Application, Application.id == Document.application_id)
-        .where(Document.status == "Pending").order_by(Document.id)
+        .where(Document.status == "Pending").order_by(Document.id.desc())
     ).all()
     return {
         "candidateCounts": {

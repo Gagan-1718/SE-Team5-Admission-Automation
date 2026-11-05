@@ -128,7 +128,7 @@ def review_queue():
     if status not in ("Pending", "Approved", "Rejected"):
         abort(400, description="Invalid document status.")
     documents = db.session.execute(
-        db.select(Document).where(Document.status == status).order_by(Document.id)
+        db.select(Document).where(Document.status == status).order_by(Document.id.desc())
     ).scalars().all()
     if request.path.endswith(".json"):
         return jsonify(documents=[document_json(d) for d in documents])
