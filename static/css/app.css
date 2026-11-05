@@ -36,7 +36,7 @@ body.app-body h2,
 body.app-body h3,
 body.app-body h4,
 body.app-body h5 { text-wrap: balance; line-height: 1.2; margin: 0; }
-body.app-body a { color: var(--brand); }
+.app-content a:not(.btn) { color: var(--brand); }
 :focus-visible { outline: 3px solid #7fb2ee; outline-offset: 2px; }
 
 .app-shell { display: grid; grid-template-columns: 224px minmax(0, 1fr); min-height: 100vh; }
@@ -48,7 +48,7 @@ body.app-body a { color: var(--brand); }
   flex-direction: column;
   gap: 4px;
 }
-.brandmark { display: flex; align-items: center; gap: 10px; color: #fff; font-weight: 700; padding: 2px 8px 16px; letter-spacing: -.01em; }
+.brandmark { text-decoration: none; display: flex; align-items: center; gap: 10px; color: #fff; font-weight: 700; padding: 2px 8px 16px; letter-spacing: -.01em; }
 .brandmark-mark { width: 28px; height: 28px; border-radius: 8px; background: var(--brand); display: grid; place-items: center; color: #fff; font-weight: 800; }
 .nav-group { font-size: .68rem; letter-spacing: .12em; text-transform: uppercase; color: #7f9bbb; padding: 12px 10px 4px; }
 .app-nav-link {
