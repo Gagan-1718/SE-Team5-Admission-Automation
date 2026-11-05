@@ -1,16 +1,26 @@
 {% extends "base.html" %}
-{% import "_ui.html" as ui %}
 {% block title %}Admission Automation{% endblock %}
 {% block content %}
-{% call ui.page_header("From application to seat, in one place.", "An educational prototype that guides candidates through each admission step and gives administrators a clear review trail.", "Team 5 · Sprint Two") %}
-  <div class="row"><a class="btn primary" href="{{ url_for('accounts.login_page') }}">Log in</a><a class="btn ghost" href="{{ url_for('accounts.registration_page') }}">Register</a></div>
-{% endcall %}
-{% call ui.card("Nine stages, one direction", "Each stage opens when the previous one is ready. Statuses explain what needs attention next.") %}
-  <ol class="stepper">
-    {% for item in [("Registration", "Create a candidate account.", "done"), ("Exam details", "Enter a seeded fictional record.", "current"), ("Application", "Save a draft and submit it.", "locked"), ("Documents", "Upload and receive verification.", "locked"), ("Eligibility", "Receive a rule-based decision.", "locked"), ("Choice filling", "Rank college and branch preferences.", "locked"), ("Allotment", "The administrator runs the single cycle.", "locked"), ("Results", "See the official published outcome.", "locked"), ("Seat decision", "Accept or reject once.", "locked")] %}
-    <li><span class="step-dot {{ item[2] }}" aria-hidden="true">{{ loop.index }}</span><div><b>{{ item[0] }}</b><span class="detail">{{ item[1] }}</span></div><span class="pill {{ 'ok' if item[2] == 'done' else 'info' if item[2] == 'current' else 'idle' }}">{{ item[2]|capitalize }}</span></li>
-    {% endfor %}
-  </ol>
-{% endcall %}
-{% call ui.card("A fictional, offline-friendly prototype") %}<p>Admission Automation uses fictional exam records and system fonts only. It is an educational software-engineering project, not an official KEA or COMEDK system.</p>{% endcall %}
+<div class="landing">
+  <section class="landing-hero">
+    <div>
+      <div class="eyebrow">Engineering admission and counselling · Karnataka</div>
+      <h1>From application to seat, in one place.</h1>
+      <p>Register, submit your application and documents, check your eligibility, fill your college choices and see your allotted seat. Administrators verify documents, run the single allotment cycle and publish results.</p>
+      <div class="row">
+        {% if g.current_user %}
+          <a class="btn primary lg" href="{{ '/admin/dashboard' if g.current_user.role == 'administrator' else '/dashboard' }}">Go to your dashboard</a>
+        {% else %}
+          <a class="btn primary lg" href="{{ url_for('accounts.login_page') }}">Log in</a>
+          <a class="btn ghost lg" href="{{ url_for('accounts.registration_page') }}">Register as a candidate</a>
+        {% endif %}
+      </div>
+    </div>
+    <div class="landing-facts" aria-label="About this system">
+      <div><strong>One counselling cycle</strong><span>Seats are allotted once, by rank and your saved choice order.</span></div>
+      <div><strong>KCET and COMEDK ranks</strong><span>Exam details are checked against seeded fictional records.</span></div>
+      <div><strong>Transparent decisions</strong><span>Every administrator action is recorded in an audit log.</span></div>
+    </div>
+  </section>
+</div>
 {% endblock %}
