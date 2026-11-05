@@ -132,17 +132,54 @@ def review_queue():
     ).scalars().all()
     if request.path.endswith(".json"):
         return jsonify(documents=[document_json(d) for d in documents])
-    people = {}
-    if documents:
-        people = {cid: (name, reference) for cid, name, reference in db.session.execute(
-            db.select(User.id, User.name, Application.reference_number)
-            .outerjoin(Application, Application.candidate_id == User.id)
-            .where(User.id.in_({d.candidate_id for d in documents}))
-        )}
     counts = dict(db.session.execute(
         db.select(Document.status, db.func.count()).group_by(Document.status)).all())
-    return render_template("documents/review.html", documents=documents, people=people,
+    candidates = list(dict.fromkeys(d.candidate_id for d in documents))
+    pages = max(1, -(-len(candidates) // CANDIDATES_PER_PAGE))
+    page = min(max(request.args.get("page", 1, type=int), 1), pages)
+    shown = candidates[(page - 1) * CANDIDATES_PER_PAGE:page * CANDIDATES_PER_PAGE]
+    return render_template("documents/review.html", groups=candidate_groups(shown),
+                           candidate_total=len(candidates), page=page, pages=pages,
                            counts=counts, status=status, csrf_token=review_token())
+
+
+CANDIDATES_PER_PAGE = 20
+
+
+def candidate_groups(order):
+    """One entry per candidate id in ``order``, with all of that candidate's documents.
+
+    The queue is filtered by status, but the reviewer sees the candidate's full set so a
+    marksheet can be checked against the ID proof and category certificate beside it.
+    """
+    if not order:
+        return []
+    people = {cid: (name, reference) for cid, name, reference in db.session.execute(
+        db.select(User.id, User.name, Application.reference_number)
+        .outerjoin(Application, Application.candidate_id == User.id)
+        .where(User.id.in_(order))
+    )}
+    owned = {cid: [] for cid in order}
+    for document in db.session.execute(
+        db.select(Document).where(Document.candidate_id.in_(order)).order_by(Document.id.desc())
+    ).scalars():
+        owned[document.candidate_id].append(document)
+    rank = {name: index for index, name in enumerate(REQUIRED_DOCUMENT_TYPES)}
+    groups = []
+    for cid in order:
+        name, reference = people.get(cid, (f"Candidate {cid}", None))
+        docs = sorted(owned[cid], key=lambda d: rank.get(d.document_type, len(rank)))
+        uploaded = {d.document_type for d in docs}
+        groups.append({
+            "name": name,
+            "reference": reference,
+            "documents": docs,
+            "missing": [t for t in REQUIRED_DOCUMENT_TYPES if t not in uploaded],
+            "required": len(REQUIRED_DOCUMENT_TYPES),
+            "approved": sum(d.status == "Approved" for d in docs),
+            "pending": sum(d.status == "Pending" for d in docs),
+        })
+    return groups
 
 
 @bp.post("/admin/documents/<int:document_id>/review")
