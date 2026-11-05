@@ -1,35 +1,45 @@
 {% extends "base.html" %}
+{% import "_ui.html" as ui %}
 {% block title %}Audit log{% endblock %}
 {% block content %}
-{% include "catalogue/_styles.html" %}
+{% set labels = {
+  "document.approve": "Document approved", "document.reject": "Document rejected",
+  "college.create": "College added", "college.update": "College edited",
+  "branch.create": "Branch added", "branch.update": "Branch renamed", "seats.update": "Seat capacity changed",
+  "rule.create": "Eligibility rule added", "rule.update": "Eligibility rule changed",
+  "allotment.run": "Allotment run", "results.publish": "Results published", "results.decision": "Seat decision recorded",
+} %}
+{% call ui.page_header("Audit log", "Every administrator action and seat decision, newest first. Read-only: entries cannot be edited or deleted.", "Administrator") %}{% endcall %}
+
 <section class="card">
-  <h1>Audit log</h1>
-  <p class="note">Read-only. Entries cannot be edited or deleted.</p>
-  <form class="cat-filter" method="get" action="/admin/audit-logs">
-    <div>
+  <form class="toolbar" method="get" action="/admin/audit-logs" role="search">
+    <div class="field grow">
       <label for="action_type">Action type</label>
-      <input type="text" id="action_type" name="action_type" value="{{ action_type }}" placeholder="e.g. college.create">
+      <input type="text" id="action_type" name="action_type" value="{{ action_type }}" placeholder="e.g. college.create or document.reject">
     </div>
-    <button type="submit">Filter</button>
+    <button class="btn primary" type="submit">Filter</button>
+    {% if action_type %}<a class="btn ghost" href="/admin/audit-logs">Clear</a>{% endif %}
   </form>
   {% if entries %}
-  <table class="cat-table">
-    <thead><tr><th>#</th><th>Time (UTC)</th><th>Actor</th><th>Action</th><th>Target</th><th>Outcome</th></tr></thead>
-    <tbody>
-      {% for e in entries %}
-      <tr>
-        <td>{{ e.id }}</td>
-        <td>{{ e.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
-        <td>{{ e.actor_role }} #{{ e.actor_id }}</td>
-        <td>{{ e.action_type }}</td>
-        <td>{% if e.target_type %}{{ e.target_type }} #{{ e.target_id }}{% else %}-{% endif %}</td>
-        <td>{{ e.outcome }}</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+  <p class="hint">{{ entries|length }} entr{{ "y" if entries|length == 1 else "ies" }}{% if action_type %} for "{{ action_type }}"{% endif %}</p>
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead><tr><th scope="col">Time (UTC)</th><th scope="col">Actor</th><th scope="col">Action</th><th scope="col">Target</th><th scope="col">Outcome</th></tr></thead>
+      <tbody>
+        {% for e in entries %}
+        <tr>
+          <td class="num">{{ e.created_at.strftime('%d %b %Y, %H:%M:%S') }}</td>
+          <td><span class="cell-main">{{ names.get(e.actor_id, "Account " ~ e.actor_id) }}</span><span class="cell-sub">{{ e.actor_role|capitalize }}</span></td>
+          <td><span class="cell-main">{{ labels.get(e.action_type, e.action_type) }}</span><span class="cell-sub">{{ e.action_type }}</span></td>
+          <td>{% if e.target_type %}{{ e.target_type|replace("_", " ") }} #{{ e.target_id }}{% else %}—{% endif %}</td>
+          <td><span class="pill {{ 'ok' if e.outcome == 'Success' else 'bad' }}">{{ e.outcome }}</span></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
   {% else %}
-  <p>No audit entries yet.</p>
+    {{ ui.empty_state("No audit entries yet" if not action_type else "No entries for this action", "Entries appear here as soon as an administrator reviews a document, changes the catalogue or rules, runs allotment or publishes results.") }}
   {% endif %}
 </section>
 {% endblock %}
