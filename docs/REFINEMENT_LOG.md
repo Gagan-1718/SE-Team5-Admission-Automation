@@ -23,3 +23,9 @@ Status: Open, Decided, Fixed (with commit or PR), Won't change (with reason).
 | R2-1 | The home (hero) page needs work | The short landing page is one panel; it does not feel like a real portal home. | Portal home: full-width navy hero with register and log-in buttons, counselling-at-a-glance box, six-step how-it-works strip, candidate and administrator sections, participating colleges read from the catalogue | Fixed (ui/redesign) |
 | R2-2 | The font is bad for this kind of website | Serif (Georgia) headings feel like a newspaper, not an admission portal. | Serif removed; one sans-serif family (Segoe UI on Windows, system font elsewhere) for headings and text, no download needed | Fixed (ui/redesign) |
 | R2-3 | The left sidebar looked better than the top bar | The portal top menu replaced the earlier sidebar. | Left sidebar back in the portal colours (navy, square, saffron edge and active marker, icons, user block); slide-out menu on phones; public pages keep the top header | Fixed (ui/redesign) |
+
+## Round 3 (5 November 2026)
+
+| # | Point raised | Explanation | Decision / fix | Status |
+|---|---|---|---|---|
+| R3-1 | The review queue should show the person's name with their three documents | The queue listed single documents, so one candidate's marksheet, ID proof and certificate were scattered across the list. | One card per candidate (name, reference, "2 of 3 approved") with all three documents inside; missing ones show "Not uploaded"; Approve/Reject stay on each pending document; 20 candidates per page | Fixed (ui/redesign) |
