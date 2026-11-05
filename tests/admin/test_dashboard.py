@@ -43,10 +43,10 @@ def test_counts_match_the_data(app, admin):
     assert body["candidateCounts"]["total"] == 2
     assert body["statusCounts"]["applications"] == {"Draft": 1, "Submitted": 1}
     assert body["statusCounts"]["documents"] == {"Pending": 2, "Approved": 1, "Rejected": 1}
-    assert [d["documentType"] for d in body["pendingDocuments"]] == ["Marksheet", "ID Proof"]
+    assert [d["documentType"] for d in body["pendingDocuments"]] == ["ID Proof", "Marksheet"]  # newest first
     assert b"ID Proof" in admin.get("/admin/dashboard").data
     # the queue names the candidate and reference so the administrator does not have to look up ids
-    first_pending = body["pendingDocuments"][0]
+    first_pending = body["pendingDocuments"][-1]
     assert first_pending["candidateName"] == "Fictional candidate 3"
     assert first_pending["referenceNumber"] == "ADM-2026-000002"
     assert b"Fictional candidate 3" in admin.get("/admin/dashboard").data

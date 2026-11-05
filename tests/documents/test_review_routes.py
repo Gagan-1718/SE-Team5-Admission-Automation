@@ -189,3 +189,12 @@ def test_html_review_confirms_what_was_decided(admin, document):
     response = client.post(f"/admin/documents/{document.id}/review",
                            data={"decision": "Approved", "csrf_token": token}, follow_redirects=True)
     assert b"flash success" in response.data and b"approved" in response.data.lower()
+
+
+def test_queue_lists_the_newest_upload_first(admin, document):
+    newer = Document(candidate_id=2, application_id=2, document_type="ID Proof",
+                     stored_name="newer-upload.pdf", status="Pending")
+    db.session.add(newer)
+    db.session.commit()
+    ids = [d["id"] for d in admin[0].get("/admin/documents.json").json["documents"]]
+    assert ids == [newer.id, document.id]
