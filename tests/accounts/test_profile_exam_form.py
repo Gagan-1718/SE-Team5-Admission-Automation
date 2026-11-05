@@ -63,6 +63,10 @@ def test_valid_exam_details_are_saved_and_profile_data_persists(client, app, mon
     reloaded_page = client.get("/accounts/profile-page").get_data(as_text=True)
     assert "data.rank" in reloaded_page
     assert "data.category" in reloaded_page
+    # after a reload the page must also show the saved exam type and score, not an empty box
+    assert profile.get_json()["exam_type"] == "KCET"
+    assert profile.get_json()["score"] == 185.0
+    assert "data.score" in reloaded_page and "data.exam_type" in reloaded_page
 
 
 def test_non_matching_exam_details_return_visible_error_contract(client, app, monkeypatch):
