@@ -15,6 +15,7 @@ from app.catalogue.seed import seed as seed_catalogue
 from app.eligibility.seed import seed as seed_eligibility
 from app.choices.models import Choice, ChoiceLock
 from app.catalogue.models import Branch, Seat
+from app.catalogue.seed import SEED_COLLEGES
 from app.eligibility.services import get_eligibility
 from app.catalogue.seed import seed as seed_catalogue
 from app.eligibility.seed import seed as seed_eligibility
@@ -418,4 +419,6 @@ def test_generator_does_not_change_seat_matrix(app, demo_environment):
         ]
 
         assert before == after
-        assert sum(row[2] for row in after) == 240
+        seeded_total = sum(sum(caps.values()) for _, branches in SEED_COLLEGES.values()
+                           for caps in branches.values())
+        assert sum(row[2] for row in after) == seeded_total
