@@ -229,6 +229,8 @@ def profile():
         role=user.role,
         rank=user.rank,
         category=user.category,
+        exam_type=user.exam_record.exam_type if user.exam_record else None,
+        score=user.exam_record.score if user.exam_record else None,
     )
 
 
