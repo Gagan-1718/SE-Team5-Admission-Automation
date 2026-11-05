@@ -54,8 +54,11 @@
   }
 
   function setAddButtons() {
+    const chosen = new Set(state.choices.map(function (choice) { return choice.branchId; }));
     document.querySelectorAll("[data-choice-add]").forEach(function (button) {
-      button.disabled = !eligible || state.locked || state.busy;
+      const added = chosen.has(Number(button.dataset.branchId));
+      button.disabled = !eligible || state.locked || state.busy || added;
+      button.textContent = added ? "Added" : "Add";
     });
   }
 
