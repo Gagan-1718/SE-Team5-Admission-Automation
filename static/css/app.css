@@ -306,3 +306,37 @@ table.data-table td.num, table.data-table th.num { text-align: right; font-varia
 .next-step.problem .next-step-label { color: var(--bad); }
 .next-step-icon { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; background: var(--brand-wash); color: var(--brand); flex: none; }
 .next-step.problem .next-step-icon { background: var(--bad-wash); color: var(--bad); }
+
+/* ------------------------------------------------------- documents */
+.doc-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.doc-card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow); display: grid; gap: 10px; align-content: start; }
+.doc-card h2 { font-size: 1.05rem; }
+.doc-card.approved { border-top: 3px solid var(--ok); }
+.doc-card.pending { border-top: 3px solid #e0a733; }
+.doc-card.rejected { border-top: 3px solid var(--bad); }
+.doc-card.missing { border-top: 3px dashed var(--line-2); }
+.doc-card-top { display: flex; align-items: center; justify-content: space-between; }
+.doc-card .btn { justify-self: start; }
+.doc-icon { width: 40px; height: 40px; border-radius: 11px; background: var(--brand-wash); color: var(--brand); display: grid; place-items: center; flex: none; }
+.doc-reason { background: var(--bad-wash); color: #8a1f1f; border-radius: var(--radius-sm); padding: 10px 12px; font-size: .88rem; }
+.doc-resubmit { display: grid; gap: 8px; }
+.file-drop { position: relative; display: grid; justify-items: center; gap: 6px; text-align: center; padding: 26px 16px; border: 2px dashed var(--line-2); border-radius: var(--radius); background: #fafcff; color: var(--ink-2); cursor: pointer; transition: border-color .15s ease, background .15s ease; }
+.file-drop:hover, .file-drop:focus-within { border-color: var(--brand); background: var(--brand-wash); }
+.file-drop.has-file { border-style: solid; border-color: var(--ok); background: var(--ok-wash); color: #0b5e41; }
+.file-drop.sm { padding: 14px 12px; grid-auto-flow: column; justify-content: center; align-items: center; }
+.file-drop strong { color: var(--brand); }
+.file-drop input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.check-list { list-style: none; padding: 0; margin: 14px 0; display: grid; gap: 10px; }
+.check-list li { display: flex; align-items: center; gap: 10px; font-weight: 600; }
+.check-list .icon { color: var(--ok); }
+.tab-count { display: inline-grid; place-items: center; min-width: 22px; height: 20px; padding: 0 6px; border-radius: 99px; background: rgb(15 30 51 / 7%); font-size: .74rem; margin-left: 4px; }
+.review-list { padding: 6px 22px; }
+.review-item { display: grid; grid-template-columns: minmax(200px, 1fr) auto; gap: 10px 16px; align-items: center; padding: 16px 0; border-bottom: 1px solid #eef2f7; }
+.review-item:last-child { border-bottom: 0; }
+.review-who { display: flex; align-items: center; gap: 12px; }
+.review-who h2 { font-size: 1rem; }
+.review-file { display: flex; align-items: center; gap: 10px; justify-self: end; }
+.review-reason { grid-column: 1 / -1; font-size: .88rem; color: var(--ink-2); }
+.review-form { grid-column: 1 / -1; display: flex; gap: 8px; flex-wrap: wrap; }
+.review-form .input { flex: 1 1 260px; min-height: 36px; padding: 7px 12px; font-size: .88rem; }
+@media (max-width: 900px) { .doc-grid { grid-template-columns: 1fr; } .review-item { grid-template-columns: 1fr; } .review-file { justify-self: start; } }
