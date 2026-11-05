@@ -198,3 +198,36 @@ def test_queue_lists_the_newest_upload_first(admin, document):
     db.session.commit()
     ids = [d["id"] for d in admin[0].get("/admin/documents.json").json["documents"]]
     assert ids == [newer.id, document.id]
+
+
+def test_html_queue_groups_each_candidates_documents_together(admin, document):
+    """R3-1: the reviewer sees one card per candidate with all of their documents."""
+    db.session.add_all([
+        Document(candidate_id=1, application_id=1, document_type='ID Proof',
+                 stored_name='id.pdf', status='Approved'),
+        Document(candidate_id=2, application_id=2, document_type='Marksheet',
+                 stored_name='other.pdf', status='Pending'),
+    ])
+    db.session.commit()
+    page = admin[0].get('/admin/documents').get_data(as_text=True)
+    assert page.count('class="card review-person"') == 2
+    assert '2 candidates with pending documents' in page
+    cards = page.split('class="card review-person"')[1:]
+    candidate_two, candidate_one = cards  # newest upload (candidate 2) comes first
+    assert '0 of 3 approved' in candidate_two and candidate_two.count('Not uploaded') == 2
+    assert 'Marksheet' in candidate_one and 'ID Proof' in candidate_one
+    assert '1 of 3 approved' in candidate_one and 'Not uploaded' in candidate_one
+
+
+def test_html_queue_pages_by_candidate(admin, monkeypatch):
+    from app.documents import routes
+    monkeypatch.setattr(routes, 'CANDIDATES_PER_PAGE', 1)
+    db.session.add_all([
+        Document(candidate_id=c, application_id=c, document_type='Marksheet',
+                 stored_name=f'm{c}.pdf', status='Pending') for c in (1, 2)
+    ])
+    db.session.commit()
+    first = admin[0].get('/admin/documents').get_data(as_text=True)
+    assert first.count('class="card review-person"') == 1 and 'Page 1 of 2' in first
+    last = admin[0].get('/admin/documents?page=9').get_data(as_text=True)
+    assert 'Page 2 of 2' in last
