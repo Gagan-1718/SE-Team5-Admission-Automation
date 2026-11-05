@@ -65,15 +65,19 @@ def _console_context():
         row["capacity"] += seat.capacity
 
     published = _is_published(run) if run else False
+    report = services.seat_consistency_report() if run else None
+    review = "locked" if not run else ("problem" if report else "done")
+    publish = "done" if published else ("current" if review == "done" else "locked")
     steps = [
         {"label": "1. Pre-run checks", "state": "done" if (run or can_run) else "problem",
          "detail": "Passed" if (run or can_run) else "Fix the failed check below"},
         {"label": "2. Run allotment", "state": "done" if run else ("current" if can_run else "locked"),
          "detail": f"Done in {run.duration_ms / 1000:.1f} s" if run else "Runs once and cannot be repeated"},
-        {"label": "3. Review result", "state": ("done" if published else "current") if run else "locked",
-         "detail": "Check the numbers and the consistency check"},
-        {"label": "4. Publish", "state": "done" if published else "locked",
-         "detail": "Candidates can now see results" if published else "After review"},
+        {"label": "3. Review result", "state": review,
+         "detail": "Seat counts do not match; do not publish" if review == "problem"
+         else "Numbers and consistency check below"},
+        {"label": "4. Publish", "state": publish,
+         "detail": "Candidates can now see results" if published else "Make results visible to candidates"},
     ]
     return {
         "run": run,
@@ -81,7 +85,7 @@ def _console_context():
         "can_run": can_run,
         "steps": steps,
         "branches": sorted(branches.values(), key=lambda b: b["label"]),
-        "report": services.seat_consistency_report() if run else None,
+        "report": report,
         "published": published,
         "publication": publication_details(run.id) if run else None,
         "decisions": decision_summary(run.id) if run else None,
