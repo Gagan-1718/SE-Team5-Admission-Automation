@@ -1,49 +1,61 @@
 {% extends "base.html" %}
-
+{% import "_ui.html" as ui %}
 {% block title %}Upload document{% endblock %}
-
+{% block breadcrumb %}Upload document{% endblock %}
 {% block content %}
-<h1>Upload admission document</h1>
-
-<p>Upload documents for your submitted application.</p>
-<p><a href="{{ url_for('documents.status_page') }}">View document status</a></p>
-
-<p>Allowed formats: PDF, JPEG and PNG. Maximum size: 2 MB.</p>
+{% call ui.page_header("Upload admission document", "Upload documents for your submitted application, one at a time.", "Documents") %}
+  <a class="btn ghost" href="{{ url_for('documents.status_page') }}">View document status</a>
+{% endcall %}
 
 {% if success %}
-<p role="status">
-  Document uploaded successfully. Status: Pending Verification.
-</p>
+  {% call ui.callout("ok", "Document uploaded successfully.") %}<p>Status: Pending Verification. An administrator will check it.</p>{% endcall %}
 {% endif %}
-
 {% if error %}
-<p role="alert">{{ error }}</p>
+  {% call ui.callout("bad", "Upload not accepted") %}<p role="alert">{{ error }}</p>{% endcall %}
 {% endif %}
 
-<form method="post" enctype="multipart/form-data">
-  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+<div class="grid g2">
+  <section class="card">
+    <form method="post" enctype="multipart/form-data" class="stack">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <div class="field">
+        <label for="document_type">Document type</label>
+        <select id="document_type" name="document_type" required>
+          <option value="">Choose a document type</option>
+          {% for document_type in document_types %}
+          <option value="{{ document_type }}">{{ document_type }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label for="file">Select document</label>
+        <label class="file-drop" for="file">
+          {{ ui.icon("upload", 26) }}
+          <span><strong>Choose a file</strong> or drop it here</span>
+          <span class="help" data-file-name>PDF, JPEG or PNG · up to 2 MB</span>
+          <input id="file" name="file" type="file" accept=".pdf,.jpg,.jpeg,.png" required>
+        </label>
+      </div>
+      <div><button class="btn primary lg" type="submit">{{ ui.icon("upload", 17) }} Upload document</button></div>
+    </form>
+  </section>
 
-  <p>
-    <label for="document_type">Document type</label>
-    <select id="document_type" name="document_type" required>
-      <option value="">Choose a document type</option>
-      {% for document_type in document_types %}
-      <option value="{{ document_type }}">{{ document_type }}</option>
-      {% endfor %}
-    </select>
-  </p>
-
-  <p>
-    <label for="file">Select document</label>
-    <input
-      id="file"
-      name="file"
-      type="file"
-      accept=".pdf,.jpg,.jpeg,.png"
-      required
-    >
-  </p>
-
-  <button type="submit">Upload document</button>
-</form>
+  <aside class="card">
+    <h2>What to upload</h2>
+    <p class="hint">Allowed formats: PDF, JPEG and PNG. Maximum size: 2 MB.</p>
+    <ul class="check-list">
+      {% for document_type in document_types %}<li>{{ ui.icon("check", 18) }}{{ document_type }}</li>{% endfor %}
+    </ul>
+    <p class="hint">Use clear, readable scans. Fictional documents only in this demo.</p>
+  </aside>
+</div>
+<script>
+document.querySelectorAll('.file-drop input[type=file]').forEach((input) => {
+  input.addEventListener('change', () => {
+    const label = input.closest('.file-drop').querySelector('[data-file-name]');
+    if (label && input.files.length) label.textContent = input.files[0].name;
+    input.closest('.file-drop').classList.toggle('has-file', input.files.length > 0);
+  });
+});
+</script>
 {% endblock %}
