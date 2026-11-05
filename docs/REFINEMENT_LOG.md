@@ -20,6 +20,6 @@ Status: Open, Decided, Fixed (with commit or PR), Won't change (with reason).
 
 | # | Point raised | Explanation | Decision / fix | Status |
 |---|---|---|---|---|
-| R2-1 | The home (hero) page needs work | The short landing page is one panel; it does not feel like a real portal home. | Proper portal home: full-width hero band, how-it-works steps, what candidates and administrators can do, participating colleges | Open |
-| R2-2 | The font is bad for this kind of website | Serif (Georgia) headings feel like a newspaper, not an admission portal. | One clean sans-serif family for headings and text, no serif | Open |
-| R2-3 | The left sidebar looked better than the top bar | The portal top menu replaced the earlier sidebar. | Bring back the left sidebar in the portal colours (square, navy, saffron active marker, icons); keep the top header only for the public pages | Open |
+| R2-1 | The home (hero) page needs work | The short landing page is one panel; it does not feel like a real portal home. | Portal home: full-width navy hero with register and log-in buttons, counselling-at-a-glance box, six-step how-it-works strip, candidate and administrator sections, participating colleges read from the catalogue | Fixed (ui/redesign) |
+| R2-2 | The font is bad for this kind of website | Serif (Georgia) headings feel like a newspaper, not an admission portal. | Serif removed; one sans-serif family (Segoe UI on Windows, system font elsewhere) for headings and text, no download needed | Fixed (ui/redesign) |
+| R2-3 | The left sidebar looked better than the top bar | The portal top menu replaced the earlier sidebar. | Left sidebar back in the portal colours (navy, square, saffron edge and active marker, icons, user block); slide-out menu on phones; public pages keep the top header | Fixed (ui/redesign) |
