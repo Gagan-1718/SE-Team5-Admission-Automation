@@ -81,10 +81,6 @@ class InvalidChoiceRequest(ChoiceError):
     status_code = 400
 
 
-def _todo(issue):
-    raise NotImplementedError(f"Contract stub: implement in issue {issue}.")
-
-
 def list_choices(candidate_id):
     """The candidate's Choice rows ordered by priority."""
     return list(
