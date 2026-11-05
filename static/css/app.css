@@ -314,3 +314,6 @@ table.data-table td.num, table.data-table th.num { text-align: right; font-varia
 .status-value { font-family: var(--serif); font-size: clamp(1.8rem, 4vw, 2.6rem); font-weight: 700; color: var(--navy); line-height: 1.15; margin: 4px 0 6px; }
 .status-panel.ok .status-value { color: var(--ok); } .status-panel.bad .status-value { color: var(--bad); } .status-panel.wait .status-value { color: var(--wait); }
 .status-reason { color: var(--ink); font-size: 1rem; }
+.rules-table .input { max-width: 180px; min-height: 36px; padding: 6px 10px; }
+.check { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; }
+.check input { width: 18px; height: 18px; accent-color: var(--navy); }
