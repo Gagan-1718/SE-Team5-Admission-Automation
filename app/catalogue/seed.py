@@ -1,4 +1,4 @@
-"""Fictional catalogue seed data, called by ``flask --app app seed-db``.
+"""Catalogue seed data (real Karnataka college names, fictional seats), called by ``flask --app app seed-db``.
 
 Safe to run repeatedly: colleges, branches and seat rows are looked up first and only
 created when missing. Existing seat capacities are never overwritten, so numbers an
@@ -10,28 +10,60 @@ from .models import Seat
 from .services import create_branch, create_college, find_branch, find_college
 
 # college name -> (city, {branch name: {category: capacity}})
+# Real Karnataka engineering colleges so the demo reads naturally; every seat number is
+# fictional demo data and does not describe the college's real intake.
+CSE, ISE, ECE = ("Computer Science and Engineering", "Information Science and Engineering",
+                 "Electronics and Communication Engineering")
 SEED_COLLEGES = {
-    "Meridian Institute of Technology": (
-        "Lakeview",
+    "RV College of Engineering": (
+        "Bengaluru",
         {
-            "Computer Science and Engineering": {"General": 30, "OBC": 15, "SC": 8, "ST": 4, "EWS": 3},
-            "Electronics and Communication Engineering": {"General": 24, "OBC": 12, "SC": 6, "ST": 3, "EWS": 3},
+            CSE: {"General": 30, "OBC": 15, "SC": 8, "ST": 4, "EWS": 3},
+            ECE: {"General": 24, "OBC": 12, "SC": 6, "ST": 3, "EWS": 3},
             "Mechanical Engineering": {"General": 18, "OBC": 9, "SC": 5, "ST": 2, "EWS": 2},
         },
     ),
-    "Cedarwood College of Engineering": (
-        "Hillcrest",
+    "BMS College of Engineering": (
+        "Bengaluru",
         {
-            "Computer Science and Engineering": {"General": 20, "OBC": 10, "SC": 5, "ST": 3, "EWS": 2},
-            "Information Science and Engineering": {"General": 16, "OBC": 8, "SC": 4, "ST": 2, "EWS": 2},
+            CSE: {"General": 20, "OBC": 10, "SC": 5, "ST": 3, "EWS": 2},
+            ISE: {"General": 16, "OBC": 8, "SC": 4, "ST": 2, "EWS": 2},
             "Civil Engineering": {"General": 12, "OBC": 6, "SC": 3, "ST": 2, "EWS": 1},
+        },
+    ),
+    "PES University": (
+        "Bengaluru",
+        {
+            CSE: {"General": 14, "OBC": 7, "SC": 4, "ST": 2, "EWS": 1},
+            "Artificial Intelligence and Machine Learning": {"General": 8, "OBC": 4, "SC": 2, "ST": 1, "EWS": 1},
+        },
+    ),
+    "M S Ramaiah Institute of Technology": (
+        "Bengaluru",
+        {
+            CSE: {"General": 12, "OBC": 6, "SC": 3, "ST": 1, "EWS": 1},
+            "Electrical and Electronics Engineering": {"General": 8, "OBC": 4, "SC": 2, "ST": 1, "EWS": 1},
+        },
+    ),
+    "Siddaganga Institute of Technology": (
+        "Tumakuru",
+        {
+            CSE: {"General": 10, "OBC": 5, "SC": 3, "ST": 1, "EWS": 1},
+            ECE: {"General": 8, "OBC": 4, "SC": 2, "ST": 1, "EWS": 1},
+        },
+    ),
+    "The National Institute of Engineering": (
+        "Mysuru",
+        {
+            CSE: {"General": 10, "OBC": 5, "SC": 2, "ST": 1, "EWS": 1},
+            ISE: {"General": 8, "OBC": 4, "SC": 2, "ST": 1, "EWS": 1},
         },
     ),
 }
 
 
 def seed():
-    """Create the fictional colleges, branches and seat rows that are missing."""
+    """Create the seeded colleges, branches and seat rows that are missing."""
     for college_name, (city, branches) in SEED_COLLEGES.items():
         college = find_college(college_name) or create_college(college_name, city)
         for branch_name, capacities in branches.items():
