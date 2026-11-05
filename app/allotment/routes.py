@@ -33,12 +33,8 @@ def _summary_json(summary):
 
 
 def _is_published(run):
-    """Asks the Result module; until its function exists the console just says 'not yet'."""
-    try:
-        from app.results.services import is_published
-        return bool(is_published(run.id))
-    except NotImplementedError:
-        return False
+    from app.results.services import is_published
+    return bool(is_published(run.id))
 
 
 def _console_context():
