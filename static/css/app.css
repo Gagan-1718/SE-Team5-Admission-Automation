@@ -122,7 +122,7 @@ body.app-body a { color: var(--brand); }
 .pill.info { background: var(--brand-wash); color: var(--brand-ink); }
 .callout { border-radius: var(--radius); padding: 14px 16px; display: flex; gap: 14px; align-items: flex-start; border: 1px solid; }
 .callout .grow { flex: 1; }
-.callout strong { display: block; }
+.callout .grow > strong:first-child { display: block; }
 .callout p { font-size: .9rem; margin: 2px 0 0; }
 .callout.info { background: var(--brand-wash); border-color: #bcd6f1; color: var(--brand-ink); }
 .callout.ok { background: var(--ok-wash); border-color: #b5dfc6; color: #0f5a37; }
