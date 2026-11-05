@@ -7,6 +7,12 @@ from app.eligibility.evaluation import PENDING, ELIGIBLE, NOT_ELIGIBLE
 from app.journey import WAITING, DONE, PROBLEM
 
 
+@pytest.fixture(autouse=True)
+def exam_details_entered(monkeypatch):
+    """These tests are about the status mapping, so the candidate has exam details by default."""
+    monkeypatch.setattr(journey, "get_exam_details", lambda candidate_id: {"rank": 1000})
+
+
 @pytest.mark.parametrize(
     ("eligibility_status", "expected_state"),
     [
@@ -65,3 +71,14 @@ def test_candidate_id_is_passed_to_eligibility_service(monkeypatch):
     journey.step_statuses(456)
 
     assert received == [456]
+
+
+def test_locked_not_waiting_while_exam_details_are_missing(monkeypatch):
+    """Waiting means someone else acts next; without exam details the candidate must act."""
+    from app.journey import LOCKED
+
+    monkeypatch.setattr(journey, "get_exam_details", lambda candidate_id: None)
+    monkeypatch.setattr(journey, "get_eligibility",
+                        lambda candidate_id: {"status": PENDING, "reason": "Exam details have not been entered yet."})
+    step = journey.step_statuses(123)[0]
+    assert step["state"] == LOCKED and "exam details" in step["detail"]
