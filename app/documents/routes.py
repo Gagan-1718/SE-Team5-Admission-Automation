@@ -6,6 +6,7 @@ from flask import (
     Blueprint,
     abort,
     current_app,
+    flash,
     jsonify,
     redirect,
     render_template,
@@ -151,10 +152,11 @@ def review(document_id):
         document = review_document(document_id, decision, data.get("reason"))
     except LookupError:
         abort(404)
-    except ReviewConflict as exc:
-        abort(409, description=str(exc))
-    except ValueError as exc:
-        abort(422, description=str(exc))
+    except (ReviewConflict, ValueError) as exc:
+        if not request.is_json:  # the browser form shows the problem on the queue page
+            flash(str(exc), "error")
+            return redirect(url_for("documents.review_queue"))
+        abort(409 if isinstance(exc, ReviewConflict) else 422, description=str(exc))
     # Only reached when the review succeeded. The entry holds ids and the decision, never
     # the rejection reason or any file name.
     record_admin_action(
@@ -164,6 +166,7 @@ def review(document_id):
     )
     if request.is_json:
         return jsonify(document_json(document))
+    flash(f"{document.document_type} {'approved' if decision == 'Approved' else 'rejected'}.", "success")
     return redirect(url_for("documents.review_queue"))
 
 
