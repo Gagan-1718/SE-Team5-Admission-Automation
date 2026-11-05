@@ -34,10 +34,10 @@
   <h2>Pending verification queue ({{ summary.pendingDocuments|length }})</h2>
   {% if summary.pendingDocuments %}
   <table class="cat-table">
-    <thead><tr><th>Document</th><th>Type</th><th>Candidate</th></tr></thead>
+    <thead><tr><th>Candidate</th><th>Reference</th><th>Document</th></tr></thead>
     <tbody>
       {% for doc in summary.pendingDocuments %}
-      <tr><td>#{{ doc.id }}</td><td>{{ doc.documentType }}</td><td>#{{ doc.candidateId }}</td></tr>
+      <tr><td>{{ doc.candidateName }}</td><td>{{ doc.referenceNumber or "—" }}</td><td>{{ doc.documentType }}</td></tr>
       {% endfor %}
     </tbody>
   </table>
