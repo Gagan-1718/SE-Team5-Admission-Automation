@@ -1,6 +1,7 @@
 """Eligibility journey step for the candidate dashboard."""
 
-from app.journey import DONE, PROBLEM, WAITING, make_step
+from app.accounts.services import get_exam_details
+from app.journey import DONE, LOCKED, PROBLEM, WAITING, make_step
 from app.eligibility.evaluation import PENDING, ELIGIBLE, NOT_ELIGIBLE
 from app.eligibility.services import get_eligibility
 
@@ -11,6 +12,8 @@ HREF = "/eligibility"
 
 def step_statuses(candidate_id):
     """Return the candidate's current eligibility journey step."""
+    if get_exam_details(candidate_id) is None:
+        return [make_step(KEY, LABEL, LOCKED, "Enter your exam details first.", HREF)]
     result = get_eligibility(candidate_id)
     status = result["status"]
 
