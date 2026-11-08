@@ -273,7 +273,7 @@ Two use-case diagrams model the system's primary actors and their interactions.
 
 # 8. Requirements Traceability Matrix (RTM)
 
-The RTM below maps every functional, non-functional, and security requirement to its SRS section, implementation module, and test case reference. Status values (Planned/Implemented/Tested/Verified) are to be updated by the team as development proceeds; all entries below are recorded at 'Planned' status as of this document version.
+The RTM below maps every functional, non-functional, and security requirement to its SRS section, implementation module, and test case reference. Status values reflect the implementation and verification evidence available at the time of this document revision. Requirements are marked as Implemented, Tested, or Verified according to the completion and validation evidence recorded by their respective owners.
 
 | Req. ID | Summary | SRS § | Module | Test Case | Status |
 |---|---|---|---|---|---|
@@ -297,16 +297,16 @@ The RTM below maps every functional, non-functional, and security requirement to
 | ADM-F-018 | Allotment result viewing | 4.8 | Result Module | TC-018 | Planned |
 | ADM-F-019 | Seat accept/reject decision | 4.8 | Result Module | TC-019 | Planned |
 | ADM-F-020 | Admin candidate/application dashboard | 4.9 | Admin Module | TC-020 | Planned |
-| ADM-NFR-001 | Response time performance | 5 | Cross-cutting | TC-026 | Planned |
+| ADM-NFR-001 | Response time performance | 5 | Cross-cutting | TC-026 | Tested |
 | ADM-NFR-002 | Allotment run scalability | 5 | Allotment Module | TC-027 | Planned |
 | ADM-NFR-003 | Seat-count data consistency | 5 | Allotment Module | TC-028 | Planned |
 | ADM-NFR-004 | Candidate workflow usability | 5 | Cross-cutting | TC-029 | Planned |
-| ADM-NFR-005 | Configurable, data-driven maintainability | 5 | Catalogue Module | TC-030 | Planned |
+| ADM-NFR-005 | Configurable, data-driven maintainability | 5 | Catalogue Module | TC-030 | Tested |
 | SEC-F-001 | Mandatory authentication | 5.1.2 | Account Module | TC-021 | Planned |
 | SEC-F-002 | Role-based access control | 5.1.2 | Account Module | TC-022 | Planned |
 | SEC-F-003 | Salted password hashing | 5.1.2 | Account Module | TC-023 | Planned |
 | SEC-F-004 | Encrypted data in transit | 5.1.2 | Cross-cutting | TC-024 | Planned |
-| SEC-F-005 | Audit logging of privileged actions | 5.1.2 | Audit Module | TC-025 | Planned |
+| SEC-F-005 | Audit logging of privileged actions | 5.1.2 | Audit Module | TC-025 | Verified |
 
 # Assumptions
 
