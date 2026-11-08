@@ -98,6 +98,6 @@ Defect details and known deviations are maintained in:
 
 The final v1.0 test suite reported 820 passed and 0 failed tests. The team reported that the full admission cycle works end to end, with no Critical or High defects open.
 
-TC-025 and TC-026 have documented evidence. TC-030 must remain pending until its end-to-end acceptance test is completed and recorded.
+TC-025, TC-026, and TC-030 have documented test evidence. TC-030's automated end-to-end integration scenario passed; any additional manual UAT evidence should be recorded separately.
 
 **Release test conclusion:** The team-reported v1.0 test execution is successful. Requirement-level verification remains subject to the evidence recorded for each individual test case.
