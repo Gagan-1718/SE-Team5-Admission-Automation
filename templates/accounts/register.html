@@ -8,25 +8,30 @@
     {% call ui.page_header("Create your candidate account", "Set up your account to continue with your admission application.", "Candidate portal", "registration-heading") %}{% endcall %}
     <form method="post" id="registration-form" class="auth-form">
     <input type="hidden" name="csrf_token" value="{{ get_csrf_token() }}">
-      {{ ui.field("Full name", name="name", type="text", required=True, autocomplete="name", id="name") }}
-      {{ ui.field("Email address", name="email", type="email", required=True, autocomplete="email", id="email") }}
+      <div class="field form-field">
+        <label for="name">Full name</label>
+        <input id="name" name="name" type="text" minlength="2" maxlength="120" autocomplete="name" required>
+      </div>
+      <div class="field form-field">
+        <label for="email">Email address</label>
+        <input id="email" name="email" type="email" maxlength="255" autocomplete="email" required>
+      </div>
       <div class="field form-field">
         <label for="date_of_birth">Date of birth</label>
-        <input id="date_of_birth" name="date_of_birth" type="date" autocomplete="bday" max="{{ today }}" required>
-        <span class="field-hint">Use a real date before today.</span>
+        <input id="date_of_birth" name="date_of_birth" type="date" autocomplete="bday" max="{{ latest_dob }}" aria-describedby="dob-hint" required>
       </div>
       <div class="field form-field">
         <label for="mobile">Mobile number</label>
-        <input id="mobile" name="mobile" type="tel" inputmode="numeric" autocomplete="tel" pattern="[0-9]{10}" required>
+        <input id="mobile" name="mobile" type="tel" inputmode="numeric" autocomplete="tel" pattern="[0-9]{10}" minlength="10" maxlength="10" required>
         <span class="field-hint">Enter a 10-digit mobile number.</span>
       </div>
       <div class="field form-field">
         <label for="password">Password</label>
         <div class="password-field">
-          <input id="password" name="password" type="password" minlength="8" autocomplete="new-password" required>
+          <input id="password" name="password" type="password" minlength="8" maxlength="128" autocomplete="new-password" required>
           <button type="button" class="password-toggle" aria-controls="password" aria-label="Show password">Show</button>
         </div>
-        <span class="field-hint">Use at least 8 characters.</span>
+        <span class="field-hint">Use 8 to 128 characters; spaces alone are not allowed.</span>
       </div>
       <button type="submit" class="primary-button">Create account</button>
       <p id="message" class="form-message" role="alert" aria-live="polite" hidden></p>
@@ -44,8 +49,23 @@ form.querySelector(".password-toggle").addEventListener("click", (event) => {
   event.currentTarget.textContent = visible ? "Show" : "Hide";
   event.currentTarget.setAttribute("aria-label", visible ? "Show password" : "Hide password");
 });
+const dob = document.getElementById("date_of_birth");
+dob.addEventListener("input", () => {
+  dob.setCustomValidity(dob.value && dob.value > dob.max ? "You must be at least 16 years old to register." : "");
+});
+const nameInput = document.getElementById("name");
+nameInput.addEventListener("input", () => {
+  const value = nameInput.value.trim();
+  const valid = value.length >= 2 && /\p{L}/u.test(value) && /^[\p{L}\p{M} '.\u2019-]+$/u.test(value);
+  nameInput.setCustomValidity(valid ? "" : "Enter a name using letters, spaces, apostrophes, hyphens or periods (2 to 120 characters).");
+});
+const passwordInput = document.getElementById("password");
+passwordInput.addEventListener("input", () => {
+  passwordInput.setCustomValidity(passwordInput.value.trim() ? "" : "Password cannot contain only spaces.");
+});
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
+  if (!form.reportValidity()) return;
   message.hidden = false;
   message.className = "form-message";
   message.textContent = "Creating your account...";
