@@ -1,5 +1,6 @@
 """Candidate registration and shared account session endpoints."""
 import re
+import unicodedata
 from datetime import date
 from urllib.parse import urlsplit
 
@@ -44,29 +45,47 @@ def _validation_error(message):
 def _registration_values(payload):
     if not isinstance(payload, dict):
         return None, "A JSON object is required."
-    name = str(payload.get("name", "")).strip()
-    email = str(payload.get("email", "")).strip().lower()
-    mobile = str(payload.get("mobile", "")).strip()
-    date_of_birth = _parse_date_of_birth(payload.get("date_of_birth"))
-    password = payload.get("password")
-
-    if not all((name, email, mobile, password, date_of_birth)):
+    fields = ("name", "email", "mobile", "date_of_birth", "password")
+    if any(not isinstance(payload.get(field), str) for field in fields):
+        return None, "Name, email, mobile, date of birth and password must be text."
+    name = payload["name"].strip()
+    email = payload["email"].strip().lower()
+    mobile = payload["mobile"].strip()
+    password = payload["password"]
+    if not all((name, email, mobile, password.strip(), payload["date_of_birth"].strip())):
         return None, "Name, email, mobile, date of birth and password are required."
-    if len(name) > 120 or len(name) < 2:
+    if not 2 <= len(name) <= 120:
         return None, "Name must be between 2 and 120 characters."
-    if not EMAIL_PATTERN.fullmatch(email):
-        return None, "Enter a valid email address."
-    if not MOBILE_PATTERN.fullmatch(mobile):
+    if not any(char.isalpha() for char in name) or any(
+        not (char.isalpha() or char in " '-.\u2019" or unicodedata.category(char).startswith("M"))
+        for char in name
+    ):
+        return None, "Name must contain letters, spaces, apostrophes, hyphens or periods only."
+    if len(email) > 255 or any(ord(char) < 32 or ord(char) == 127 for char in email) or not EMAIL_PATTERN.fullmatch(email):
+        return None, "Enter a valid email address of at most 255 characters."
+    if not re.fullmatch(r"[0-9]{10}", mobile):
         return None, "Mobile number must contain exactly 10 digits."
-    if not isinstance(password, str) or len(password) < 8:
-        return None, "Password must contain at least 8 characters."
+    if not 8 <= len(password) <= 128:
+        return None, "Password must contain between 8 and 128 characters."
+    date_of_birth = _parse_date_of_birth(payload["date_of_birth"])
     if date_of_birth is None:
-        return None, "Enter a valid date of birth in the past."
+        return None, "Enter a valid date of birth in YYYY-MM-DD format in the past."
+    if date_of_birth > _latest_registration_dob():
+        return None, "You must be at least 16 years old to register."
     return {"name": name, "email": email, "mobile": mobile, "password": password, "date_of_birth": date_of_birth}, None
 
 
+def _latest_registration_dob():
+    """Latest eligible birthday, using calendar years rather than days / 365."""
+    today = date.today()
+    try:
+        return today.replace(year=today.year - 16)
+    except ValueError:
+        return today.replace(year=today.year - 16, day=28)
+
+
 def _parse_date_of_birth(value):
-    if not isinstance(value, str):
+    if not isinstance(value, str) or not re.fullmatch(r"[0-9]{4}-[0-9]{2}-[0-9]{2}", value):
         return None
     try:
         parsed = date.fromisoformat(value)
@@ -77,7 +96,7 @@ def _parse_date_of_birth(value):
 
 @bp.get("/register")
 def registration_page():
-    return render_template("accounts/register.html", today=date.today().isoformat())
+    return render_template("accounts/register.html", latest_dob=_latest_registration_dob().isoformat())
 
 
 @bp.get("/login")
