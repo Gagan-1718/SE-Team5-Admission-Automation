@@ -67,12 +67,20 @@ The test was conducted sequentially with a single client. It was not a concurren
 ### TC-030 — Admin Catalogue, Seat, and Eligibility Configuration
 
 **Requirement:** ADM-NFR-005 — Configurable, data-driven maintainability  
-**Status:** Pending verification
+**Status:** Passed
 
-TC-030 requires end-to-end evidence that an administrator can configure catalogue, branch, seat capacity, and eligibility rules, and that the candidate-facing catalogue and allotment flow reflect those changes.
+The integration test verifies that an administrator can create a college and branch, configure seat capacity, and update the General eligibility cutoff. It confirms that the candidate becomes eligible after the cutoff is updated, sees the configured college and branch in the candidate-facing catalogue, submits and locks a choice, and receives the configured seat through the allotment process.
 
-Do not mark TC-030 as Passed or the corresponding RTM entry as Verified until the complete test has been executed and its evidence recorded.
+**Command:**
+```bash
+pytest tests/integration/test_demo_flow.py -v
+```
 
+**Result:** 12 passed in 7.97s.
+
+**Evidence:** The test `test_admin_configured_catalogue_flows_through_choices_and_allotment` passed. It verifies the complete flow from administrator configuration through candidate eligibility, catalogue visibility, choice submission, and successful allotment. The configured seat capacity was one, the filled seat count was one, and the candidate's allotment result was `Allocated`.
+
+This records the automated TC-030 integration scenario. Additional manual UAT evidence, if required, should be recorded separately.
 ## 5. Defect Summary
 
 The v1.0 release status reported by the team is:
@@ -90,6 +98,6 @@ Defect details and known deviations are maintained in:
 
 The final v1.0 test suite reported 820 passed and 0 failed tests. The team reported that the full admission cycle works end to end, with no Critical or High defects open.
 
-TC-025 and TC-026 have documented evidence. TC-030 must remain pending until its end-to-end acceptance test is completed and recorded.
+TC-025, TC-026, and TC-030 have documented test evidence. TC-030's automated end-to-end integration scenario passed; any additional manual UAT evidence should be recorded separately.
 
 **Release test conclusion:** The team-reported v1.0 test execution is successful. Requirement-level verification remains subject to the evidence recorded for each individual test case.
