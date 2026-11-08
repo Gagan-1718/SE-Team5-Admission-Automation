@@ -118,3 +118,37 @@ service exists; the binary Dashboard count defect is recorded as VARUN-001 in
 Browser automation was attempted but unavailable: the Computer Use browser host
 returned `The browser access host is unavailable`. Therefore 400px responsive,
 keyboard-only, and contrast checks remain pending manual verification.
+
+## Part 3 — Unit Test Report — 8 November 2026
+
+The detailed report is [UNIT_TEST_REPORT.md](../testing/UNIT_TEST_REPORT.md).
+
+The genuine isolated unit/component scope contains these four modules:
+
+- `tests/eligibility/test_evaluate.py` — 9 pure eligibility decision tests.
+- `tests/allotment/test_engine.py` — 44 pure allotment algorithm tests.
+- `tests/accounts/test_password_hashing.py` — 4 direct hashing-helper tests.
+- `tests/choices/test_frontend_controller.py` — 4 static Choices controller component tests.
+
+Exact command, run on branch `docs/varun-unit-test-report` at
+`d89e718bad7f58a4f826d343198fbac4b97a4e97` with Python 3.11.9:
+
+```powershell
+py -m pytest -q tests/eligibility/test_evaluate.py tests/allotment/test_engine.py tests/accounts/test_password_hashing.py tests/choices/test_frontend_controller.py
+```
+
+Result: **61 passed in 1.31s**. These are the only tests counted as unit tests;
+the full pytest suite is not relabelled as unit testing.
+
+The existing coverage reports record separate supplied executions using Python
+3.12.10 and coverage.py 7.17.2:
+
+- Statement coverage: **95.46%** over 2,666 executable statements in 67 `app/` Python files.
+- Branch coverage: **89.74%** over 604 branch destinations.
+- Main regression: **883 passed, 1 skipped**, with HTTPS initially skipped.
+- Separate HTTPS execution after installing the optional dependencies: **10 passed**.
+
+The 883 and 10 results are separate executions, not a combined 893-test run.
+Historical failure/fix references and the VARUN-001 regression evidence are in
+the report and `docs/DEFECT_LOG.md`. The supplied 3.12 logs were not independently
+available in this environment; the fresh unit run used Python 3.11.9.
