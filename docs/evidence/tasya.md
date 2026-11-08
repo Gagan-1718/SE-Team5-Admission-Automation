@@ -182,7 +182,7 @@ The test provides evidence for the integrated audit and result decision flow.
 ### 4.2 TC-026 — Candidate Response-Time Verification
 
 **Requirement:** ADM-NFR-001 — Response time performance
-**Status:** Passed under the documented test conditions
+**Status:** Partial — the tested pages met the 2-second target under single-client conditions; concurrent-load verification remains pending.
 
 The candidate-facing login, college catalogue, eligibility, and choices pages were measured.
 
@@ -241,7 +241,7 @@ This records the automated TC-030 integration scenario. Additional manual UAT ev
 | Audit Log | `tests/audit/test_audit_log.py` | 8 passed |
 | Audit | `tests/audit/` | 15 passed |
 | TC-025 | `tests/allotment/test_result_decision_flow.py` | 1 passed |
-| TC-026 | Candidate-facing response-time measurements | Passed under documented conditions |
+| TC-026 | Candidate-facing response-time measurements | Partial — single-client measurements met the target; concurrent load test pending |
 | **TC-030** | `tests/integration/test_demo_flow.py` — admin-configured catalogue flow | 12 passed |
 
 These results are from separate test executions. They should not be added together as a unique test count because some tests may overlap.
@@ -262,6 +262,6 @@ These results are from separate test executions. They should not be added togeth
 
 The recorded automated test executions show successful results across eligibility, catalogue, admin dashboard, audit-related test areas, and the Sprint 2 TC-025 audit and result decision flow.
 
-TC-026 met the documented two-second average response-time target under the recorded single-client test conditions.
+TC-026 met the documented two-second average response-time target under the recorded single-client test conditions. However, the required concurrent-user workload has not yet been tested; therefore, the overall performance requirement remains partially verified.
 
 **TC-030** passed the recorded admin-configured catalogue integration scenario. The result is documented above.

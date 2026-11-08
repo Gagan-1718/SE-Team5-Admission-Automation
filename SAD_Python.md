@@ -614,7 +614,7 @@ The algorithm of section 4.1 is a pure function `allot()` in `app/allotment/engi
 
 | Requirement | Result | Evidence |
 | --- | --- | --- |
-| ADM-NFR-001 response time | Tested candidate pages averaged 3 to 16 ms (target 2 s); single client, not a load test | `docs/evidence/tasya-response-time.md` (TC-026) |
+| ADM-NFR-001 response time | Single-client candidate pages averaged 3 to 16 ms (target 2 s); the required 25-candidate concurrent load test remains pending, so the requirement is partially verified | `docs/evidence/tasya-response-time.md` (TC-026); `docs/testing/SYSTEM_VALIDATION_REPORT.md` |
 | ADM-NFR-002 run time | 300 candidates: median 0.967 s; 600 candidates: median 1.589 s; limit 60 s | `scripts/time_allotment.py`, `docs/evidence/gagan.md` |
 | ADM-NFR-003 consistency | Filled seats equal allotment records for every seat row after each run; the database refuses filled > capacity; a corrupted row is reported | `scripts/check_seat_consistency.py`, console tile, `docs/evidence/gagan.md` |
 | SEC-F-004 HTTPS | TLS with a local certificate, HTTP redirect, HSTS, Secure cookie | `scripts/serve_https.py`, `tests/test_https.py` |
