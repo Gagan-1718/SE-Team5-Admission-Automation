@@ -7,6 +7,8 @@ Optional filter: ?action_type=college.create. There is no POST, PUT or DELETE ro
 from flask import Blueprint, jsonify, render_template, request
 
 from app.accounts.auth import role_required
+from app.accounts.models import User
+from app.extensions import db
 
 from .services import list_audit
 
@@ -17,8 +19,12 @@ bp = Blueprint("audit", __name__)
 @role_required("administrator")
 def audit_page():
     action_type = request.args.get("action_type", "").strip() or None
+    entries = list_audit(action_type)
+    actor_ids = {e.actor_id for e in entries if e.actor_id}
+    names = dict(db.session.execute(
+        db.select(User.id, User.name).where(User.id.in_(actor_ids))).all()) if actor_ids else {}
     return render_template(
-        "audit/log.html", entries=list_audit(action_type), action_type=action_type or ""
+        "audit/log.html", entries=entries, names=names, action_type=action_type or ""
     )
 
 

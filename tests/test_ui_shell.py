@@ -76,3 +76,9 @@ def test_internal_error_page_is_friendly(app, client):
         assert b"secret internal detail" not in response.get_data()
         assert b"Traceback" not in response.get_data()
         assert home in response.data
+
+
+def test_access_denied_says_who_is_signed_in(app):
+    client = logged_in_client(app, "administrator", 99)
+    page = client.get("/documents").get_data(as_text=True)
+    assert "signed in as" in page and "Administrator" in page and "incognito" in page

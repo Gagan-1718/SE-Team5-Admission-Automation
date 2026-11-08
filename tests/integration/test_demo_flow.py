@@ -179,7 +179,7 @@ def test_full_demo_flow(seeded):
     # 10: the candidate can browse the seeded catalogue (TC-010)
     colleges = candidate.get("/colleges")
     assert colleges.status_code == 200
-    assert b"Meridian Institute of Technology" in colleges.data
+    assert b"RV College of Engineering" in colleges.data
 
     # 12: access control (TC-021, TC-022)
     assert candidate.get("/admin/documents").status_code == 403

@@ -6,6 +6,7 @@ from flask import (
     Blueprint,
     abort,
     current_app,
+    flash,
     jsonify,
     redirect,
     render_template,
@@ -29,6 +30,8 @@ from app.documents.services import (
 )
 
 from app.accounts.auth import current_candidate_id
+from app.accounts.models import User
+from app.application.models import Application
 from app.application.identity import candidate_page_required
 from app.application.services import get_submitted_application
 
@@ -125,12 +128,58 @@ def review_queue():
     if status not in ("Pending", "Approved", "Rejected"):
         abort(400, description="Invalid document status.")
     documents = db.session.execute(
-        db.select(Document).where(Document.status == status).order_by(Document.id)
+        db.select(Document).where(Document.status == status).order_by(Document.id.desc())
     ).scalars().all()
     if request.path.endswith(".json"):
         return jsonify(documents=[document_json(d) for d in documents])
-    return render_template("documents/review.html", documents=documents,
-                           status=status, csrf_token=review_token())
+    counts = dict(db.session.execute(
+        db.select(Document.status, db.func.count()).group_by(Document.status)).all())
+    candidates = list(dict.fromkeys(d.candidate_id for d in documents))
+    pages = max(1, -(-len(candidates) // CANDIDATES_PER_PAGE))
+    page = min(max(request.args.get("page", 1, type=int), 1), pages)
+    shown = candidates[(page - 1) * CANDIDATES_PER_PAGE:page * CANDIDATES_PER_PAGE]
+    return render_template("documents/review.html", groups=candidate_groups(shown),
+                           candidate_total=len(candidates), page=page, pages=pages,
+                           counts=counts, status=status, csrf_token=review_token())
+
+
+CANDIDATES_PER_PAGE = 20
+
+
+def candidate_groups(order):
+    """One entry per candidate id in ``order``, with all of that candidate's documents.
+
+    The queue is filtered by status, but the reviewer sees the candidate's full set so a
+    marksheet can be checked against the ID proof and category certificate beside it.
+    """
+    if not order:
+        return []
+    people = {cid: (name, reference) for cid, name, reference in db.session.execute(
+        db.select(User.id, User.name, Application.reference_number)
+        .outerjoin(Application, Application.candidate_id == User.id)
+        .where(User.id.in_(order))
+    )}
+    owned = {cid: [] for cid in order}
+    for document in db.session.execute(
+        db.select(Document).where(Document.candidate_id.in_(order)).order_by(Document.id.desc())
+    ).scalars():
+        owned[document.candidate_id].append(document)
+    rank = {name: index for index, name in enumerate(REQUIRED_DOCUMENT_TYPES)}
+    groups = []
+    for cid in order:
+        name, reference = people.get(cid, (f"Candidate {cid}", None))
+        docs = sorted(owned[cid], key=lambda d: rank.get(d.document_type, len(rank)))
+        uploaded = {d.document_type for d in docs}
+        groups.append({
+            "name": name,
+            "reference": reference,
+            "documents": docs,
+            "missing": [t for t in REQUIRED_DOCUMENT_TYPES if t not in uploaded],
+            "required": len(REQUIRED_DOCUMENT_TYPES),
+            "approved": sum(d.status == "Approved" for d in docs),
+            "pending": sum(d.status == "Pending" for d in docs),
+        })
+    return groups
 
 
 @bp.post("/admin/documents/<int:document_id>/review")
@@ -151,10 +200,11 @@ def review(document_id):
         document = review_document(document_id, decision, data.get("reason"))
     except LookupError:
         abort(404)
-    except ReviewConflict as exc:
-        abort(409, description=str(exc))
-    except ValueError as exc:
-        abort(422, description=str(exc))
+    except (ReviewConflict, ValueError) as exc:
+        if not request.is_json:  # the browser form shows the problem on the queue page
+            flash(str(exc), "error")
+            return redirect(url_for("documents.review_queue"))
+        abort(409 if isinstance(exc, ReviewConflict) else 422, description=str(exc))
     # Only reached when the review succeeded. The entry holds ids and the decision, never
     # the rejection reason or any file name.
     record_admin_action(
@@ -164,6 +214,7 @@ def review(document_id):
     )
     if request.is_json:
         return jsonify(document_json(document))
+    flash(f"{document.document_type} {'approved' if decision == 'Approved' else 'rejected'}.", "success")
     return redirect(url_for("documents.review_queue"))
 
 
@@ -198,6 +249,7 @@ def status_page():
     ).scalars().all()
     response = current_app.make_response(
         render_template("documents/status.html", documents=documents,
+                        required_types=REQUIRED_DOCUMENT_TYPES,
                         csrf_token=resubmission_token(),
                         success=session.pop("document_resubmission_success", False))
     )

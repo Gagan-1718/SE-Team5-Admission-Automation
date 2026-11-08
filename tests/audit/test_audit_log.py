@@ -12,7 +12,7 @@ from app.extensions import db
 from tests.catalogue.helpers import get_branch, get_college, login_client
 
 
-MERIDIAN = "Meridian Institute of Technology"
+RVCE = "RV College of Engineering"
 CSE = "Computer Science and Engineering"
 
 
@@ -76,7 +76,7 @@ def test_catalogue_actions_write_audit_entries(seeded, admin):
 
 
 def test_rejected_actions_are_not_logged(seeded, admin):
-    admin.post("/admin/colleges/new", data={"name": MERIDIAN})
+    admin.post("/admin/colleges/new", data={"name": RVCE})
     admin.post("/admin/colleges/new", data={"name": "  "})
     assert _entries() == []
 

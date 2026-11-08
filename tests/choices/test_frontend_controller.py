@@ -25,3 +25,8 @@ def test_controller_handles_lock_and_backend_failures_without_raw_errors():
     assert "Network error" in CONTROLLER
     assert "Choices locked on" in CONTROLLER
     assert "unlock" not in CONTROLLER.lower()
+
+
+def test_add_button_turns_into_added_for_branches_already_in_the_list():
+    assert "chosen.has(Number(button.dataset.branchId))" in CONTROLLER
+    assert '"Added"' in CONTROLLER

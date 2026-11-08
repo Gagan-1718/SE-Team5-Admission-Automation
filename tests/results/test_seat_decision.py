@@ -1,4 +1,5 @@
 """ADM-F-019 / TC-019: exactly-once choices, audit atomicity, CSRF and concurrency."""
+import re
 from concurrent.futures import ThreadPoolExecutor
 from threading import Barrier
 
@@ -208,3 +209,14 @@ def test_console_summary_counts_allocated_seats_only(result_world):
     page = w["client"]("admin").get("/admin/allotment")
     assert page.status_code == 200
     assert b"Seat decisions" in page.data and b"Rejected seats are not released" in page.data
+
+
+def test_result_page_shows_a_readable_decision_time(result_world):
+    publish(result_world)
+    client = result_world["client"]()
+    before = client.get("/result").get_data(as_text=True)
+    assert "does not release it" in before  # warn before the one-time choice
+    page = client.post("/result/decision", data={"decision": "Accept"}, follow_redirects=True).get_data(as_text=True)
+    assert "T" not in page.split("Recorded on ", 1)[1].split(" UTC", 1)[0]  # not raw ISO text
+    assert re.search(r"Recorded on \d{1,2} [A-Z][a-z]{2} \d{4}, \d{2}:\d{2} UTC", page)
+    assert "does not release it" not in page

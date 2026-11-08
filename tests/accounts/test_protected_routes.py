@@ -15,15 +15,15 @@ def register_and_login(client):
 
 
 def test_anonymous_users_are_denied_protected_page_and_api(client):
-    assert client.get("/accounts/dashboard").status_code == 401
     assert client.get("/accounts/me").status_code == 401
-    assert client.get("/accounts/admin-check").status_code == 401
+    assert client.get("/accounts/profile").status_code == 401
+    assert client.get("/admin/dashboard.json").status_code == 401
 
 
 def test_candidate_is_denied_administrator_route(client):
     register_and_login(client)
 
-    assert client.get("/accounts/admin-check").status_code == 403
+    assert client.get("/admin/dashboard.json").status_code == 403
 
 
 def test_administrator_role_is_checked_from_server_side_account(client, app):
@@ -42,7 +42,7 @@ def test_administrator_role_is_checked_from_server_side_account(client, app):
         "/accounts/login",
         json={"identifier": "admin@example.test", "password": "admin-password-123"},
     ).status_code == 200
-    assert client.get("/accounts/admin-check").status_code == 200
+    assert client.get("/admin/dashboard.json").status_code == 200
 
 
 def test_identity_contract_is_server_derived(client, app):

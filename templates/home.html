@@ -2,15 +2,82 @@
 {% import "_ui.html" as ui %}
 {% block title %}Admission Automation{% endblock %}
 {% block content %}
-{% call ui.page_header("From application to seat, in one place.", "An educational prototype that guides candidates through each admission step and gives administrators a clear review trail.", "Team 5 · Sprint Two") %}
-  <div class="row"><a class="btn primary" href="{{ url_for('accounts.login_page') }}">Log in</a><a class="btn ghost" href="{{ url_for('accounts.registration_page') }}">Register</a></div>
-{% endcall %}
-{% call ui.card("Nine stages, one direction", "Each stage opens when the previous one is ready. Statuses explain what needs attention next.") %}
-  <ol class="stepper">
-    {% for item in [("Registration", "Create a candidate account.", "done"), ("Exam details", "Enter a seeded fictional record.", "current"), ("Application", "Save a draft and submit it.", "locked"), ("Documents", "Upload and receive verification.", "locked"), ("Eligibility", "Receive a rule-based decision.", "locked"), ("Choice filling", "Rank college and branch preferences.", "locked"), ("Allotment", "The administrator runs the single cycle.", "locked"), ("Results", "See the official published outcome.", "locked"), ("Seat decision", "Accept or reject once.", "locked")] %}
-    <li><span class="step-dot {{ item[2] }}" aria-hidden="true">{{ loop.index }}</span><div><b>{{ item[0] }}</b><span class="detail">{{ item[1] }}</span></div><span class="pill {{ 'ok' if item[2] == 'done' else 'info' if item[2] == 'current' else 'idle' }}">{{ item[2]|capitalize }}</span></li>
-    {% endfor %}
-  </ol>
-{% endcall %}
-{% call ui.card("A fictional, offline-friendly prototype") %}<p>Admission Automation uses fictional exam records and system fonts only. It is an educational software-engineering project, not an official KEA or COMEDK system.</p>{% endcall %}
+{% set dashboard = ('/admin/dashboard' if g.current_user and g.current_user.role == 'administrator' else '/dashboard') %}
+<section class="home-hero">
+  <div class="home-wrap home-hero-inner">
+    <div class="home-hero-text">
+      <div class="home-kicker">Engineering admission and counselling · Karnataka</div>
+      <h1>From application to seat, in one place.</h1>
+      <p>Apply with your KCET or COMEDK rank, upload your documents, check your eligibility, fill your college choices and receive your allotted seat. One portal for candidates and administrators, from registration to the final seat decision.</p>
+      <div class="row home-actions">
+        {% if g.current_user %}
+          <a class="btn lg home-btn-primary" href="{{ dashboard }}">Go to your dashboard {{ ui.icon("arrow", 16) }}</a>
+        {% else %}
+          <a class="btn lg home-btn-primary" href="{{ url_for('accounts.registration_page') }}">Register as a candidate {{ ui.icon("arrow", 16) }}</a>
+          <a class="btn lg home-btn-ghost" href="{{ url_for('accounts.login_page') }}">Log in</a>
+        {% endif %}
+      </div>
+    </div>
+    <aside class="home-glance" aria-label="Counselling at a glance">
+      <div class="home-glance-head">Counselling at a glance</div>
+      <dl>
+        <div><dt>Participating colleges</dt><dd>{{ colleges|length }}</dd></div>
+        <div><dt>Seats on offer</dt><dd>{{ colleges|sum(attribute="seats_total") }}</dd></div>
+        <div><dt>Allotment rounds</dt><dd>1</dd></div>
+        <div><dt>Exams accepted</dt><dd>KCET · COMEDK</dd></div>
+      </dl>
+    </aside>
+  </div>
+</section>
+
+<div class="home-wrap home-sections">
+  <section aria-labelledby="how-title">
+    <div class="home-section-head"><div class="eyebrow">How it works</div><h2 id="how-title">Six steps from registration to your seat</h2></div>
+    <ol class="home-steps">
+      {% for title, text, icon in [
+        ("Register", "Create your candidate account with your email and mobile number.", "user"),
+        ("Exam details", "Enter your KCET or COMEDK rank, category and score.", "file"),
+        ("Apply and upload", "Submit your application and upload your marksheet, ID proof and category certificate.", "upload"),
+        ("Eligibility", "Your eligibility is decided automatically once your documents are approved.", "check"),
+        ("Fill choices", "Pick colleges and branches in your order of preference and lock the list.", "list"),
+        ("Seat and decision", "See your allotted seat after results are published, then accept or reject it once.", "award"),
+      ] %}
+      <li><span class="home-step-no">{{ loop.index }}</span><span class="home-step-icon">{{ ui.icon(icon, 20) }}</span><strong>{{ title }}</strong><p>{{ text }}</p></li>
+      {% endfor %}
+    </ol>
+  </section>
+
+  <section class="home-roles" aria-label="Who uses the portal">
+    <div class="home-role">
+      <h2>For candidates</h2>
+      <ul>
+        <li>Save your application as a draft and come back later</li>
+        <li>See exactly which document was rejected and why, and replace it</li>
+        <li>Track every step on one dashboard</li>
+        <li>Print your allotment letter</li>
+      </ul>
+    </div>
+    <div class="home-role">
+      <h2>For administrators</h2>
+      <ul>
+        <li>Verify documents with a reason for every rejection</li>
+        <li>Manage colleges, branches, seats and eligibility cut-offs</li>
+        <li>Run the allotment once, check seat consistency, then publish</li>
+        <li>Every action is kept in a read-only audit log</li>
+      </ul>
+    </div>
+  </section>
+
+  {% if colleges %}
+  <section aria-labelledby="colleges-title">
+    <div class="home-section-head"><div class="eyebrow">Participating colleges</div><h2 id="colleges-title">{{ colleges|length }} engineering colleges in Karnataka</h2></div>
+    <ul class="home-colleges">
+      {% for college in colleges %}
+      <li><span class="home-college-icon">{{ ui.icon("building", 20) }}</span><span><strong>{{ college.name }}</strong><span>{{ college.city or "Karnataka" }} · {{ college.branches|length }} branches · {{ college.seats_total }} seats</span></span></li>
+      {% endfor %}
+    </ul>
+    <p class="hint">Seat numbers are fictional demo data and do not describe the colleges' real intake.</p>
+  </section>
+  {% endif %}
+</div>
 {% endblock %}

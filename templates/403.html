@@ -5,7 +5,12 @@
 <section class="card error-page" aria-labelledby="error-title">
   <h1 id="error-title">403</h1>
   <h2>Access denied</h2>
+  {% if g.current_user %}
+  <p>You are signed in as <strong>{{ g.current_user.name }}</strong> ({{ 'Administrator' if g.current_user.role == 'administrator' else 'Candidate' }}), and this page is for {{ 'candidates' if g.current_user.role == 'administrator' else 'administrators' }}.</p>
+  <p class="hint">One browser keeps one login. To use a candidate and an administrator at the same time, open the second one in a private (incognito) window.</p>
+  {% else %}
   <p>You do not have permission to open this page.</p>
+  {% endif %}
   <a class="btn primary" href="{{ home_url }}">Return to your home</a>
 </section>
 {% endblock %}

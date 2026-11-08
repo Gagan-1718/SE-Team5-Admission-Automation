@@ -164,18 +164,6 @@ def me():
     return jsonify(user)
 
 
-@bp.get("/admin-check")
-@role_required("administrator")
-def admin_check():
-    return jsonify(message="Administrator access granted.")
-
-
-@bp.get("/dashboard")
-@login_required
-def dashboard():
-    return jsonify(message="Candidate dashboard", identity=current_identity())
-
-
 @page_login_required
 def candidate_dashboard():
     """Render the candidate journey without reading another module's tables."""
@@ -229,6 +217,8 @@ def profile():
         role=user.role,
         rank=user.rank,
         category=user.category,
+        exam_type=user.exam_record.exam_type if user.exam_record else None,
+        score=user.exam_record.score if user.exam_record else None,
     )
 
 

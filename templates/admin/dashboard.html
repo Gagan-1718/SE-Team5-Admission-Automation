@@ -1,54 +1,108 @@
 {% extends "base.html" %}
+{% import "_ui.html" as ui %}
 {% block title %}Admin dashboard{% endblock %}
-{% block content %}
-{% include "catalogue/_styles.html" %}
-<section class="card">
-  <h1>Administrator dashboard</h1>
+{% block breadcrumb %}Dashboard{% endblock %}
 
-  <h2>Candidates</h2>
-  <table class="cat-table">
-    <tbody>
-      <tr><th>Registered candidates</th><td class="num">{{ summary.candidateCounts.total }}</td></tr>
-      <tr><th>With exam details entered</th><td class="num">{{ summary.candidateCounts.withExamDetails }}</td></tr>
-    </tbody>
-  </table>
-
-  <h2>Applications</h2>
-  <table class="cat-table">
-    <tbody>
-      {% for status, number in summary.statusCounts.applications.items() %}
-      <tr><th>{{ status }}</th><td class="num">{{ number }}</td></tr>
-      {% endfor %}
-    </tbody>
-  </table>
-
-  <h2>Documents</h2>
-  <table class="cat-table">
-    <tbody>
-      {% for status, number in summary.statusCounts.documents.items() %}
-      <tr><th>{{ status }}</th><td class="num">{{ number }}</td></tr>
-      {% endfor %}
-    </tbody>
-  </table>
-
-  <h2>Pending verification queue ({{ summary.pendingDocuments|length }})</h2>
-  {% if summary.pendingDocuments %}
-  <table class="cat-table">
-    <thead><tr><th>Document</th><th>Type</th><th>Candidate</th></tr></thead>
-    <tbody>
-      {% for doc in summary.pendingDocuments %}
-      <tr><td>#{{ doc.id }}</td><td>{{ doc.documentType }}</td><td>#{{ doc.candidateId }}</td></tr>
-      {% endfor %}
-    </tbody>
-  </table>
-  {% else %}
-  <p class="note">Nothing is waiting for review.</p>
-  {% endif %}
-
-  <p class="cat-actions">
-    <a href="/admin/documents">Review documents</a>
-    <a href="/admin/colleges">Manage colleges</a>
-    <a href="/admin/audit-logs">Audit log</a>
-  </p>
+{% macro split_card(title, split, hint=None) -%}
+<section class="card split-card">
+  <div class="split-head"><h2>{{ title }}</h2><span class="split-total">{{ split.total }}</span></div>
+  {% if hint %}<p class="hint">{{ hint }}</p>{% endif %}
+  <div class="seg-bar" role="img" aria-label="{{ title }}: {% for p in split.parts %}{{ p.label }} {{ p.count }}{{ ', ' if not loop.last }}{% endfor %}">
+    {% for p in split.parts if p.count %}<span class="seg {{ p.tone }}" style="flex-grow: {{ p.count }}" title="{{ p.label }}: {{ p.count }} ({{ p.percent }}%)"></span>{% endfor %}
+    {% if not split.total %}<span class="seg empty"></span>{% endif %}
+  </div>
+  <ul class="seg-legend">
+    {% for p in split.parts %}
+    <li><span class="swatch {{ p.tone }}" aria-hidden="true"></span><span class="lbl">{{ p.label }}</span><strong>{{ p.count }}</strong><span class="pct">{{ p.percent }}%</span></li>
+    {% endfor %}
+  </ul>
 </section>
+{%- endmacro %}
+
+{% block content %}
+{% set o = overview %}
+{% set seats_filled = o.seats|sum(attribute="filled") %}
+{% set seats_total = o.seats|sum(attribute="capacity") %}
+{% set stage = "Results published" if o.published else ("Allotment run, not published" if o.run else "Before the allotment run") %}
+{% call ui.page_header("Administrator dashboard", "The whole admission cycle at a glance, including where candidates drop out.", "Administrator") %}
+  <span class="pill {{ 'ok' if o.published else 'wait' if o.run else 'info' }} lg">{{ stage }}</span>
+{% endcall %}
+
+<section class="dashboard-tiles" aria-label="Headline figures">
+  {{ ui.tile("Registered candidates", o.total, summary.candidateCounts.withExamDetails ~ " with exam details") }}
+  {{ ui.tile("Applications submitted", o.applications.parts[0].count, o.applications.parts[1].count ~ " drafts · " ~ o.applications.parts[2].count ~ " not started") }}
+  {{ ui.tile("Eligible", o.eligibility.parts[0].count, o.eligibility.parts[2].count ~ " not eligible · " ~ o.eligibility.parts[1].count ~ " pending") }}
+  {{ ui.tile("Seats filled", seats_filled ~ " / " ~ seats_total, o.seats|length ~ " colleges") }}
+</section>
+
+{% set attention = [
+  (summary.statusCounts.documents.Pending, "documents waiting for review", url_for('documents.review_queue', status='Pending'), "Review"),
+  (summary.statusCounts.documents.Rejected, "rejected documents waiting for the candidate to resubmit", url_for('documents.review_queue', status='Rejected'), "View"),
+  (o.choices.parts[1].count, "eligible candidates have saved choices but not locked them", url_for('admin.candidate_list'), "Candidates"),
+  (o.applications.parts[1].count, "applications are still drafts", url_for('admin.candidate_list'), "Candidates"),
+] %}
+<section class="card attention">
+  <div class="card-head"><div><h2>Needs attention</h2><p>Open items that stop candidates moving forward.</p></div></div>
+  <ul class="attention-list">
+    {% for count, text, href, action in attention %}
+    <li class="{{ 'zero' if not count }}"><strong>{{ count }}</strong><span>{{ text }}</span>{% if count %}<a class="btn ghost sm" href="{{ href }}">{{ action }}</a>{% endif %}</li>
+    {% endfor %}
+  </ul>
+</section>
+
+<section class="card">
+  <div class="card-head"><div><h2>Admission pipeline</h2><p>How many of the {{ o.total }} registered candidates reached each step. The gaps are the negative cases.</p></div></div>
+  <div class="funnel" role="list">
+    {% for step in o.pipeline %}
+    <div class="funnel-row" role="listitem">
+      <span class="funnel-label">{{ step.label }}</span>
+      <span class="funnel-track"><span class="funnel-bar" style="width: {{ step.percent }}%" title="{{ step.label }}: {{ step.count }} of {{ o.total }}"></span></span>
+      <span class="funnel-value"><strong>{{ step.count }}</strong> <span>{{ step.percent }}%</span></span>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<div class="split-grid">
+  {{ split_card("Applications", o.applications) }}
+  {{ split_card("Documents", o.documents, "All uploaded documents by review status.") }}
+  {{ split_card("Eligibility", o.eligibility) }}
+  {{ split_card("Choices of eligible candidates", o.choices) }}
+  {% if o.allotment %}{{ split_card("Allotment outcome", o.allotment, "Every registered candidate after the run.") }}{% endif %}
+  {% if o.decisions %}{{ split_card("Seat decisions", o.decisions, "Allotted candidates only. Rejected seats are not released.") }}{% endif %}
+</div>
+
+<div class="grid g2">
+  <section class="card">
+    <div class="card-head"><div><h2>Seats by college</h2><p>Filled seats against total capacity across all branches and categories.</p></div></div>
+    <div class="meters">
+      {% for s in o.seats %}
+      <div class="meter-row">
+        <span class="meter-label">{{ s.college }}</span>
+        <span class="meter-track"><span class="meter-fill" style="width: {{ (s.filled * 100 / s.capacity) if s.capacity else 0 }}%" title="{{ s.college }}: {{ s.filled }} of {{ s.capacity }} seats filled"></span></span>
+        <span class="meter-value">{{ s.filled }} / {{ s.capacity }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-head"><div><h2>Pending verification queue ({{ summary.pendingDocuments|length }})</h2><p>Newest uploads first.</p></div></div>
+    {% if summary.pendingDocuments %}
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead><tr><th scope="col">Candidate</th><th scope="col">Document</th></tr></thead>
+        <tbody>
+          {% for doc in summary.pendingDocuments[:8] %}
+          <tr><td><span class="cell-main">{{ doc.candidateName }}</span><span class="cell-sub">{{ doc.referenceNumber or "—" }}</span></td><td>{{ doc.documentType }}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <p style="margin-top:12px"><a class="btn primary sm" href="{{ url_for('documents.review_queue') }}">Open the review queue</a></p>
+    {% else %}
+      {{ ui.empty_state("Nothing to review", "Every uploaded document has been checked.") }}
+    {% endif %}
+  </section>
+</div>
 {% endblock %}

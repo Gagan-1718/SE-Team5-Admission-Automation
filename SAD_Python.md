@@ -572,7 +572,6 @@ HTML pages and JSON endpoints share the same services. Administrator routes answ
 | Accounts | GET /accounts/me, GET/PUT /accounts/profile, GET /accounts/profile-page | Profile and contact details (ADM-F-003) |
 | Accounts | PUT /accounts/exam-details | Exam details, accepted only for a seeded combination (ADM-F-003, A-09) |
 | Accounts | GET /dashboard | Candidate journey dashboard: the seven steps with their state and the next action (SAD 4.5) |
-| Accounts | GET /accounts/dashboard | Older JSON identity endpoint kept for compatibility |
 | Application | GET/POST /application, POST /application/submit | Draft form and submit (ADM-F-004, ADM-F-005) |
 | Application | POST /api/v1/applications, PUT /api/v1/applications/{id}, POST /api/v1/applications/{id}/submit, GET /api/v1/applications/me | Same as SAD 4.3.2; submit also needs exam details (D-20) |
 | Documents | GET/POST /documents/upload, GET /documents, POST /documents/{id}/resubmit | Upload, status, resubmission (ADM-F-006, ADM-F-008) |

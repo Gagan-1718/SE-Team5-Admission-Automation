@@ -25,7 +25,10 @@ def server_error(_error):
 
 @bp.get("/")
 def home():
-    return render_template("home.html")
+    from app.catalogue.models import College
+
+    colleges = db.session.execute(db.select(College).order_by(College.name)).scalars().all()
+    return render_template("home.html", colleges=colleges)
 
 
 @bp.get("/health")

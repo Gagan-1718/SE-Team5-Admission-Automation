@@ -3,29 +3,47 @@
 {% block title %}Dashboard{% endblock %}
 {% block breadcrumb %}Dashboard{% endblock %}
 {% block content %}
+{% set done = steps|selectattr("state", "equalto", "done")|list|length %}
+{% set percent = (done * 100 / steps|length)|round|int if steps else 0 %}
 <div class="dashboard-page">
-  {{ ui.page_header("Your admission journey", "See what is complete and what to do next.", "Candidate dashboard") }}
+  <section class="hero-card">
+    <div class="hero-text">
+      <div class="eyebrow">Candidate dashboard</div>
+      <h1>Hello, {{ g.current_user.name.split(" ")[0] }}</h1>
+      <p>Your admission journey, step by step. See what is complete and what to do next.</p>
+    </div>
+    <div class="hero-progress" aria-label="{{ done }} of {{ steps|length }} steps complete">
+      <div class="hero-progress-top"><strong>{{ done }} of {{ steps|length }}</strong><span>steps complete</span></div>
+      <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ percent }}"><span style="width: {{ percent }}%"></span></div>
+    </div>
+  </section>
 
   {% if action %}
-    {% call ui.callout("bad" if action.state == "problem" else "info", "Next step") %}
-      <p><strong>{{ action.label }}</strong> — {{ action.detail }}</p>
-      <a class="btn primary sm" href="{{ action.href }}">Open {{ action.label }}</a>
-    {% endcall %}
+    <section class="next-step {{ 'problem' if action.state == 'problem' else 'current' }}" aria-labelledby="next-step-title">
+      <span class="next-step-icon">{{ ui.icon("alert" if action.state == "problem" else "arrow", 22) }}</span>
+      <div class="grow">
+        <div class="next-step-label" id="next-step-title">Next step</div>
+        <h2>{{ action.label }}</h2>
+        <p>{{ action.detail }}</p>
+      </div>
+      <a class="btn {{ 'danger' if action.state == 'problem' else 'primary' }}" href="{{ action.href }}">Open {{ action.label }} {{ ui.icon("arrow", 16) }}</a>
+    </section>
   {% else %}
     {% call ui.callout("ok", "Journey status") %}
-      <p>Your current steps are complete or waiting for the next system action.</p>
+      <p>Your current steps are complete or waiting for the next system action. Nothing needs your attention right now.</p>
     {% endcall %}
   {% endif %}
 
-  {% call ui.card("Your progress") %}
-    {{ ui.stepper(steps) }}
-  {% endcall %}
-
   <section class="dashboard-tiles" aria-label="Admission summary">
-    {{ ui.tile("Exam and rank", exam.exam_type ~ " · " ~ exam.rank if exam else "Not entered", exam.category if exam else "Add your exam details") }}
+    {{ ui.tile("Exam and rank", exam.exam_type ~ " · " ~ exam.rank if exam else "Not entered", exam.category ~ " category" if exam else "Add your exam details") }}
     {{ ui.tile("Application", application.status if application else "Not started", application.reference_number if application and application.reference_number else "Save and submit your application") }}
     {{ ui.tile("Documents approved", documents, "Required documents") }}
     {{ ui.tile("Eligibility", eligibility.status, eligibility.reason) }}
   </section>
+
+  {% call ui.card() %}
+    <div class="card-head"><div><h2>Your progress</h2><p>Each step opens when the one before it is ready.</p></div></div>
+    {{ ui.stepper(steps) }}
+  {% endcall %}
 </div>
 {% endblock %}

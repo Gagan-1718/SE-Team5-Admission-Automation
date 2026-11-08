@@ -62,7 +62,9 @@ def _decision_for_result(result_id):
 def _decision_json(value):
     if value is None:
         return None
-    return {"decision": value.decision, "decided_at": value.decided_at.isoformat()}
+    when = value.decided_at
+    return {"decision": value.decision, "decided_at": when.isoformat(),
+            "decided_label": f"{when.day} {when:%b %Y, %H:%M}"}
 
 
 

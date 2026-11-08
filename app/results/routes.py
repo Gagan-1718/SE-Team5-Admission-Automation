@@ -8,6 +8,16 @@ from . import services
 bp = Blueprint("results", __name__)
 
 
+@bp.app_context_processor
+def navigation_state():
+    """Lets the shared menu unlock "Result" once the completed run is published."""
+    def results_published():
+        from app.allotment.services import get_completed_run
+        run = get_completed_run()
+        return run is not None and services.is_published(run.id)
+    return {"results_published": results_published}
+
+
 @bp.post("/api/v1/admin/allotment/runs/<int:run_id>/publish")
 @role_required("administrator")
 def publish_run(run_id):

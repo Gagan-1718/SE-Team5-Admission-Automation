@@ -121,7 +121,7 @@ def test_print_css_hides_shell_and_buttons():
     from pathlib import Path
     css = Path("static/css/results.css").read_text()
     assert "@media print" in css and "@page" in css
-    for selector in (".app-sidebar", ".app-topbar", ".no-print", ".result-ticket"):
+    for selector in (".portal-header", ".portal-footer", ".no-print", ".result-ticket"):
         assert selector in css
 
 

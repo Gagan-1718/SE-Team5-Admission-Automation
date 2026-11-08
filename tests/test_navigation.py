@@ -70,9 +70,33 @@ def test_candidate_choices_navigation_is_enabled(app):
 def test_choices_navigation_is_active_on_choices_page(app):
     client = login(app, "nav.choices-active@example.test", "candidate", "9000000017")
     html = client.get("/choices").data.decode()
-    assert re.search(r'<a class="app-nav-link active" href="/choices">', html)
+    assert re.search(r'<a class="app-nav-link active" href="/choices"[^>]*>', html)
 
 
 def test_navigation_uses_real_anchor_links(app):
     html = login(app, "nav.anchor@example.test", "candidate", "9000000014").get("/").data.decode()
     assert re.search(r'<a[^>]+href="/application"', html)
+
+
+def test_administrator_allotment_link_is_never_locked(app):
+    html = login(app, "nav.allot@example.test", "administrator", "9000000018").get("/admin/dashboard").data.decode()
+    link = html.split('href="/admin/allotment"', 1)[1].split("</a>", 1)[0]
+    assert "data-locked" not in link and "Locked" not in link
+
+
+def test_result_link_unlocks_once_results_are_published(app):
+    from app.allotment.models import AllotmentRun
+    from app.results.models import ResultPublication
+
+    client = login(app, "nav.published@example.test", "candidate", "9000000019")
+    admin = db.session.execute(db.select(User).filter_by(email="nav.published@example.test")).scalar_one()
+    run = AllotmentRun(cycle=1, run_by=admin.id, candidates_processed=0, allocated_count=0,
+                       not_allocated_count=0, duration_ms=1)
+    db.session.add(run)
+    db.session.commit()
+    db.session.add(ResultPublication(run_id=run.id, published_by=admin.id))
+    db.session.commit()
+    html = client.get("/dashboard").data.decode()
+    link = html.split('href="/result"', 1)[1].split("</a>", 1)[0]
+    assert "data-locked" not in html.split('href="/result"', 1)[0].rsplit("<a", 1)[1]
+    assert "Locked" not in link

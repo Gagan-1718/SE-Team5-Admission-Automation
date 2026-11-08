@@ -1,30 +1,75 @@
 {% extends "base.html" %}
+{% import "_ui.html" as ui %}
 {% block title %}Review documents{% endblock %}
+{% block breadcrumb %}Documents{% endblock %}
 {% block content %}
-<h1>Document verification queue</h1>
-<form method="get">
-  <label for="status">Status</label>
-  <select id="status" name="status">
-    {% for value in ['Pending', 'Approved', 'Rejected'] %}
-    <option {% if value == status %}selected{% endif %}>{{ value }}</option>
-    {% endfor %}
-  </select><button type="submit">Filter</button>
-</form>
-{% for document in documents %}
-<section aria-labelledby="document-{{ document.id }}">
-  <h2 id="document-{{ document.id }}">Document {{ document.id }}: {{ document.document_type }}</h2>
-  <p>Candidate {{ document.candidate_id }} — {{ document.status }}</p>
-  <a href="{{ url_for('documents.review_file', document_id=document.id) }}">Download document {{ document.id }}</a>
-  {% if document.rejection_reason %}<p>Reason: {{ document.rejection_reason }}</p>{% endif %}
-  {% if document.status == 'Pending' %}
-  <form method="post" action="{{ url_for('documents.review', document_id=document.id) }}">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-    <label for="reason-{{ document.id }}">Rejection reason (required when rejecting)</label>
-    <textarea id="reason-{{ document.id }}" name="reason"></textarea>
-    <button name="decision" value="Approved">Approve</button>
-    <button name="decision" value="Rejected">Reject</button>
-  </form>
-  {% endif %}
+{% call ui.page_header("Document verification queue", "Each candidate's documents are shown together. Open each file, then approve it or reject it with a reason the candidate will see.", "Administrator") %}{% endcall %}
+
+<nav class="tabs" aria-label="Filter by status">
+  {% for value in ['Pending', 'Approved', 'Rejected'] %}
+  <a href="{{ url_for('documents.review_queue', status=value) }}"{% if value == status %} aria-current="page"{% endif %}>{{ value }} <span class="tab-count">{{ counts.get(value, 0) }}</span></a>
+  {% endfor %}
+</nav>
+
+<p class="review-summary hint">
+  {% if groups %}{{ candidate_total }} candidate{{ 's' if candidate_total != 1 }} with {{ status|lower }} documents. Newest uploads first.{% if pages > 1 %} Page {{ page }} of {{ pages }}.{% endif %}{% endif %}
+</p>
+
+{% for group in groups %}
+<section class="card review-person" aria-labelledby="person-{{ loop.index }}">
+  <header class="review-person-head">
+    <span class="app-avatar" aria-hidden="true">{{ group.name[:1]|upper }}</span>
+    <div class="grow">
+      <h2 id="person-{{ loop.index }}">{{ group.name }}</h2>
+      <span class="cell-sub">{{ group.reference or "No application reference" }}</span>
+    </div>
+    <span class="review-tally">{{ group.approved }} of {{ group.required }} approved{% if group.pending %} · {{ group.pending }} to review{% endif %}</span>
+  </header>
+
+  {% for document in group.documents %}
+  <article class="review-item{% if document.status == status %} is-match{% endif %}" aria-labelledby="document-{{ document.id }}">
+    <div class="review-who">
+      <span class="doc-icon">{{ ui.icon("file", 20) }}</span>
+      <h3 id="document-{{ document.id }}">{{ document.document_type }}</h3>
+    </div>
+    <div class="review-file">
+      {{ ui.pill(document.status) }}
+      <a class="btn ghost sm" href="{{ url_for('documents.review_file', document_id=document.id) }}">{{ ui.icon("download", 15) }} Open file</a>
+    </div>
+    {% if document.rejection_reason %}<p class="review-reason"><strong>Reason:</strong> {{ document.rejection_reason }}</p>{% endif %}
+    {% if document.status == 'Pending' %}
+    <form method="post" action="{{ url_for('documents.review', document_id=document.id) }}" class="review-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <label class="sr-only" for="reason-{{ document.id }}">Rejection reason for {{ document.document_type }} (required when rejecting)</label>
+      <input class="input" id="reason-{{ document.id }}" name="reason" placeholder="Reason, required only when rejecting">
+      <button class="btn good sm" name="decision" value="Approved">Approve</button>
+      <button class="btn subtle-danger sm" name="decision" value="Rejected">Reject</button>
+    </form>
+    {% endif %}
+  </article>
+  {% endfor %}
+
+  {% for missing in group.missing %}
+  <div class="review-item is-missing">
+    <div class="review-who">
+      <span class="doc-icon">{{ ui.icon("file", 20) }}</span>
+      <h3>{{ missing }}</h3>
+    </div>
+    <div class="review-file"><span class="pill idle">Not uploaded</span></div>
+  </div>
+  {% endfor %}
 </section>
-{% else %}<p>No {{ status }} documents.</p>{% endfor %}
+{% else %}
+<section class="card">
+  {{ ui.empty_state("No " ~ status ~ " documents", "Nothing is waiting here right now." if status == "Pending" else "Documents appear here after they are reviewed.") }}
+</section>
+{% endfor %}
+
+{% if pages > 1 %}
+<nav class="pager" aria-label="Queue pages">
+  {% if page > 1 %}<a class="btn ghost sm" href="{{ url_for('documents.review_queue', status=status, page=page - 1) }}">Previous</a>{% endif %}
+  <span>Page {{ page }} of {{ pages }}</span>
+  {% if page < pages %}<a class="btn ghost sm" href="{{ url_for('documents.review_queue', status=status, page=page + 1) }}">Next</a>{% endif %}
+</nav>
+{% endif %}
 {% endblock %}

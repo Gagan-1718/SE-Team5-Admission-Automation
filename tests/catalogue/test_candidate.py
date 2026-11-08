@@ -2,14 +2,14 @@
 from app.extensions import db
 from tests.catalogue.helpers import get_college, get_seat
 
-MERIDIAN = b"Meridian Institute of Technology"
-CEDARWOOD = b"Cedarwood College of Engineering"
+RVCE = b"RV College of Engineering"
+BMSCE = b"BMS College of Engineering"
 
 
 def test_catalogue_lists_all_colleges_and_branches(seeded, client):
     response = client.get("/colleges")
     assert response.status_code == 200
-    assert MERIDIAN in response.data and CEDARWOOD in response.data
+    assert RVCE in response.data and BMSCE in response.data
     for branch in (b"Mechanical Engineering", b"Civil Engineering", b"Information Science and Engineering"):
         assert branch in response.data
 
@@ -23,44 +23,44 @@ def test_empty_catalogue_shows_a_message(app, client):
 def test_filter_by_branch_name_shows_only_matching_branches(seeded, client):
     response = client.get("/colleges?q=civil")
     assert b"Civil Engineering" in response.data
-    assert CEDARWOOD in response.data
-    assert b"<h2>" + MERIDIAN not in response.data
+    assert BMSCE in response.data
+    assert b"<h2>" + RVCE not in response.data
     assert b"Mechanical Engineering" not in response.data
     assert b"Information Science" not in response.data
 
 
 def test_filter_by_college_name_shows_all_its_branches(seeded, client):
-    response = client.get("/colleges?q=CEDARWOOD")
-    assert CEDARWOOD in response.data
+    response = client.get("/colleges?q=BMS")
+    assert BMSCE in response.data
     for branch in (b"Computer Science and Engineering", b"Information Science and Engineering", b"Civil Engineering"):
         assert branch in response.data
-    assert b"<h2>" + MERIDIAN not in response.data
+    assert b"<h2>" + RVCE not in response.data
 
 
 def test_filter_matching_branches_in_several_colleges(seeded, client):
     response = client.get("/colleges?q=computer science")
-    assert MERIDIAN in response.data and CEDARWOOD in response.data
+    assert RVCE in response.data and BMSCE in response.data
     assert b"Civil Engineering" not in response.data
     assert b"Mechanical Engineering" not in response.data
 
 
 def test_college_dropdown_filter(seeded, client):
-    cedarwood_id = get_college("Cedarwood College of Engineering").id
-    response = client.get(f"/colleges?college_id={cedarwood_id}")
+    bmsce_id = get_college("BMS College of Engineering").id
+    response = client.get(f"/colleges?college_id={bmsce_id}")
     listing = response.data.split(b"<h2>")[1:]  # the headings of the result sections
-    assert len(listing) == 1 and CEDARWOOD in listing[0]
+    assert len(listing) == 1 and BMSCE in listing[0]
 
 
 def test_college_and_text_filters_combine(seeded, client):
-    meridian_id = get_college("Meridian Institute of Technology").id
-    response = client.get(f"/colleges?college_id={meridian_id}&q=civil")
+    rvce_id = get_college("RV College of Engineering").id
+    response = client.get(f"/colleges?college_id={rvce_id}&q=civil")
     assert b"No colleges or branches match" in response.data
 
 
 def test_filter_with_no_match_shows_message(seeded, client):
     response = client.get("/colleges?q=zzz-no-such-thing")
     assert b"No colleges or branches match" in response.data
-    assert b"<h2>" + MERIDIAN not in response.data
+    assert b"<h2>" + RVCE not in response.data
 
 
 def test_filter_text_is_not_treated_as_a_pattern(seeded, client):
@@ -74,10 +74,10 @@ def test_filter_text_is_escaped_in_the_page(seeded, client):
 
 
 def test_seat_availability_matches_the_seat_matrix(seeded, client):
-    seat = get_seat("Meridian Institute of Technology", "Computer Science and Engineering", "General")
+    seat = get_seat("RV College of Engineering", "Computer Science and Engineering", "General")
     seat.filled = 5
     db.session.commit()
-    response = client.get("/colleges?q=meridian")
+    response = client.get("/colleges?q=RV+College")
     assert b"25 / 30" in response.data  # General: 30 - 5 filled
     # whole-branch total: 30+15+8+4+3 = 60 capacity, 5 filled
     assert b"55 / 60" in response.data
