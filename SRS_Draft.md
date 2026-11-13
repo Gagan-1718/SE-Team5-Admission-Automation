@@ -6,7 +6,7 @@ This Software Requirements Specification (SRS) defines the functional, non-funct
 
 ## 1.2 Scope
 
-The system enables engineering admission candidates to register, submit applications, upload supporting documents, check eligibility against configured (mock/seeded) exam data, browse participating colleges and branches, fill and lock ranked preferences, and view and act on seat allotment results. It enables administrators to manage candidate records, verify documents, manage the college/branch/seat catalogue, run a rank-and-preference-based seat allotment engine, publish results, and review a basic audit trail.
+The system enables engineering admission candidates to register, submit applications, upload supporting documents, check eligibility against configured (mock/seeded) exam data, browse participating colleges and branches, fill and lock ranked preferences, and view and act on seat allotment results. It enables administrators to view and search candidate records, review application statuses and verification queues, verify documents, manage the college/branch/seat catalogue, run a rank-and-preference-based seat allotment engine, publish results, and review a basic audit trail.
 
 The system is an educational prototype that follows the general structure of real KCET/COMEDK counselling workflows. It does not integrate with, and does not claim to be, the official Karnataka Examinations Authority (KEA) or COMEDK systems. The following are explicitly out of scope: real KEA/COMEDK API integration, OCR or AI-based document verification, Aadhaar or biometric authentication, offline/kiosk modes, real payment or SMS gateways, mandatory external email services, medical/dental admissions, post-admission academic management, in-app notifications, multiple/subsequent counselling rounds, and any AI-based prediction, recommendation, or graph-analytics functionality. A single allotment cycle is implemented; support for multiple rounds is noted only as a possible future enhancement, not as a requirement.
 
@@ -178,7 +178,7 @@ This requirement covers consolidated administrative oversight of candidates, app
 
 | ID | Requirement ("The system shall...") | Priority | Source | Acceptance Criteria | Dependencies |
 |---|---|---|---|---|---|
-| ADM-F-020 | The system shall allow the administrator to view and manage candidate records, application statuses, and document-verification queues from a consolidated dashboard. | Medium | Administrator | TC-020: Given the admin dashboard, candidate counts, statuses, and pending-verification queues match the underlying data. | Depends on ADM-F-001, ADM-F-005, ADM-F-007, ADM-F-011 |
+| ADM-F-020 | The system shall allow the administrator to view and search candidate records, application statuses, and document-verification queues from a consolidated dashboard. Direct administrator editing of candidate records is outside the approved scope. | Medium | Administrator | TC-020: Given the admin dashboard, candidate counts, statuses, and pending-verification queues match the underlying data. | Depends on ADM-F-001, ADM-F-005, ADM-F-007, ADM-F-011 |
 
 # 5. Non-Functional Requirements
 
