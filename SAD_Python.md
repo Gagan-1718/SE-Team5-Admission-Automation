@@ -614,11 +614,13 @@ The algorithm of section 4.1 is a pure function `allot()` in `app/allotment/engi
 
 | Requirement | Result | Evidence |
 | --- | --- | --- |
-| ADM-NFR-001 response time | Single-client candidate pages averaged 3 to 16 ms (target 2 s); the required 25-candidate concurrent load test remains pending, so the requirement is partially verified | `docs/evidence/tasya-response-time.md` (TC-026); `docs/testing/SYSTEM_VALIDATION_REPORT.md` |
-| ADM-NFR-002 run time | 300 candidates: median 0.967 s; 600 candidates: median 1.589 s; limit 60 s | `scripts/time_allotment.py`, `docs/evidence/gagan.md` |
-| ADM-NFR-003 consistency | Filled seats equal allotment records for every seat row after each run; the database refuses filled > capacity; a corrupted row is reported | `scripts/check_seat_consistency.py`, console tile, `docs/evidence/gagan.md` |
-| SEC-F-004 HTTPS | TLS with a local certificate, HTTP redirect, HSTS, Secure cookie | `scripts/serve_https.py`, `tests/test_https.py` |
+| ADM-NFR-001 response time | Under a 25-candidate concurrent workload, sign-in, dashboard, catalogue and choices requests all returned HTTP 200. Average response times ranged from 331 to 525 ms, with P95 values below 832 ms, meeting the 2-second target in the tested local environment. | `docs/evidence/tasya-response-time.md`; `docs/testing/SYSTEM_VALIDATION_REPORT.md` |
+| ADM-NFR-002 run time | 300 candidates: median 0.967 s; 600 candidates: median 1.589 s; limit 60 s. | `scripts/time_allotment.py`, `docs/evidence/gagan.md` |
+| ADM-NFR-003 consistency | Filled seats equal allotment records for every seat row after each run; the database refuses filled > capacity; a corrupted row is reported. | `scripts/check_seat_consistency.py`, console tile, `docs/evidence/gagan.md` |
+| SEC-F-004 HTTPS | TLS with a local certificate, HTTP redirect, HSTS, Secure cookie. | `scripts/serve_https.py`, `tests/test_https.py` |
 
 ### 6.6 Completeness at the end of Sprint Two
 
-Every functional requirement ADM-F-001 to ADM-F-020 and SEC-F-001 to SEC-F-005 has a working endpoint on `main` (section 6.2). The items that were still open on the morning of 1 November 2026 (result page and decision, candidate list, response-time measurement, journey dashboard) were merged the same day; `docs/DEVIATIONS.md` section 7 records how each was closed and `docs/DEFECT_LOG.md` lists every defect with its disposition. Not built: correcting a candidate record from the administrator screens (`PUT /admin/candidates/{id}`, section 4.3.7 and assumption A-18); administrators can view candidate records, and documents are corrected through review and resubmission (DEVIATIONS D-23).
+The functional requirements ADM-F-001 to ADM-F-019 and SEC-F-001 to SEC-F-005 have corresponding implemented functionality on `main` (see Section 6.2). ADM-F-020 is partially addressed: administrators can view candidate records, while direct candidate-record editing is not implemented (D-23). The remaining Sprint Two items, including the result page and decision, candidate list, response-time measurement and journey dashboard, were merged into `main` on 1 November 2026. `docs/DEVIATIONS.md` records implementation differences and known gaps, while `docs/DEFECT_LOG.md` records defects and their dispositions.
+
+Not built: correcting a candidate record directly from the administrator screens (`PUT /admin/candidates/{id}`, Section 4.3.7 and assumption A-18). Administrators can view candidate records, and document issues are handled through review and resubmission (DEVIATIONS D-23).

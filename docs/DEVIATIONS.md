@@ -1,6 +1,6 @@
 # Deviations from the submitted SRS, SAD and Test Plan
 
-Status date: **1 November 2026** (Sprint Two, day 3; first written 21 October 2026). This file records every place where the product differs from the documents we submitted, why, and what we will say in the final demo. The SRS stays authoritative: **no functional or security requirement was dropped or changed**; the differences below are design and implementation choices. The Sprint One gaps in section 3 are closed; what is still open is in section 7.
+Status date: 1 November 2026 (Sprint Two, day 3; first written 21 October 2026). This file records the differences between the submitted documents and the implemented product, including the reasons for those differences and how they are addressed in the final demonstration. The SRS remains the requirements baseline. No requirement IDs were removed or rewritten; implementation differences and any partially addressed requirements are documented below. The Sprint One gaps in Section 3 are closed; the known remaining gap is recorded in Section 7 and D-23.
 
 ## 1. Technology (documented earlier)
 
