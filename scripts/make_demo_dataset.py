@@ -1,11 +1,13 @@
 """Generate deterministic fictional candidate data for demonstrations.
 
 Usage:
-    DEMO_CANDIDATE_PASSWORD='fictional-pass-1' \
+    DEMO_CANDIDATE_PASSWORD='pass1234' \
         python scripts/make_demo_dataset.py --candidates 300 --seed 1
 
 The database must already be initialized and seeded.
 This script does not create, reset, or seed database tables.
+Approved and rejected demo documents get the same audit entries a real
+administrator review writes, so the audit log has data to show in the demo.
 """
 
 import argparse
@@ -33,6 +35,8 @@ from app.accounts.constants import ALLOWED_CATEGORIES
 from app.application.models import Application, SUBMITTED
 from app.application.services import make_reference_number
 
+from app.audit.services import record_audit
+
 from app.documents.models import Document
 from app.documents.storage import upload_directory
 
@@ -50,6 +54,20 @@ DOCUMENT_TYPES = (
     ("Marksheet", "marksheet"),
     ("ID Proof", "id-proof"),
     ("Category Certificate", "category-certificate"),
+)
+
+# The audit action the real review route writes for each decision.
+REVIEW_AUDIT_ACTIONS = {
+    "Approved": "document.approve",
+    "Rejected": "document.reject",
+}
+
+# One candidate per demo situation (candidate number -> what the login shows).
+DEMO_LOGINS = (
+    (1, "eligible, choices locked"),
+    (8, "not eligible: rank above the cut-off"),
+    (9, "one document pending or rejected"),
+    (10, "eligible, choices saved but not locked"),
 )
 
 BOARDS = (
@@ -369,12 +387,20 @@ def generate_dataset(candidate_count, seed):
 
     directory = upload_directory()
 
+    # Simulated reviews are recorded under the seeded administrator.
+    admin_id = db.session.scalar(
+        db.select(User.id)
+        .where(User.role == "administrator")
+        .order_by(User.id)
+    )
+
     created_users = 0
     created_exam_records = 0
     created_applications = 0
     created_documents = 0
     created_choices = 0
     created_locks = 0
+    created_audit_entries = 0
 
     try:
         for index in range(candidate_count):
@@ -530,6 +556,19 @@ def generate_dataset(candidate_count, seed):
                     db.session.add(document)
                     created_documents += 1
 
+                    # Only new documents are audited, so a rerun adds no entries.
+                    action = REVIEW_AUDIT_ACTIONS.get(document.status)
+                    if admin_id is not None and action is not None:
+                        db.session.flush()  # gives the document its id
+                        record_audit(
+                            admin_id,
+                            action,
+                            "document",
+                            document.id,
+                            commit=False,
+                        )
+                        created_audit_entries += 1
+
                 else:
                     existing.application_id = application.id
                     existing.stored_name = stored_name
@@ -564,7 +603,14 @@ def generate_dataset(candidate_count, seed):
     print(f"New document records: {created_documents}")
     print(f"New choices: {created_choices}")
     print(f"New permanent locks: {created_locks}")
+    print(f"New audit entries: {created_audit_entries}")
     print(f"Document directory: {directory}")
+
+    if admin_id is None:
+        print(
+            "No administrator found, so no review entries were written to "
+            "the audit log. Run 'flask --app app seed-db' first."
+        )
 
     print("\nExpected eligibility distribution:")
     print(f"  Eligible:     {candidate_count * 8 // 10}")
@@ -575,6 +621,14 @@ def generate_dataset(candidate_count, seed):
     print(f"  Locked:       {candidate_count * 7 // 10}")
     print(f"  Unlocked:     {candidate_count // 10}")
     print(f"  No choices:   {candidate_count * 2 // 10}")
+
+    print("\nDemo logins:")
+    print("  admin@example.test     administrator "
+          "(password: the ADMIN_SEED_PASSWORD used with seed-db)")
+    for number, situation in DEMO_LOGINS:
+        if number <= candidate_count:
+            print(f"  {candidate_email(number)}  {situation}")
+    print("  Every demo candidate uses the DEMO_CANDIDATE_PASSWORD you set.")
 
 
 def main():

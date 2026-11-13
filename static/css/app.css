@@ -86,8 +86,8 @@ body.app-body h3 { font-size: 1.02rem; }
 /* --------------------------------------------------------- public header */
 .portal-header { background: var(--navy); color: #fff; border-bottom: 4px solid var(--saffron); }
 .portal-top { max-width: 1200px; margin: 0 auto; padding: 12px 24px; display: flex; align-items: center; gap: 18px; }
-.portal-account { margin-left: auto; display: flex; align-items: center; gap: 16px; font-size: .9rem; }
-.portal-account a { color: #dbe5f5; text-decoration: none; font-weight: 600; }
+.portal-account { margin-left: auto; display: flex; align-items: center; gap: 16px; font-size: .9rem; flex-shrink: 0; }
+.portal-account a { color: #dbe5f5; text-decoration: none; font-weight: 600; white-space: nowrap; }
 .portal-account a.btn.primary { color: var(--navy); background: #fff; border-color: #fff; }
 
 /* ----------------------------------------------------------------- page */
