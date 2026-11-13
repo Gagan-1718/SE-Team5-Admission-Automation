@@ -79,7 +79,7 @@ def test_running_from_the_console_shows_the_summary_and_locks_the_button(app, or
     page = admin.get("/admin/allotment").get_data(as_text=True)
     assert "Allotment complete: 3 allocated, 2 not allocated." in page
     assert "Passed" in page and "0 mismatches" in page
-    assert "Run allotment (already completed)" in page
+    assert "Run allotment (already completed)" not in page  # leftover hint removed (R4-1)
     assert "Run completed, not published" in page
     assert "Oracle College A · CSE" in page
     assert runs() == 1

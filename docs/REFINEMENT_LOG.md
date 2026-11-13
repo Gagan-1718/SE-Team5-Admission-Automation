@@ -29,3 +29,12 @@ Status: Open, Decided, Fixed (with commit or PR), Won't change (with reason).
 | # | Point raised | Explanation | Decision / fix | Status |
 |---|---|---|---|---|
 | R3-1 | The review queue should show the person's name with their three documents | The queue listed single documents, so one candidate's marksheet, ID proof and certificate were scattered across the list. | One card per candidate (name, reference, "2 of 3 approved") with all three documents inside; missing ones show "Not uploaded"; Approve/Reject stay on each pending document; 20 candidates per page | Fixed (ui/redesign) |
+
+## Round 4 (8 November 2026)
+
+| # | Point raised | Explanation | Decision / fix | Status |
+|---|---|---|---|---|
+| R4-1 | Stray line on the publish card | "Run allotment (already completed)" was printed under the card in every state. | Line removed; the console steps already say the run is done | Fixed (13 Nov 2026) |
+| R4-2 | "Log in" breaks onto two lines on a phone | The public header let the links shrink. | Header links never wrap; the brand text wraps instead | Fixed (13 Nov 2026) |
+| R4-3 | Audit log looks empty in the demo | The demo generator set documents to Approved or Rejected without the audit entry a real review writes, so the log showed only the allotment run. | The generator writes `document.approve` / `document.reject` for each new reviewed document under the seeded administrator; a rerun adds nothing | Fixed (13 Nov 2026) |
+| R4-4 | Demo logins are hard to remember | The README suggested a long placeholder password and named no candidate logins. | README uses `admin123` and `pass1234` for the local demo and lists one login per situation; the generator prints the same list. Passwords still come from environment variables | Fixed (13 Nov 2026) |

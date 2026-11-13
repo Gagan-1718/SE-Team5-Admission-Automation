@@ -430,3 +430,46 @@ def test_every_generated_candidate_has_a_different_realistic_name():
     assert not any("Candidate" in name or any(ch.isdigit() for ch in name) for name in names)
     assert all(len(name.split()) == 2 for name in names)
     assert names == [generator.candidate_name(index, seed=1) for index in range(600)]  # same seed, same names
+
+
+def _audit_entries():
+    from app.audit.models import AuditLog
+
+    return db.session.execute(db.select(AuditLog).order_by(AuditLog.id)).scalars().all()
+
+
+def test_reviewed_demo_documents_are_in_the_audit_log_once(app, demo_environment, monkeypatch, capsys):
+    from app.accounts.seed import seed as seed_accounts
+
+    monkeypatch.setenv("ADMIN_SEED_PASSWORD", "fictional-admin-password")
+    with app.app_context():
+        seed_accounts()
+        admin = db.session.scalar(db.select(User).where(User.role == "administrator"))
+        run_generator(candidate_count=20, seed=1)
+
+        reviewed = db.session.execute(
+            db.select(Document.id, Document.status).where(Document.status.in_(("Approved", "Rejected")))
+        ).all()
+        expected = {(doc_id, "document.approve" if status == "Approved" else "document.reject")
+                    for doc_id, status in reviewed}
+        entries = _audit_entries()
+        assert {(e.target_id, e.action_type) for e in entries} == expected
+        assert len(entries) == len(expected)
+        assert all(e.actor_id == admin.id and e.actor_role == "administrator"
+                   and e.target_type == "document" and e.outcome == "Success" for e in entries)
+
+        run_generator(candidate_count=20, seed=1)  # a rerun adds no new entries
+        assert len(_audit_entries()) == len(expected)
+
+    output = capsys.readouterr().out
+    assert "Demo logins:" in output
+    for email in ("cand0001@example.test", "cand0008@example.test",
+                  "cand0009@example.test", "cand0010@example.test"):
+        assert email in output
+
+
+def test_generator_without_an_administrator_writes_no_audit_entries(app, demo_environment, capsys):
+    with app.app_context():
+        run_generator(candidate_count=10, seed=1)
+        assert _audit_entries() == []
+    assert "No administrator found" in capsys.readouterr().out
