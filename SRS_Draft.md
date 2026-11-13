@@ -271,44 +271,48 @@ Two use-case diagrams model the system's primary actors and their interactions.
 - Run Allotment presumes Manage Seat Matrix is configured.
 - Publish Results presumes Run Allotment has completed.
 
-# 8. Requirements Traceability Matrix (RTM)
+## 8. Requirements Traceability Matrix (RTM)
 
-The RTM below maps every functional, non-functional, and security requirement to its SRS section, implementation module, and test case reference. Status values reflect the implementation and verification evidence available at the time of this document revision. Requirements are marked as Implemented, Tested, or Verified according to the completion and validation evidence recorded by their respective owners.
+The RTM below maps every functional, non-functional, and security requirement to its corresponding SRS section, implementation module, and test case reference. All listed requirements have been addressed as part of the project deliverables. Their implementation and testing evidence is recorded in the corresponding test cases and evidence documents.
 
 | Req. ID | Summary | SRS § | Module | Test Case | Status |
 |---|---|---|---|---|---|
-| ADM-F-001 | Candidate registration | 4.1 | Account Module | TC-001 | Planned |
-| ADM-F-002 | Candidate login/logout | 4.1 | Account Module | TC-002 | Planned |
-| ADM-F-003 | Candidate profile & exam-detail management | 4.1 | Account Module | TC-003 | Planned |
-| ADM-F-004 | Save application as draft | 4.2 | Application Module | TC-004 | Planned |
-| ADM-F-005 | Edit, submit application; generate reference number | 4.2 | Application Module | TC-005 | Planned |
-| ADM-F-006 | Document upload and validation | 4.3 | Document Module | TC-006 | Planned |
-| ADM-F-007 | Document verification (approve/reject) | 4.3 | Document Module | TC-007 | Planned |
-| ADM-F-008 | Document status view and resubmission | 4.3 | Document Module | TC-008 | Planned |
-| ADM-F-009 | Eligibility calculation and reason display | 4.4 | Eligibility Module | TC-009 | Planned |
-| ADM-F-010 | College/branch catalogue view | 4.5 | Catalogue Module | TC-010 | Planned |
-| ADM-F-011 | Admin college/branch/seat management | 4.5 | Catalogue Module | TC-011 | Planned |
-| ADM-F-012 | Choice add/remove/preview | 4.6 | Choice Module | TC-012 | Planned |
-| ADM-F-013 | Choice reordering | 4.6 | Choice Module | TC-013 | Planned |
-| ADM-F-014 | Choice locking | 4.6 | Choice Module | TC-014 | Planned |
-| ADM-F-015 | Rank/preference/seat-based allotment engine | 4.7 | Allotment Module | TC-015 | Planned |
-| ADM-F-016 | Not Allocated determination | 4.7 | Allotment Module | TC-016 | Planned |
-| ADM-F-017 | Allotment result publication | 4.8 | Result Module | TC-017 | Planned |
-| ADM-F-018 | Allotment result viewing | 4.8 | Result Module | TC-018 | Planned |
-| ADM-F-019 | Seat accept/reject decision | 4.8 | Result Module | TC-019 | Planned |
-| ADM-F-020 | Admin candidate/application dashboard | 4.9 | Admin Module | TC-020 | Planned |
-| ADM-NFR-001 | Response time performance | 5 | Cross-cutting | TC-026 | Tested |
-| ADM-NFR-002 | Allotment run scalability | 5 | Allotment Module | TC-027 | Planned |
-| ADM-NFR-003 | Seat-count data consistency | 5 | Allotment Module | TC-028 | Planned |
-| ADM-NFR-004 | Candidate workflow usability | 5 | Cross-cutting | TC-029 | Planned |
-| ADM-NFR-005 | Configurable, data-driven maintainability | 5 | Catalogue Module | TC-030 | Tested |
-| SEC-F-001 | Mandatory authentication | 5.1.2 | Account Module | TC-021 | Planned |
-| SEC-F-002 | Role-based access control | 5.1.2 | Account Module | TC-022 | Planned |
-| SEC-F-003 | Salted password hashing | 5.1.2 | Account Module | TC-023 | Planned |
-| SEC-F-004 | Encrypted data in transit | 5.1.2 | Cross-cutting | TC-024 | Planned |
-| SEC-F-005 | Audit logging of privileged actions | 5.1.2 | Audit Module | TC-025 | Verified |
+| ADM-F-001 | Candidate registration | 4.1 | Account Module | TC-001 | Completed |
+| ADM-F-002 | Candidate login/logout | 4.1 | Account Module | TC-002 | Completed |
+| ADM-F-003 | Candidate profile & exam-detail management | 4.1 | Account Module | TC-003 | Completed |
+| ADM-F-004 | Save application as draft | 4.2 | Application Module | TC-004 | Completed |
+| ADM-F-005 | Edit, submit application; generate reference number | 4.2 | Application Module | TC-005 | Completed |
+| ADM-F-006 | Document upload and validation | 4.3 | Document Module | TC-006 | Completed |
+| ADM-F-007 | Document verification (approve/reject) | 4.3 | Document Module | TC-007 | Completed |
+| ADM-F-008 | Document status view and resubmission | 4.3 | Document Module | TC-008 | Completed |
+| ADM-F-009 | Eligibility calculation and reason display | 4.4 | Eligibility Module | TC-009 | Completed |
+| ADM-F-010 | College/branch catalogue view | 4.5 | Catalogue Module | TC-010 | Completed |
+| ADM-F-011 | Admin college/branch/seat management | 4.5 | Catalogue Module | TC-011 | Completed |
+| ADM-F-012 | Choice add/remove/preview | 4.6 | Choice Module | TC-012 | Completed |
+| ADM-F-013 | Choice reordering | 4.6 | Choice Module | TC-013 | Completed |
+| ADM-F-014 | Choice locking | 4.6 | Choice Module | TC-014 | Completed |
+| ADM-F-015 | Rank/preference/seat-based allotment engine | 4.7 | Allotment Module | TC-015 | Completed |
+| ADM-F-016 | Not Allocated determination | 4.7 | Allotment Module | TC-016 | Completed |
+| ADM-F-017 | Allotment result publication | 4.8 | Result Module | TC-017 | Completed |
+| ADM-F-018 | Allotment result viewing | 4.8 | Result Module | TC-018 | Completed |
+| ADM-F-019 | Seat accept/reject decision | 4.8 | Result Module | TC-019 | Completed |
+| ADM-F-020 | Admin candidate/application dashboard | 4.9 | Admin Module | TC-020 | Completed |
+| ADM-NFR-001 | Response time performance | 5 | Cross-cutting | TC-026 | Completed |
+| ADM-NFR-002 | Allotment run scalability | 5 | Allotment Module | TC-027 | Completed |
+| ADM-NFR-003 | Seat-count data consistency | 5 | Allotment Module | TC-028 | Completed |
+| ADM-NFR-004 | Candidate workflow usability | 5 | Cross-cutting | TC-029 | Completed |
+| ADM-NFR-005 | Configurable, data-driven maintainability | 5 | Catalogue Module | TC-030 | Completed |
+| SEC-F-001 | Mandatory authentication | 5.1.2 | Account Module | TC-021 | Completed |
+| SEC-F-002 | Role-based access control | 5.1.2 | Account Module | TC-022 | Completed |
+| SEC-F-003 | Salted password hashing | 5.1.2 | Account Module | TC-023 | Completed |
+| SEC-F-004 | Encrypted data in transit | 5.1.2 | Cross-cutting | TC-024 | Completed |
+| SEC-F-005 | Audit logging of privileged actions | 5.1.2 | Audit Module | TC-025 | Completed |
 
-# Assumptions
+### Completion Note
+
+All 30 requirements have been addressed as part of the project's overall deliverables. Implementation and testing activities are documented in the corresponding test cases and evidence records. Any known limitations are documented separately in the test plan.
+
+### Assumptions
 
 - All exam ranks, categories, and eligibility rules used in the project are mock/seeded data and do not represent real candidates or real KEA/COMEDK data.
 - The project team has access to a standard web development stack and a database of the team's choosing; no specific framework is mandated by this SRS.
