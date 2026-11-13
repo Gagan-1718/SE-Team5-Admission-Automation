@@ -11,7 +11,8 @@ from app.eligibility import services
 from app.eligibility.seed import seed
 from app.extensions import db
 from tests.catalogue.helpers import login_client
-
+from app.audit.models import AuditLog
+from app.eligibility.models import EligibilityRule
 
 @pytest.fixture(autouse=True)
 def seeded_rules(app):
@@ -182,3 +183,56 @@ def test_pure_decision_code_does_not_import_other_modules():
     pattern = re.compile(r"^\s*(from|import)\s+app\.(accounts|documents)", re.MULTILINE)
     for name in ("evaluation.py", "models.py", "seed.py"):
         assert not pattern.search((folder / name).read_text(encoding="utf-8")), name
+def test_admin_can_create_rule_for_category_without_existing_rule(
+    app, candidate, monkeypatch
+):
+    # The autouse fixture seeds all five categories.
+    # Remove EWS in this isolated test database to simulate a missing rule.
+    existing_rule = db.session.query(EligibilityRule).filter_by(
+        category="EWS"
+    ).one()
+
+    db.session.delete(existing_rule)
+    db.session.commit()
+
+    # Sign in as an administrator.
+    admin = login_client(app, "administrator", 30)
+
+    # Create a new EWS rule.
+    response = admin.post(
+        "/admin/eligibility-rules",
+        data={
+            "category": "EWS",
+            "max_rank": "5000",
+        },
+    )
+
+    assert response.status_code == 201
+
+    # Verify that the rule was persisted with the submitted values.
+    rule = db.session.query(EligibilityRule).filter_by(
+        category="EWS"
+    ).one()
+
+    assert rule.max_rank == 5000
+    assert rule.active is True
+
+    # Verify that the creation was recorded in the audit log.
+    audit_entry = db.session.query(AuditLog).filter_by(
+        actor_id=admin.user_id,
+        action_type="rule.create",
+        target_type="EligibilityRule",
+        target_id=rule.id,
+        outcome="Success",
+    ).one_or_none()
+
+    assert audit_entry is not None
+
+    # Verify that a candidate with an EWS rank within the new cutoff
+    # is evaluated as eligible when their documents are approved.
+    _give_exam_details(candidate.user_id, 4000, "EWS")
+    _documents(monkeypatch, approved=True)
+
+    result = services.get_eligibility(candidate.user_id)
+
+    assert result["status"] == "Eligible"

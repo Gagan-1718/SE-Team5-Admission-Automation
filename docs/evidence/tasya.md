@@ -208,13 +208,14 @@ All measured page averages were below the two-second response-time target.
 Detailed measurements and test conditions are recorded in:
 
 `docs/evidence/tasya-response-time.md`
+
 ### 4.3 TC-030 — Admin Catalogue, Seat, and Eligibility Configuration
 
 **Requirement:** ADM-NFR-005 — Configurable, data-driven maintainability
 
-**Status:** Passed
+**Status:** Passed — automated integration and eligibility-rule creation tests
 
-The integration test verifies that an administrator can create a college and branch, configure seat capacity, and update the General eligibility cutoff. It confirms that the candidate becomes eligible after the cutoff is updated, sees the configured college and branch in the candidate-facing catalogue, submits and locks a choice, and receives the configured seat through the allotment process.
+#### Test 1: Admin catalogue, seat, and eligibility configuration
 
 **Command:**
 ```bash
@@ -223,10 +224,36 @@ pytest tests/integration/test_demo_flow.py -v
 
 **Result:** 12 passed in 6.90s.
 
-**Evidence:** The test `test_admin_configured_catalogue_flows_through_choices_and_allotment` passed. It verifies the complete flow from administrator configuration through candidate eligibility, catalogue visibility, choice submission, and successful allotment. It also confirms that the configured seat capacity is one, the filled seat count is one, and the candidate's allotment result is `Allocated`.
+**Evidence:** The test `test_admin_configured_catalogue_flows_through_choices_and_allotment` passed. It verifies that an administrator can create a college and branch, configure seat capacity, and update an existing General-category eligibility cutoff. The candidate's eligibility is evaluated using the updated rule, the configured college and branch become available in the candidate catalogue, and the candidate can add choices and proceed through allotment.
 
-This records the automated TC-030 integration scenario. Additional manual UAT evidence, if required, should be recorded separately.
+#### Test 2: Creating a new eligibility rule for a category without an existing rule
 
+**Command:**
+```bash
+pytest -v tests/eligibility/test_routes.py::test_admin_can_create_rule_for_category_without_existing_rule
+```
+
+**Result:** 1 passed in 1.16s.
+
+**Evidence:** The test removes the seeded EWS eligibility rule from the isolated test database and creates a new EWS rule through the administrator endpoint (`POST /admin/eligibility-rules`) with a cutoff rank of 5000. It verifies that the rule is persisted with the correct cutoff and active status, that a `rule.create` audit entry is recorded with the administrator and rule details, and that a candidate with EWS rank 4000 is evaluated as eligible when their documents are approved.
+
+#### Regression verification
+
+**Eligibility route tests:**
+```bash
+pytest -v tests/eligibility/test_routes.py
+```
+**Result:** 20 passed in 7.68s.
+
+**Complete eligibility test directory:**
+```bash
+pytest -q tests/eligibility/
+```
+**Result:** 43 passed.
+
+**Overall evidence:** The automated tests verify both configuration of existing catalogue and eligibility data and creation of a previously absent eligibility rule. They also verify that the newly configured rule affects candidate eligibility and that its creation is recorded in the audit log.
+
+Manual UAT, if required, should be recorded separately from these automated test results.
 
 
 ## 5. Test Results Summary
