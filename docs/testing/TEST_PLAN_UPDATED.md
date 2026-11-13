@@ -756,7 +756,7 @@ python -m pytest -q tests/audit tests/allotment/test_result_decision_flow.py
 ```
 
 **Actual result / evidence:** Relevant mapped tests are included in the owner-reported successful R1 suite. Individual per-case counts were not retained; manual substeps are not inferred from automated assertions.
-
+**Execution reference:** [Tasya Sprint 2 evidence](../evidence/tasya.md), Section 4.1 (TC-025).
 **Status:** PASS for mapped automated scope (R1); requirement acceptance subject to owner review.
 
 ### TC-026 - Candidate response time
@@ -774,13 +774,22 @@ python -m pytest -q tests/audit tests/allotment/test_result_decision_flow.py
 
 **Expected result:** Mean standard response <=2s under stated workload; report concurrent work separately from sequential request timings.
 
-**Final implementation update:** Existing sequential single-client results are historical evidence; not proof of proposed 25-user load.
+**Final implementation update:** Sequential single-client measurements are retained as historical evidence. A separate 25-concurrent-candidate workload was executed and is documented below.
 
-**Execution reference:** [Tasya response-time evidence](../evidence/tasya-response-time.md). Retain actual workload and timing outputs for any repeat.
+**Execution reference:** [Tasya response-time evidence](../evidence/tasya-response-time.md).
 
-**Actual result / evidence:** Tasya recorded one warm-up and ten measured requests per page on 1 November. Averages: login 3.42 ms, catalogue 7.55 ms, eligibility 10.60 ms, choices 15.46 ms. Single client only, not 25 concurrent users and not a newly measured final-build result.
+**Actual result / evidence:** Sequential measurements recorded on 1 November 2026: login 3.42 ms, catalogue 7.55 ms, eligibility 10.60 ms and choices 15.46 ms (average response times; single client).
 
-**Status:** Historical sequential measurement available; proposed concurrent workload not demonstrated.
+A separate concurrent test was recorded on 13 November 2026 using 25 candidate sessions and an isolated dataset of 300 fictional candidates. It measured 25 requests per endpoint (100 requests total):
+
+- Sign-in: average 443.31 ms; P95 831.18 ms; maximum 925.23 ms.
+- Dashboard: average 524.89 ms; P95 725.94 ms; maximum 787.60 ms.
+- Catalogue: average 387.35 ms; P95 558.97 ms; maximum 560.27 ms.
+- Choices: average 331.28 ms; P95 418.12 ms; maximum 444.83 ms.
+
+All 100 requests returned HTTP 200. All measured average and P95 response times were below the 2-second target. The sequential and concurrent measurements are separate test runs. The concurrent test used a local Flask development server and does not establish production performance.
+
+**Status:** PASS for the recorded 25-concurrent-candidate workload in the local demo environment. Production performance is not established.
 
 ### TC-027 - Allotment performance
 
@@ -885,6 +894,8 @@ python -m pytest -q tests/integration/test_demo_flow.py::test_admin_configured_c
 ```
 
 **Actual result / evidence:** Mapped integration creates college/branch/seats, updates an existing cutoff, and verifies catalogue, eligibility, choices and allotment. Creation of a rule for a previously absent category is a separate scenario, not proved by that cutoff update. Review full evidence before changing the older summary pending status.
+
+**Execution reference:** [Tasya Sprint 2 evidence](../evidence/tasya.md), Section 4.3 (TC-030).
 
 **Status:** PASS for existing integrated configuration scenario in R1; new-rule creation needs separate acceptance evidence.
 
