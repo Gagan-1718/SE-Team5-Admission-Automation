@@ -29,9 +29,9 @@ The execution records supplied by the team include separate test runs and enviro
 | Test Case | Validation area | Result | Evidence / limitation |
 |---|---|---|---|
 | TC-001–TC-019 | Registration, application, eligibility, documents, candidate workflows | Passed — mapped automated scope | Corresponding automated checks were included in the R1 execution. Owner review of the mappings remains necessary. |
-| TC-020 | Administrator candidate list and candidate record management | **Partial** | Candidate list/dashboard checks pass. Direct editing of candidate records is not implemented; this is the accepted gap DEF-013 / D-23. |
+| TC-020 | Administrator candidate list, search, pagination and dashboard checks | Passed — D-23 scope | The dashboard, candidate-list search, pagination and access-control checks passed. Direct editing of candidate records remains outside the approved D-23 scope under DEF-013. |
 | TC-021–TC-025 | Security, authorization, audit logging, allotment and publication workflows | Passed — mapped automated scope | Corresponding checks were included in R1. TC-025 has separate evidence for the allotment/result decision flow. |
-| TC-026 | Candidate-page response time | **Partial** | Historical single-client measurements were below the 2-second target. Concurrent-load validation is not demonstrated by those measurements. |
+| TC-026 | Candidate-page response time | Passed — 25-session local test | On 13 November 2026, 25 concurrent candidate journeys were simulated on the local Flask development server; 100/100 requests returned HTTP 200, with averages of 443.31 ms (login), 524.89 ms (dashboard), 387.35 ms (catalogue) and 331.28 ms (choices), all below 2 seconds. Local development-server limitations remain. |
 | TC-027 | Allotment performance at scale | Passed — previously recorded benchmark | Gagan’s documented benchmark reports median times of 0.967 seconds for 300 candidates and 1.589 seconds for 600 candidates, against a 60-second limit. These are earlier benchmark results, not a new R1 measurement. |
 | TC-028 | Allotment and seat consistency | Passed — mapped automated scope | Consistency checks were included in R1. Final owner review of the mapping remains necessary. |
 | TC-029 | Usability / first-time-user walkthrough | **Limited evidence** | Owner walkthrough feedback was recorded. Participant-level completion counts, elapsed times, assistance counts, and a five-person usability record were not provided. |
@@ -59,9 +59,9 @@ The Sprint Two defect log records the following dispositions:
 
 - DEF-001 through DEF-009 and DEF-011 through DEF-012 are documented as fixed.
 - DEF-010 is documented as not a defect.
-- DEF-013 is a Medium-severity known gap, deferred under `docs/DEVIATIONS.md` D-23.
+- DEF-013 is a scope decision under `docs/DEVIATIONS.md` D-23, not a defect. It preserves the historical decision that direct administrator editing of candidate records was intentionally excluded from approved scope.
 
-D-23 concerns direct administrator editing of candidate records. The `/admin/candidates` page supports viewing, while document correction is handled through the reject/resubmit workflow. Direct editing through `PUT /admin/candidates/{id}` was not implemented.
+D-23 concerns direct administrator editing of candidate records. The `/admin/candidates` page supports viewing, searching, pagination, dashboard checks and access control, while document correction is handled through the reject/resubmit workflow. Direct editing through `PUT /admin/candidates/{id}` was intentionally not implemented under the approved scope.
 
 The deviation record states that no Critical or High defects remain open at the `v1.0` tag. This is reported as the team’s documented release status; it does not mean that every functional requirement is fully implemented.
 
@@ -69,16 +69,16 @@ The deviation record states that no Critical or High defects remain open at the 
 
 ### TC-026 — Candidate response time
 
-The recorded historical single-client measurements were:
+The recorded 13 November 2026 local concurrent measurement used 25 simultaneous candidate journeys and is the relevant evidence for this case.
 
 | Page | Average response time |
 |---|---:|
-| Login | 3.42 ms |
-| Catalogue | 7.55 ms |
-| Eligibility | 10.60 ms |
-| Choices | 15.46 ms |
+| Sign-in (`POST /accounts/login`) | 443.31 ms |
+| Dashboard (`GET /dashboard`) | 524.89 ms |
+| Catalogue (`GET /colleges`) | 387.35 ms |
+| Choices (`GET /choices`) | 331.28 ms |
 
-These results are below the 2-second target under the recorded conditions. However, they are historical measurements and do not demonstrate the concurrent 25-candidate condition described in the performance test plan. TC-026 is therefore reported as partial.
+All 100 measured requests returned HTTP 200. The average response times were below the 2-second target, and the 25-session local load test was successful. The remaining limitation is that the test used the local Flask development server rather than a production deployment environment.
 
 ### TC-027 — Allotment performance
 
@@ -95,8 +95,8 @@ Both are below the documented 60-second allotment limit. These results are from 
 
 The following limitations should be considered when interpreting the results:
 
-1. TC-020 does not include direct administrator editing of candidate records; the scope is deferred under D-23.
-2. TC-026 does not demonstrate concurrent-load performance at 25 candidates.
+1. TC-020 covers the approved D-23 read-only administration scope: dashboard, search, pagination, record viewing and access control. Direct editing remains intentionally outside scope.
+2. TC-026 was measured on the local Flask development server, not a production WSGI deployment; this is the remaining deployment limitation despite the successful 25-session local test.
 3. TC-029 lacks participant-level usability measurements required to independently establish the full first-time-user protocol.
 4. TC-030 demonstrates the configured catalogue → candidate choices → allotment workflow, but does not independently demonstrate creation of a rule for a missing category.
 5. Automated Flask client checks and HTML assertions do not establish complete cross-browser validation.
@@ -106,6 +106,6 @@ The following limitations should be considered when interpreting the results:
 
 The supplied automated execution results and integration evidence demonstrate substantial validation of the Admission Automation system’s candidate, administrator, security, audit, configuration, and allotment workflows.
 
-The report preserves the known limitations rather than treating all acceptance criteria as fully verified. TC-020 and TC-026 remain partial, TC-029 has limited usability evidence, and TC-030 is passed for the demonstrated workflow with a separate rule-creation detail not yet evidenced.
+The report preserves the known limitations rather than treating all acceptance criteria as fully verified. TC-020 passed for the approved D-23 read-only administration scope; TC-026 passed under the 25-session local development-server test; TC-029 has limited usability evidence; and TC-030's demonstrated catalogue-to-allotment workflow passed, but full ADM-NFR-005 verification remains partial because rule creation for a missing category is not independently evidenced.
 
 The team’s deviation record states that no Critical or High defects remain open at the `v1.0` tag. The final RTM and Test Summary Report should retain the evidence-based distinctions documented here.
