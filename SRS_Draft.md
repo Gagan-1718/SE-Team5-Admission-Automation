@@ -253,7 +253,7 @@ Two use-case diagrams model the system's primary actors and their interactions.
 **Actor:** Administrator
 
 **Use cases:**
-- Manage Candidates
+- View and search candidate records
 - Verify Documents
 - Verify Eligibility
 - Manage Colleges
@@ -300,8 +300,8 @@ The RTM below maps every functional, non-functional, and security requirement to
 | ADM-NFR-001 | Response time performance | 5 | Cross-cutting | TC-026 | Completed |
 | ADM-NFR-002 | Allotment run scalability | 5 | Allotment Module | TC-027 | Completed |
 | ADM-NFR-003 | Seat-count data consistency | 5 | Allotment Module | TC-028 | Completed |
-| ADM-NFR-004 | Candidate workflow usability | 5 | Cross-cutting | TC-029 | Completed |
-| ADM-NFR-005 | Configurable, data-driven maintainability | 5 | Catalogue Module | TC-030 | Completed |
+| ADM-NFR-004 | Candidate workflow usability | 5 | Cross-cutting | TC-029 | Partial |
+| ADM-NFR-005 | Configurable, data-driven maintainability | 5 | Catalogue Module | TC-030 | Partial |
 | SEC-F-001 | Mandatory authentication | 5.1.2 | Account Module | TC-021 | Completed |
 | SEC-F-002 | Role-based access control | 5.1.2 | Account Module | TC-022 | Completed |
 | SEC-F-003 | Salted password hashing | 5.1.2 | Account Module | TC-023 | Completed |

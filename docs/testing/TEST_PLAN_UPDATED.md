@@ -605,12 +605,12 @@ python -m pytest -q tests/results/test_seat_decision.py tests/results/test_resul
 **Steps:**
 
 1. Compare dashboard counts/queues with DB.
-2. view candidate list and restricted access.
-3. check direct candidate correction capability.
+2. search, paginate and view candidate records; validate access control.
+3. confirm that direct administrator editing remains out of approved D-23 scope.
 
-**Expected result:** Counts and read-only records match DB; candidate denied admin; direct record correction remains known deferred gap DEF-013/D-23.
+**Expected result:** Dashboard totals, search results, pagination, and read-only record views match the database; candidate-role access is denied; direct record editing is explicitly excluded from scope under D-23 and is not treated as an open defect.
 
-**Final implementation update:** Do not claim full view-and-manage acceptance: editing candidate records is deferred.
+**Final implementation update:** The approved D-23 scope covers administrator viewing, searching, pagination, dashboard checks, and access control only; direct candidate record editing is outside scope.
 
 **Mapped checks / repeat command:**
 
@@ -618,9 +618,9 @@ python -m pytest -q tests/results/test_seat_decision.py tests/results/test_resul
 python -m pytest -q tests/admin
 ```
 
-**Actual result / evidence:** Dashboard counts/list checks passed as part of R1. Direct candidate correction remains a documented deferred gap DEF-013 / D-23; do not erase it because automated tests pass.
+**Actual result / evidence:** Dashboard counts/search/pagination and access-control checks passed as part of R1. Direct candidate record editing remains explicitly outside the approved D-23 scope and is not an open defect.
 
-**Status:** PARTIAL against full view-and-manage scope; automated dashboard/list checks included in R1.
+**Status:** PASS for the approved D-23 read-only administration scope; direct editing is not in scope.
 
 ### TC-021 - Mandatory authentication
 
@@ -928,6 +928,6 @@ Remaining seats: A-CSE 0, A-ISE 0, B-ECE 1. Summary: five processed, three alloc
 - Keep original exit criteria: planned cases executed with evidence, oracle passing, requirements covered, defects triaged and no open Critical/High defects. Owner walkthrough verification does not itself grant faculty acceptance.
 - Tasya consolidates reviewed per-requirement statuses in the RTM and system/summary reports. Do not mark every row Verified solely because pytest passed.
 - Retain the dated older 820-pass summary and add a dated Part 3 update with R1/R2 and the final merged coverage. Do not overwrite historical dates/environments.
-- Review the acknowledged TC-020 correction gap, TC-026 workload scope and TC-030 complete configuration scenario. TC-029 owner usability verification is recorded without invented participant results.
+- Review the approved D-23 scope for TC-020, the local development-server limitation for TC-026, the participant-evidence limitation for TC-029, and the outstanding new-rule creation evidence for TC-030.
 - Each module owner reviews their case details and adds actual dated evidence to their own file. Record real new defects and their agreed disposition in docs/DEFECT_LOG.md.
 - This revision does not modify application code, the original PDF, existing coverage reports, commits or GitHub.
